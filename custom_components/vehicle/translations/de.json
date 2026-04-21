@@ -1,0 +1,41 @@
+{
+  "title": "My Vehicle",
+  "entity": {
+    "sensor": {
+      "vehicle_state": {
+        "state": {
+          "unknown": "Unbekannt",
+          "unavailable": "Nicht verfügbar",
+          "offline": "Offline",
+          "parked": "Geparkt",
+          "charging": "Lädt",
+          "driving": "Fährt",
+          "error": "Fehler"
+        }
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Adapter auswählen",
+        "description": "Wähle den Quell-Adapter aus, über den Fahrzeuge erkannt werden sollen.",
+        "data": {
+          "adapter": "Adapter"
+        }
+      },
+      "vehicle": {
+        "title": "Fahrzeug auswählen",
+        "description": "Wähle eines der Fahrzeuge aus, die vom ausgewählten Adapter erkannt wurden.",
+        "data": {
+          "vehicle_id": "Fahrzeug"
+        }
+      }
+    },
+    "error": {
+      "adapter_not_available": "Der ausgewählte Adapter ist derzeit nicht verfugbar.",
+      "no_vehicles_found": "Fur den ausgewählten Adapter wurden keine Fahrzeuge gefunden.",
+      "vehicle_not_found": "Das ausgewählte Fahrzeug konnte nicht gefunden werden."
+    }
+  }
+}

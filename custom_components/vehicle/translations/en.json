@@ -1,5 +1,20 @@
 {
-  "title": "Vehicle",
+  "title": "My Vehicle",
+  "entity": {
+    "sensor": {
+      "vehicle_state": {
+        "state": {
+          "unknown": "Unknown",
+          "unavailable": "Unavailable",
+          "offline": "Offline",
+          "parked": "Parked",
+          "charging": "Charging",
+          "driving": "Driving",
+          "error": "Error"
+        }
+      }
+    }
+  },
   "config": {
     "step": {
       "user": {
@@ -18,6 +33,7 @@
       }
     },
     "error": {
+      "adapter_not_available": "The selected adapter is not currently available.",
       "no_vehicles_found": "No vehicles were discovered for the selected adapter.",
       "vehicle_not_found": "The selected vehicle could not be found."
     }

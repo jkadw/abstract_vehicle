@@ -517,7 +517,7 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
                         payload["source_units"]["distance_unit"] = unit
                 continue
 
-            if "range" in match_text and "fuel" not in match_text:
+            if "range" in match_text and "total" in match_text:
                 value = cls._float_from_state(state.state)
                 if value is not None:
                     payload["metrics"]["range"] = value

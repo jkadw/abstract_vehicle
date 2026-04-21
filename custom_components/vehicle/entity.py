@@ -71,6 +71,7 @@ class VehicleEntity(VehicleBaseEntity, SensorEntity):
     """Aggregate vehicle state entity exposed in the sensor domain."""
 
     _attr_has_entity_name = False
+    _attr_translation_key = "vehicle_state"
 
     def __init__(self, normalized_data: NormalizedVehicleData) -> None:
         super().__init__(normalized_data, "state", "State")
