@@ -71,6 +71,12 @@ class VehicleAdapter(ABC):
     """Async interface that separates raw acquisition from normalization."""
 
     @classmethod
+    def get_friendly_name(cls) -> str:
+        """Return a user-facing name for the underlying integration."""
+
+        return cls.__name__
+
+    @classmethod
     async def async_discover_vehicles(cls, hass: Any) -> list[DiscoveredVehicle]:
         """Return vehicles discoverable for this adapter in the current HA instance."""
 

@@ -3,7 +3,12 @@
 from typing import Final
 
 DOMAIN: Final = "vehicle"
-PLATFORMS: Final[tuple[str, ...]] = ("sensor",)
+PLATFORMS: Final[tuple[str, ...]] = (
+    "sensor",
+    "binary_sensor",
+    "lock",
+    "device_tracker",
+)
 
 CONF_ADAPTER: Final = "adapter"
 CONF_VEHICLE_ID: Final = "vehicle_id"
@@ -16,7 +21,7 @@ DEFAULT_ENTRY_TITLE: Final = "Vehicle"
 
 DATA_ADAPTER: Final = "adapter"
 DATA_NORMALIZED: Final = "normalized_data"
-DATA_ENTITY: Final = "entity"
+DATA_ENTITIES: Final = "entities"
 DATA_SERVICES_REGISTERED: Final = "services_registered"
 
 SERVICE_LOCK: Final = "lock"

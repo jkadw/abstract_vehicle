@@ -20,6 +20,12 @@ class MockVehicleAdapter(VehicleAdapter):
     """Small in-memory adapter with realistic sample data."""
 
     @classmethod
+    def get_friendly_name(cls) -> str:
+        """Return a user-facing name for the mock adapter."""
+
+        return "Mock Adapter"
+
+    @classmethod
     async def async_discover_vehicles(cls, hass: Any) -> list[DiscoveredVehicle]:
         """Expose a single development vehicle for config-flow discovery."""
 

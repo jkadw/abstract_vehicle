@@ -7,7 +7,11 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
-from .adapters import DiscoveredVehicle, KiaUvoVehicleAdapter, MockVehicleAdapter
+from .adapters import (
+    DiscoveredVehicle,
+    HyundaiKiaConnectKiaUvoVehicleAdapter,
+    MockVehicleAdapter,
+)
 from .const import (
     ADAPTER_TYPE_KIA_UVO,
     ADAPTER_TYPE_MOCK,
@@ -19,7 +23,10 @@ from .const import (
 
 ADAPTER_OPTIONS = {
     ADAPTER_TYPE_MOCK: ("Mock Adapter", MockVehicleAdapter),
-    ADAPTER_TYPE_KIA_UVO: ("kia_uvo", KiaUvoVehicleAdapter),
+    ADAPTER_TYPE_KIA_UVO: (
+        HyundaiKiaConnectKiaUvoVehicleAdapter.get_friendly_name(),
+        HyundaiKiaConnectKiaUvoVehicleAdapter,
+    ),
 }
 
 

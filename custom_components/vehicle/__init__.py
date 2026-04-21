@@ -5,7 +5,11 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .adapters import KiaUvoVehicleAdapter, MockVehicleAdapter, VehicleAdapter
+from .adapters import (
+    HyundaiKiaConnectKiaUvoVehicleAdapter,
+    MockVehicleAdapter,
+    VehicleAdapter,
+)
 from .const import (
     ADAPTER_TYPE_KIA_UVO,
     ADAPTER_TYPE_MOCK,
@@ -13,6 +17,7 @@ from .const import (
     CONF_VEHICLE_ID,
     CONF_VEHICLES,
     DATA_ADAPTER,
+    DATA_ENTITIES,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
     DOMAIN,
@@ -43,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = {
         DATA_ADAPTER: adapter,
+        DATA_ENTITIES: [],
         DATA_NORMALIZED: normalized_data,
     }
 
@@ -75,7 +81,9 @@ def _create_adapter(entry: ConfigEntry) -> VehicleAdapter:
         vehicle_id = entry.data.get(CONF_VEHICLE_ID)
         if vehicle_id is not None and not isinstance(vehicle_id, str):
             raise ValueError("kia_uvo vehicle_id must be a string when configured")
-        return KiaUvoVehicleAdapter(vehicles=vehicles, vehicle_id=vehicle_id)
+        return HyundaiKiaConnectKiaUvoVehicleAdapter(
+            vehicles=vehicles, vehicle_id=vehicle_id
+        )
 
     raise ValueError(f"Unsupported adapter type: {adapter_type}")
 

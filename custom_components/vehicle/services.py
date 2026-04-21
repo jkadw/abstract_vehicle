@@ -13,7 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from .adapters import UnsupportedVehicleActionError
 from .const import (
     DATA_ADAPTER,
-    DATA_ENTITY,
+    DATA_ENTITIES,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
     DOMAIN,
@@ -91,7 +91,7 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
                 )
 
             adapter = entry_data[DATA_ADAPTER]
-            entity = entry_data.get(DATA_ENTITY)
+            entities = entry_data.get(DATA_ENTITIES, [])
 
             try:
                 await adapter.execute_action(action_name)
@@ -108,7 +108,7 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
             updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
             entry_data[DATA_NORMALIZED] = updated
 
-            if entity is not None:
+            for entity in entities:
                 entity.update_normalized_data(updated)
                 entity.async_write_ha_state()
 
@@ -131,10 +131,10 @@ def _find_target_entries(
     for value in domain_data.values():
         if not isinstance(value, dict):
             continue
-        entity = value.get(DATA_ENTITY)
-        if entity is None:
-            continue
-        if getattr(entity, "entity_id", None) in target_ids:
-            matched_entries.append(value)
+        entities = value.get(DATA_ENTITIES, [])
+        for entity in entities:
+            if getattr(entity, "entity_id", None) in target_ids:
+                matched_entries.append(value)
+                break
 
     return matched_entries
