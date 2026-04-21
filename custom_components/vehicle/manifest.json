@@ -1,13 +1,13 @@
 {
   "domain": "vehicle",
-  "name": "Vehicle",
+  "name": "My Vehicle",
   "version": "0.1.0",
   "config_flow": true,
-  "documentation": "https://github.com/example/vehicle",
-  "issue_tracker": "https://github.com/example/vehicle/issues",
+  "documentation": "https://github.com/jkadw/abstract_vehicle",
+  "issue_tracker": "https://github.com/jkadw/abstract_vehicle/issues",
   "requirements": [],
   "codeowners": [
-    "@example"
+    "@jkadw"
   ],
   "iot_class": "cloud_polling"
 }

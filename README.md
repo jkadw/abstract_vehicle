@@ -1,4 +1,4 @@
-# Vehicle
+# My Vehicle
 
 `vehicle` is a Home Assistant custom integration that provides a stable, manufacturer-agnostic vehicle abstraction.
 

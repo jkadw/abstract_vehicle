@@ -79,6 +79,14 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
         if self._vehicle_id not in self._vehicles:
             raise ValueError(f"Configured kia_uvo vehicle_id not found: {self._vehicle_id}")
 
+        if self._hass is not None:
+            refreshed_vehicle = self._build_vehicle_payload_from_hass(
+                self._hass,
+                self._vehicle_id,
+            )
+            if refreshed_vehicle is not None:
+                self._vehicles[self._vehicle_id] = refreshed_vehicle
+
     async def get_raw_state(self) -> RawStatePayload:
         """Return raw state for the configured kia_uvo vehicle."""
 
@@ -257,6 +265,36 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
             for entity_id in value
             if isinstance(entity_id, str) and "." in entity_id
         ]
+
+    @classmethod
+    def _build_vehicle_payload_from_hass(
+        cls,
+        hass: Any,
+        vehicle_id: str,
+    ) -> dict[str, Any] | None:
+        """Rebuild a configured vehicle payload from current HA registry state."""
+
+        from homeassistant.helpers import device_registry as dr
+        from homeassistant.helpers import entity_registry as er
+
+        device_registry = dr.async_get(hass)
+        entity_registry = er.async_get(hass)
+        devices = getattr(device_registry, "devices", {})
+        entities = getattr(entity_registry, "entities", {})
+
+        for device in devices.values():
+            identifiers = getattr(device, "identifiers", set())
+            if cls._vehicle_id_from_identifiers(identifiers) != vehicle_id:
+                continue
+
+            return cls._build_vehicle_payload_from_device(
+                hass,
+                device,
+                entities.values(),
+                vehicle_id,
+            )
+
+        return None
 
     @classmethod
     def _vehicle_id_from_identifiers(cls, identifiers: Any) -> str | None:

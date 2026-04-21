@@ -49,7 +49,7 @@ class VehicleBaseEntity(Entity):
             identifiers={(DOMAIN, info.vehicle_id)},
             manufacturer=info.manufacturer,
             model=info.model,
-            name=f"my_{info.name}",
+            name=f"My {info.name}",
         )
 
     def update_normalized_data(self, normalized_data: NormalizedVehicleData) -> None:
