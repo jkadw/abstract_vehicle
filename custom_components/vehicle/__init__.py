@@ -35,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
 
-    adapter = _create_adapter(hass, entry)
+    adapter = await _create_adapter(hass, entry)
     raw_state = await adapter.get_raw_state()
     raw_metrics = await adapter.get_raw_metrics()
     capabilities = await adapter.get_capabilities()
@@ -63,13 +63,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-def _create_adapter(hass: HomeAssistant, entry: ConfigEntry) -> VehicleAdapter:
+async def _create_adapter(hass: HomeAssistant, entry: ConfigEntry) -> VehicleAdapter:
     """Create the configured adapter instance."""
 
     adapter_type = entry.data.get(CONF_ADAPTER, "mock")
     if not isinstance(adapter_type, str):
         raise ValueError("Configured adapter type must be a string")
-    return create_adapter_from_entry(hass, adapter_type, dict(entry.data))
+    return await create_adapter_from_entry(hass, adapter_type, dict(entry.data))
 
 
 __all__ = ["DOMAIN"]

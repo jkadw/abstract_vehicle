@@ -12,12 +12,20 @@ from .registry import ADAPTER_DEFINITIONS, AdapterDefinition, get_adapter_defini
 from ..const import CONF_VEHICLE_ID, CONF_VEHICLES
 
 
-def load_adapter_class(definition: AdapterDefinition) -> type[VehicleAdapter]:
+def _load_adapter_class(definition: AdapterDefinition) -> type[VehicleAdapter]:
     """Import and return the adapter class for a registry definition."""
 
     module = importlib.import_module(definition.module_path)
     adapter_class = getattr(module, definition.class_name)
     return adapter_class
+
+
+async def load_adapter_class(
+    hass: HomeAssistant, definition: AdapterDefinition
+) -> type[VehicleAdapter]:
+    """Import and return the adapter class without blocking the event loop."""
+
+    return await hass.async_add_executor_job(_load_adapter_class, definition)
 
 
 async def is_adapter_available(
@@ -57,7 +65,7 @@ async def get_available_adapter_options(
     options: dict[str, tuple[str, type[VehicleAdapter]]] = {}
     for definition in await get_available_adapter_definitions(hass):
         try:
-            adapter_class = load_adapter_class(definition)
+            adapter_class = await load_adapter_class(hass, definition)
         except Exception:
             continue
         options[definition.key] = (
@@ -79,11 +87,11 @@ async def discover_adapter_vehicles(
     if not await is_adapter_available(hass, definition):
         raise ValueError(f"Adapter not available: {adapter_key}")
 
-    adapter_class = load_adapter_class(definition)
+    adapter_class = await load_adapter_class(hass, definition)
     return await adapter_class.async_discover_vehicles(hass)
 
 
-def create_adapter_from_entry(
+async def create_adapter_from_entry(
     hass: HomeAssistant,
     adapter_key: str,
     entry_data: dict[str, Any],
@@ -94,7 +102,7 @@ def create_adapter_from_entry(
     if definition is None:
         raise ValueError(f"Unsupported adapter type: {adapter_key}")
 
-    adapter_class = load_adapter_class(definition)
+    adapter_class = await load_adapter_class(hass, definition)
 
     if adapter_key == "mock":
         return adapter_class()

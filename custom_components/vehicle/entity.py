@@ -70,6 +70,8 @@ class VehicleBaseEntity(Entity):
 class VehicleEntity(VehicleBaseEntity, SensorEntity):
     """Aggregate vehicle state entity exposed in the sensor domain."""
 
+    _attr_has_entity_name = False
+
     def __init__(self, normalized_data: NormalizedVehicleData) -> None:
         super().__init__(normalized_data, "state", "State")
 
@@ -102,5 +104,5 @@ class VehicleEntity(VehicleBaseEntity, SensorEntity):
     def _sync_entity_metadata(self) -> None:
         """Keep the aggregate sensor metadata aligned with the normalized data."""
 
-        self._attr_name = "State"
+        self._attr_name = f"My {self._normalized_data.info.name}"
         self._attr_unique_id = self._normalized_data.info.vehicle_id
