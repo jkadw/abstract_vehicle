@@ -79,13 +79,16 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
         if self._vehicle_id not in self._vehicles:
             raise ValueError(f"Configured kia_uvo vehicle_id not found: {self._vehicle_id}")
 
-        if self._hass is not None:
+        if self._hass is not None and getattr(self._hass, "is_running", False):
             refreshed_vehicle = self._build_vehicle_payload_from_hass(
                 self._hass,
                 self._vehicle_id,
             )
             if refreshed_vehicle is not None:
-                self._vehicles[self._vehicle_id] = refreshed_vehicle
+                self._vehicles[self._vehicle_id] = self._merge_vehicle_payloads(
+                    self._vehicles[self._vehicle_id],
+                    refreshed_vehicle,
+                )
 
     async def get_raw_state(self) -> RawStatePayload:
         """Return raw state for the configured kia_uvo vehicle."""
@@ -257,7 +260,8 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
     def _as_str(self, value: Any) -> str | None:
         return value if isinstance(value, str) else None
 
-    def _as_entity_id_list(self, value: Any) -> list[str]:
+    @classmethod
+    def _as_entity_id_list(cls, value: Any) -> list[str]:
         if not isinstance(value, list):
             return []
         return [
@@ -265,6 +269,92 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
             for entity_id in value
             if isinstance(entity_id, str) and "." in entity_id
         ]
+
+    @classmethod
+    def _merge_vehicle_payloads(
+        cls,
+        stored_vehicle: dict[str, Any],
+        refreshed_vehicle: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Merge live-discovered data into stored payloads without regressing support."""
+
+        merged = deepcopy(stored_vehicle)
+
+        for field_name in (
+            "name",
+            "manufacturer",
+            "model",
+            "vehicle_type",
+            "available",
+            "backend_online",
+            "has_error",
+            "driving",
+            "charging_active",
+            "charging_plugged",
+            "locked",
+            "climate_active",
+            "status",
+        ):
+            refreshed_value = refreshed_vehicle.get(field_name)
+            if refreshed_value is not None:
+                merged[field_name] = refreshed_value
+
+        merged["metrics"] = {
+            **cls._as_dict(stored_vehicle.get("metrics")),
+            **cls._as_dict(refreshed_vehicle.get("metrics")),
+        }
+        merged["openings"] = {
+            **cls._as_dict(stored_vehicle.get("openings")),
+            **cls._as_dict(refreshed_vehicle.get("openings")),
+        }
+        merged["source_units"] = {
+            **cls._as_dict(stored_vehicle.get("source_units")),
+            **cls._as_dict(refreshed_vehicle.get("source_units")),
+        }
+
+        stored_capabilities = cls._as_dict(stored_vehicle.get("capabilities"))
+        refreshed_capabilities = cls._as_dict(refreshed_vehicle.get("capabilities"))
+        merged_capabilities: dict[str, dict[str, bool]] = {}
+        for capability_name in set(stored_capabilities) | set(refreshed_capabilities):
+            stored_support = cls._as_dict(stored_capabilities.get(capability_name))
+            refreshed_support = cls._as_dict(refreshed_capabilities.get(capability_name))
+            merged_capabilities[capability_name] = {
+                "state_supported": bool(
+                    stored_support.get("state_supported")
+                    or refreshed_support.get("state_supported")
+                ),
+                "action_supported": bool(
+                    stored_support.get("action_supported")
+                    or refreshed_support.get("action_supported")
+                ),
+            }
+        merged["capabilities"] = merged_capabilities
+
+        merged["source_entity_ids"] = cls._merge_entity_id_lists(
+            stored_vehicle.get("source_entity_ids"),
+            refreshed_vehicle.get("source_entity_ids"),
+        )
+        merged["refresh_entity_ids"] = cls._merge_entity_id_lists(
+            stored_vehicle.get("refresh_entity_ids"),
+            refreshed_vehicle.get("refresh_entity_ids"),
+        )
+
+        return merged
+
+    @classmethod
+    def _merge_entity_id_lists(cls, *values: Any) -> list[str]:
+        merged: list[str] = []
+        for value in values:
+            for entity_id in cls._as_entity_id_list(value):
+                if entity_id not in merged:
+                    merged.append(entity_id)
+        return merged
+
+    @classmethod
+    def _as_dict(cls, value: Any) -> dict[str, Any]:
+        if isinstance(value, dict):
+            return value
+        return {}
 
     @classmethod
     def _build_vehicle_payload_from_hass(

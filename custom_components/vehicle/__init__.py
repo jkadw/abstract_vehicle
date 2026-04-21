@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 
 from .adapters import (
     VehicleAdapter,
     create_adapter_from_entry,
 )
 from .const import (
+    ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
     DATA_ADAPTER,
     DATA_ENTITIES,
@@ -34,6 +36,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a vehicle config entry."""
 
     hass.data.setdefault(DOMAIN, {})
+
+    adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
+    if not hass.is_running and adapter_type != ADAPTER_TYPE_MOCK:
+        async def _async_reload_on_started(event: Event) -> None:
+            _ = event
+            await hass.config_entries.async_reload(entry.entry_id)
+
+        entry.async_on_unload(
+            hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STARTED,
+                _async_reload_on_started,
+            )
+        )
 
     adapter = await _create_adapter(hass, entry)
     raw_state = await adapter.get_raw_state()
