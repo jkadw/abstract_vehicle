@@ -7,6 +7,7 @@ from typing import Any
 
 from .base import (
     ActionResult,
+    DiscoveredVehicle,
     RawMetricsPayload,
     RawStatePayload,
     UnsupportedVehicleActionError,
@@ -17,6 +18,48 @@ from ..model import CapabilitySupport, VehicleCapabilities
 
 class MockVehicleAdapter(VehicleAdapter):
     """Small in-memory adapter with realistic sample data."""
+
+    @classmethod
+    async def async_discover_vehicles(cls, hass: Any) -> list[DiscoveredVehicle]:
+        """Expose a single development vehicle for config-flow discovery."""
+
+        _ = hass
+        adapter = cls()
+        payload = {
+            "vehicle_id": "mock-vehicle-001",
+            "name": "Family EV",
+            "manufacturer": "Mock Motors",
+            "model": "Atlas",
+            "vehicle_type": "ev",
+            "available": True,
+            "backend_online": True,
+            "has_error": False,
+            "driving": False,
+            "charging_active": False,
+            "charging_plugged": True,
+            "locked": True,
+            "climate_active": False,
+            "metrics": dict(adapter._base_metrics),
+            "openings": dict(adapter._base_metrics["openings"]),
+            "source_units": dict(adapter._base_metrics["source_units"]),
+            "capabilities": {
+                "lock": {"state_supported": True, "action_supported": True},
+                "windows": {"state_supported": True, "action_supported": False},
+                "climate": {"state_supported": True, "action_supported": True},
+                "charging": {"state_supported": True, "action_supported": False},
+                "location": {"state_supported": True, "action_supported": False},
+                "battery": {"state_supported": True, "action_supported": False},
+                "fuel": {"state_supported": False, "action_supported": False},
+                "odometer": {"state_supported": True, "action_supported": False},
+            },
+        }
+        return [
+            DiscoveredVehicle(
+                vehicle_id="mock-vehicle-001",
+                title="Mock Motors Atlas",
+                payload=payload,
+            )
+        ]
 
     def __init__(self, initial_state: str = "parked") -> None:
         self._vehicle_info: RawStatePayload = {

@@ -2,6 +2,7 @@
 
 from .base import (
     ActionResult,
+    DiscoveredVehicle,
     RawMetricsPayload,
     RawStatePayload,
     UnsupportedVehicleActionError,
@@ -14,6 +15,7 @@ from .mock import MockVehicleAdapter
 
 __all__ = [
     "ActionResult",
+    "DiscoveredVehicle",
     "KiaHyundaiVehicleAdapter",
     "KiaUvoVehicleAdapter",
     "MockVehicleAdapter",

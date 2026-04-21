@@ -7,6 +7,7 @@ from typing import Any
 
 from .base import (
     ActionResult,
+    DiscoveredVehicle,
     RawMetricsPayload,
     RawStatePayload,
     UnsupportedVehicleActionError,
@@ -17,6 +18,46 @@ from ..model import CapabilitySupport, VehicleCapabilities
 
 class KiaUvoVehicleAdapter(VehicleAdapter):
     """Map configured kia_uvo vehicle payloads into the shared adapter interface."""
+
+    @classmethod
+    async def async_discover_vehicles(cls, hass: Any) -> list[DiscoveredVehicle]:
+        """Discover kia_uvo vehicles from the HA registries and current state."""
+
+        from homeassistant.helpers import device_registry as dr
+        from homeassistant.helpers import entity_registry as er
+
+        device_registry = dr.async_get(hass)
+        entity_registry = er.async_get(hass)
+        devices = getattr(device_registry, "devices", {})
+        entities = getattr(entity_registry, "entities", {})
+
+        discovered: list[DiscoveredVehicle] = []
+        for device in devices.values():
+            identifiers = getattr(device, "identifiers", set())
+            vehicle_id = next(
+                (
+                    identifier_value
+                    for identifier_domain, identifier_value in identifiers
+                    if identifier_domain == "kia_uvo"
+                ),
+                None,
+            )
+            if vehicle_id is None:
+                continue
+
+            vehicle_payload = cls._build_vehicle_payload_from_device(
+                hass, device, entities.values(), vehicle_id
+            )
+            title = vehicle_payload.get("name") or f"kia_uvo {vehicle_id}"
+            discovered.append(
+                DiscoveredVehicle(
+                    vehicle_id=vehicle_id,
+                    title=str(title),
+                    payload=vehicle_payload,
+                )
+            )
+
+        return discovered
 
     def __init__(
         self,
@@ -173,3 +214,149 @@ class KiaUvoVehicleAdapter(VehicleAdapter):
 
     def _as_str(self, value: Any) -> str | None:
         return value if isinstance(value, str) else None
+
+    @classmethod
+    def _build_vehicle_payload_from_device(
+        cls,
+        hass: Any,
+        device: Any,
+        entity_entries: Any,
+        vehicle_id: str,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "vehicle_id": vehicle_id,
+            "name": getattr(device, "name_by_user", None)
+            or getattr(device, "name", None)
+            or f"kia_uvo {vehicle_id}",
+            "manufacturer": getattr(device, "manufacturer", None) or "Kia/Hyundai",
+            "model": getattr(device, "model", None) or "Unknown",
+            "vehicle_type": "unknown",
+            "available": True,
+            "backend_online": True,
+            "has_error": False,
+            "driving": False,
+            "charging_active": False,
+            "charging_plugged": False,
+            "locked": None,
+            "climate_active": None,
+            "metrics": {},
+            "openings": {},
+            "source_units": {},
+            "capabilities": {
+                capability_name: {"state_supported": False, "action_supported": False}
+                for capability_name in (
+                    "lock",
+                    "windows",
+                    "climate",
+                    "charging",
+                    "location",
+                    "battery",
+                    "fuel",
+                    "odometer",
+                )
+            },
+        }
+
+        for entity_entry in entity_entries:
+            if getattr(entity_entry, "device_id", None) != getattr(device, "id", None):
+                continue
+
+            entity_id = getattr(entity_entry, "entity_id", "")
+            state = hass.states.get(entity_id)
+            if state is None:
+                continue
+
+            domain, _, object_id = entity_id.partition(".")
+            object_id = object_id.lower()
+            original_name = str(getattr(entity_entry, "original_name", "") or "").lower()
+            match_text = f"{object_id} {original_name}"
+
+            if domain == "lock":
+                payload["locked"] = state.state == "locked"
+                payload["capabilities"]["lock"] = {
+                    "state_supported": True,
+                    "action_supported": True,
+                }
+                continue
+
+            if domain == "climate":
+                payload["climate_active"] = state.state not in {"off", "unavailable", "unknown"}
+                payload["capabilities"]["climate"] = {
+                    "state_supported": True,
+                    "action_supported": True,
+                }
+                continue
+
+            if domain == "device_tracker":
+                latitude = state.attributes.get("latitude")
+                longitude = state.attributes.get("longitude")
+                if isinstance(latitude, (int, float)) and isinstance(longitude, (int, float)):
+                    payload["metrics"]["latitude"] = float(latitude)
+                    payload["metrics"]["longitude"] = float(longitude)
+                    payload["capabilities"]["location"]["state_supported"] = True
+                continue
+
+            if domain not in {"sensor", "binary_sensor"}:
+                continue
+
+            if "battery" in match_text and "12v" not in match_text:
+                value = cls._float_from_state(state.state)
+                if value is not None:
+                    payload["metrics"]["battery_level"] = value
+                    payload["capabilities"]["battery"]["state_supported"] = True
+                continue
+
+            if "odometer" in match_text:
+                value = cls._float_from_state(state.state)
+                if value is not None:
+                    payload["metrics"]["odometer"] = value
+                    payload["capabilities"]["odometer"]["state_supported"] = True
+                    unit = state.attributes.get("unit_of_measurement")
+                    if isinstance(unit, str):
+                        payload["source_units"]["distance_unit"] = unit
+                continue
+
+            if "range" in match_text and "fuel" not in match_text:
+                value = cls._float_from_state(state.state)
+                if value is not None:
+                    payload["metrics"]["range"] = value
+                    unit = state.attributes.get("unit_of_measurement")
+                    if isinstance(unit, str):
+                        payload["source_units"]["distance_unit"] = unit
+                continue
+
+            if "fuel" in match_text and "range" in match_text:
+                value = cls._float_from_state(state.state)
+                if value is not None:
+                    payload["metrics"]["fuel_level"] = value
+                    payload["capabilities"]["fuel"]["state_supported"] = True
+                continue
+
+            if "charge" in match_text and "plug" in match_text:
+                payload["charging_plugged"] = state.state in {"on", "true", "plugged_in"}
+                payload["capabilities"]["charging"]["state_supported"] = True
+                continue
+
+            if "charge" in match_text:
+                payload["charging_active"] = state.state in {"on", "true", "charging"}
+                payload["capabilities"]["charging"]["state_supported"] = True
+                continue
+
+            if "window" in match_text or "sunroof" in match_text:
+                payload["openings"][object_id] = (
+                    "open" if state.state in {"on", "open", "true"} else "closed"
+                )
+                payload["capabilities"]["windows"]["state_supported"] = True
+
+        return payload
+
+    @classmethod
+    def _float_from_state(cls, value: Any) -> float | None:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return None

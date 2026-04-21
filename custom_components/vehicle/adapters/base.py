@@ -4,9 +4,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any, TypedDict
 
 from ..model import VehicleCapabilities
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoveredVehicle:
+    """Vehicle metadata returned during config-flow discovery."""
+
+    vehicle_id: str
+    title: str
+    payload: dict[str, Any]
 
 
 class RawStatePayload(TypedDict, total=False):
@@ -59,6 +69,13 @@ class UnsupportedVehicleActionError(VehicleAdapterError):
 
 class VehicleAdapter(ABC):
     """Async interface that separates raw acquisition from normalization."""
+
+    @classmethod
+    async def async_discover_vehicles(cls, hass: Any) -> list[DiscoveredVehicle]:
+        """Return vehicles discoverable for this adapter in the current HA instance."""
+
+        _ = hass
+        return []
 
     @abstractmethod
     async def get_raw_state(self) -> RawStatePayload:
