@@ -183,6 +183,7 @@ def build_vehicle_attributes(data: NormalizedVehicleData) -> dict[str, Any]:
         "battery",
         "fuel",
         "odometer",
+        "refresh",
     ):
         support = getattr(data.capabilities, capability_name)
         attributes[f"{capability_name}_state_supported"] = support.state_supported
@@ -235,6 +236,8 @@ def _infer_state_supported(
         return _as_float(raw_metrics.get("fuel_level")) is not None
     if capability_name == "odometer":
         return _as_float(raw_metrics.get("odometer")) is not None
+    if capability_name == "refresh":
+        return False
     return False
 
 

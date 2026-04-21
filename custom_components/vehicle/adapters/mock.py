@@ -57,6 +57,7 @@ class MockVehicleAdapter(VehicleAdapter):
                 "battery": {"state_supported": True, "action_supported": False},
                 "fuel": {"state_supported": False, "action_supported": False},
                 "odometer": {"state_supported": True, "action_supported": False},
+                "refresh": {"state_supported": False, "action_supported": True},
             },
         }
         return [
@@ -118,6 +119,7 @@ class MockVehicleAdapter(VehicleAdapter):
             battery=CapabilitySupport(state_supported=True, action_supported=False),
             fuel=CapabilitySupport(state_supported=False, action_supported=False),
             odometer=CapabilitySupport(state_supported=True, action_supported=False),
+            refresh=CapabilitySupport(state_supported=False, action_supported=True),
         )
         self.set_scenario(initial_state)
 
@@ -152,6 +154,8 @@ class MockVehicleAdapter(VehicleAdapter):
             self._state["climate_active"] = True
         elif action == "stop_climate" and self._capabilities.climate.action_supported:
             self._state["climate_active"] = False
+        elif action == "refresh" and self._capabilities.refresh.action_supported:
+            self._state["status"] = self._state.get("status", "parked")
         else:
             raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
 

@@ -40,6 +40,7 @@ class VehicleCapabilities:
     battery: CapabilitySupport = field(default_factory=CapabilitySupport)
     fuel: CapabilitySupport = field(default_factory=CapabilitySupport)
     odometer: CapabilitySupport = field(default_factory=CapabilitySupport)
+    refresh: CapabilitySupport = field(default_factory=CapabilitySupport)
 
 
 DOCUMENTED_CAPABILITY_SCHEMA = CORE_CAPABILITIES

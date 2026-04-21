@@ -19,6 +19,7 @@ from .const import (
     DATA_SERVICES_REGISTERED,
     DOMAIN,
     SERVICE_LOCK,
+    SERVICE_REFRESH,
     SERVICE_START_CLIMATE,
     SERVICE_STOP_CLIMATE,
     SERVICE_UNLOCK,
@@ -31,6 +32,7 @@ SERVICE_ACTIONS: dict[str, tuple[str, str]] = {
     SERVICE_UNLOCK: ("lock", "unlock"),
     SERVICE_START_CLIMATE: ("climate", "start_climate"),
     SERVICE_STOP_CLIMATE: ("climate", "stop_climate"),
+    SERVICE_REFRESH: ("refresh", "refresh"),
 }
 
 SERVICE_SCHEMA = vol.Schema(

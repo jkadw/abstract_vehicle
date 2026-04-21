@@ -8,6 +8,7 @@ PLATFORMS: Final[tuple[str, ...]] = (
     "binary_sensor",
     "lock",
     "device_tracker",
+    "button",
 )
 
 CONF_ADAPTER: Final = "adapter"
@@ -28,6 +29,7 @@ SERVICE_LOCK: Final = "lock"
 SERVICE_UNLOCK: Final = "unlock"
 SERVICE_START_CLIMATE: Final = "start_climate"
 SERVICE_STOP_CLIMATE: Final = "stop_climate"
+SERVICE_REFRESH: Final = "refresh"
 
 NORMALIZED_STATES: Final[tuple[str, ...]] = (
     "unknown",
@@ -48,6 +50,7 @@ CORE_CAPABILITIES: Final[tuple[str, ...]] = (
     "battery",
     "fuel",
     "odometer",
+    "refresh",
 )
 
 DOCUMENTED_ATTRIBUTE_SCHEMA: Final[tuple[str, ...]] = (
@@ -81,4 +84,6 @@ DOCUMENTED_ATTRIBUTE_SCHEMA: Final[tuple[str, ...]] = (
     "fuel_action_supported",
     "odometer_state_supported",
     "odometer_action_supported",
+    "refresh_state_supported",
+    "refresh_action_supported",
 )

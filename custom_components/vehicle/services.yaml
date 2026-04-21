@@ -25,3 +25,10 @@ stop_climate:
   target:
     device:
       integration: vehicle
+
+refresh:
+  name: Refresh Vehicle
+  description: Trigger a refresh for the selected vehicle if the adapter supports it.
+  target:
+    device:
+      integration: vehicle

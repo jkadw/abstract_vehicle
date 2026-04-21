@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
 
-    adapter = _create_adapter(entry)
+    adapter = _create_adapter(hass, entry)
     raw_state = await adapter.get_raw_state()
     raw_metrics = await adapter.get_raw_metrics()
     capabilities = await adapter.get_capabilities()
@@ -68,7 +68,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-def _create_adapter(entry: ConfigEntry) -> VehicleAdapter:
+def _create_adapter(hass: HomeAssistant, entry: ConfigEntry) -> VehicleAdapter:
     """Create the configured adapter instance."""
 
     adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
@@ -82,7 +82,7 @@ def _create_adapter(entry: ConfigEntry) -> VehicleAdapter:
         if vehicle_id is not None and not isinstance(vehicle_id, str):
             raise ValueError("kia_uvo vehicle_id must be a string when configured")
         return HyundaiKiaConnectKiaUvoVehicleAdapter(
-            vehicles=vehicles, vehicle_id=vehicle_id
+            hass=hass, vehicles=vehicles, vehicle_id=vehicle_id
         )
 
     raise ValueError(f"Unsupported adapter type: {adapter_type}")

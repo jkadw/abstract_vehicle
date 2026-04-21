@@ -62,7 +62,9 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
         self,
         vehicles: list[dict[str, Any]],
         vehicle_id: str | None = None,
+        hass: Any | None = None,
     ) -> None:
+        self._hass = hass
         if not vehicles:
             raise ValueError("kia_uvo adapter requires at least one configured vehicle")
 
@@ -149,6 +151,7 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
             battery=self._capability_support(capabilities.get("battery")),
             fuel=self._capability_support(capabilities.get("fuel")),
             odometer=self._capability_support(capabilities.get("odometer")),
+            refresh=self._capability_support(capabilities.get("refresh")),
         )
 
     async def execute_action(self, action: str, **kwargs: Any) -> ActionResult:
@@ -166,11 +169,43 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
             if not capabilities.climate.action_supported:
                 raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
             vehicle["climate_active"] = action == "start_climate"
+        elif action == "refresh":
+            if not capabilities.refresh.action_supported:
+                raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
+            await self._execute_refresh()
         else:
             raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
 
         vehicle["status"] = self._derive_status(vehicle)
         return {"success": True, "action": action}
+
+    async def _execute_refresh(self) -> None:
+        """Trigger a refresh in the source Hyundai/Kia integration."""
+
+        if self._hass is None:
+            raise UnsupportedVehicleActionError("Unsupported action: refresh")
+
+        refresh_entities = self._as_entity_id_list(self._vehicle.get("refresh_entity_ids"))
+        if refresh_entities:
+            for entity_id in refresh_entities:
+                await self._hass.services.async_call(
+                    "button",
+                    "press",
+                    {"entity_id": entity_id},
+                    blocking=True,
+                )
+            return
+
+        source_entities = self._as_entity_id_list(self._vehicle.get("source_entity_ids"))
+        if not source_entities:
+            raise UnsupportedVehicleActionError("Unsupported action: refresh")
+
+        await self._hass.services.async_call(
+            "homeassistant",
+            "update_entity",
+            {"entity_id": source_entities},
+            blocking=True,
+        )
 
     @property
     def _vehicle(self) -> dict[str, Any]:
@@ -213,6 +248,15 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
 
     def _as_str(self, value: Any) -> str | None:
         return value if isinstance(value, str) else None
+
+    def _as_entity_id_list(self, value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [
+            entity_id
+            for entity_id in value
+            if isinstance(entity_id, str) and "." in entity_id
+        ]
 
     @classmethod
     def _vehicle_id_from_identifiers(cls, identifiers: Any) -> str | None:
@@ -270,8 +314,11 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
                     "battery",
                     "fuel",
                     "odometer",
+                    "refresh",
                 )
             },
+            "source_entity_ids": [],
+            "refresh_entity_ids": [],
         }
 
         for entity_entry in entity_entries:
@@ -279,14 +326,23 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
                 continue
 
             entity_id = getattr(entity_entry, "entity_id", "")
-            state = hass.states.get(entity_id)
-            if state is None:
-                continue
+            payload["source_entity_ids"].append(entity_id)
 
             domain, _, object_id = entity_id.partition(".")
             object_id = object_id.lower()
             original_name = str(getattr(entity_entry, "original_name", "") or "").lower()
             match_text = f"{object_id} {original_name}"
+
+            if domain == "button" and any(
+                token in match_text for token in ("refresh", "update", "force update")
+            ):
+                payload["refresh_entity_ids"].append(entity_id)
+                payload["capabilities"]["refresh"]["action_supported"] = True
+                continue
+
+            state = hass.states.get(entity_id)
+            if state is None:
+                continue
 
             if domain == "lock":
                 payload["locked"] = state.state == "locked"
@@ -364,6 +420,9 @@ class HyundaiKiaConnectKiaUvoVehicleAdapter(VehicleAdapter):
                     "open" if state.state in {"on", "open", "true"} else "closed"
                 )
                 payload["capabilities"]["windows"]["state_supported"] = True
+
+        if payload["source_entity_ids"]:
+            payload["capabilities"]["refresh"]["action_supported"] = True
 
         return payload
 
