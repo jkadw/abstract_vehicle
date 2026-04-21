@@ -59,3 +59,16 @@ class VehicleBaseEntity(Entity):
         self._attr_unique_id = (
             f"{self._normalized_data.info.vehicle_id}_{self._entity_key}"
         )
+
+
+class VehicleEntity(VehicleBaseEntity):
+    """Backward-compatible aggregate state entity."""
+
+    def __init__(self, normalized_data: NormalizedVehicleData) -> None:
+        super().__init__(normalized_data, "state", "State")
+
+    @property
+    def state(self) -> str:
+        """Return the canonical vehicle state."""
+
+        return self._normalized_data.state.value

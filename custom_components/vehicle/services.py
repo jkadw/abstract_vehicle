@@ -70,6 +70,41 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
     domain_data.pop(DATA_SERVICES_REGISTERED, None)
 
 
+async def async_execute_entry_action(
+    entry_data: dict[str, object], capability_name: str, action_name: str
+) -> None:
+    """Execute an action, then rebuild and fan out normalized state."""
+
+    normalized = entry_data[DATA_NORMALIZED]
+    support = getattr(normalized.capabilities, capability_name)
+    if not support.action_supported:
+        raise ServiceValidationError(
+            f"Capability '{capability_name}' does not support action '{action_name}'"
+        )
+
+    adapter = entry_data[DATA_ADAPTER]
+    entities = entry_data.get(DATA_ENTITIES, [])
+
+    try:
+        await adapter.execute_action(action_name)
+    except UnsupportedVehicleActionError as err:
+        raise ServiceValidationError(str(err)) from err
+    except Exception as err:
+        raise HomeAssistantError(
+            f"Failed to execute vehicle action '{action_name}'"
+        ) from err
+
+    raw_state = await adapter.get_raw_state()
+    raw_metrics = await adapter.get_raw_metrics()
+    capabilities = await adapter.get_capabilities()
+    updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+    entry_data[DATA_NORMALIZED] = updated
+
+    for entity in entities:
+        entity.update_normalized_data(updated)
+        entity.async_write_ha_state()
+
+
 def _build_service_handler(hass: HomeAssistant, service_name: str):
     async def _handle_service(call: ServiceCall) -> None:
         target_entity_ids = _coerce_entity_ids(call.data["entity_id"])
@@ -83,34 +118,7 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
         capability_name, action_name = SERVICE_ACTIONS[service_name]
 
         for entry_data in target_entries:
-            normalized = entry_data[DATA_NORMALIZED]
-            support = getattr(normalized.capabilities, capability_name)
-            if not support.action_supported:
-                raise ServiceValidationError(
-                    f"Capability '{capability_name}' does not support action '{action_name}'"
-                )
-
-            adapter = entry_data[DATA_ADAPTER]
-            entities = entry_data.get(DATA_ENTITIES, [])
-
-            try:
-                await adapter.execute_action(action_name)
-            except UnsupportedVehicleActionError as err:
-                raise ServiceValidationError(str(err)) from err
-            except Exception as err:
-                raise HomeAssistantError(
-                    f"Failed to execute vehicle action '{action_name}'"
-                ) from err
-
-            raw_state = await adapter.get_raw_state()
-            raw_metrics = await adapter.get_raw_metrics()
-            capabilities = await adapter.get_capabilities()
-            updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
-            entry_data[DATA_NORMALIZED] = updated
-
-            for entity in entities:
-                entity.update_normalized_data(updated)
-                entity.async_write_ha_state()
+            await async_execute_entry_action(entry_data, capability_name, action_name)
 
     return _handle_service
 

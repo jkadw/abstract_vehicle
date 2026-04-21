@@ -85,3 +85,4 @@ class NormalizedVehicleData:
     longitude: float | None = None
     odometer: float | None = None
     source_units: SourceUnits = field(default_factory=SourceUnits)
+    display_units: SourceUnits = field(default_factory=SourceUnits)

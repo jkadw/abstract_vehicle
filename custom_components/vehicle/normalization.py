@@ -145,6 +145,12 @@ def normalize_vehicle_data(
             normalization_config.distance_unit,
         ),
         source_units=source_units,
+        display_units=SourceUnits(
+            distance_unit=normalization_config.distance_unit,
+            temperature_unit=normalization_config.temperature_unit,
+            power_unit=normalization_config.power_unit,
+            energy_unit=normalization_config.energy_unit,
+        ),
     )
 
 

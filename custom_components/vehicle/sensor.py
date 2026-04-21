@@ -61,7 +61,7 @@ class VehicleValueSensorEntity(VehicleBaseEntity, SensorEntity):
     @property
     def native_unit_of_measurement(self) -> str | None:
         if self._spec.key in {"range", "odometer"}:
-            distance_unit = self._normalized_data.source_units.distance_unit
+            distance_unit = self._normalized_data.display_units.distance_unit
             if distance_unit == "mi":
                 return UnitOfLength.MILES
             return UnitOfLength.KILOMETERS

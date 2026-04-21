@@ -8,7 +8,7 @@ from custom_components.vehicle.adapters.base import UnsupportedVehicleActionErro
 from custom_components.vehicle.adapters.mock import MockVehicleAdapter
 from custom_components.vehicle.const import (
     DATA_ADAPTER,
-    DATA_ENTITY,
+    DATA_ENTITIES,
     DATA_NORMALIZED,
     DOMAIN,
     SERVICE_START_CLIMATE,
@@ -61,7 +61,7 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
             "entry-1": {
                 DATA_ADAPTER: adapter,
                 DATA_NORMALIZED: normalized,
-                DATA_ENTITY: entity,
+                DATA_ENTITIES: [entity],
             }
         }
     }
@@ -96,7 +96,7 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
             "entry-1": {
                 DATA_ADAPTER: adapter,
                 DATA_NORMALIZED: normalized,
-                DATA_ENTITY: entity,
+                DATA_ENTITIES: [entity],
             }
         }
     }
@@ -129,7 +129,7 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
             "entry-1": {
                 DATA_ADAPTER: adapter,
                 DATA_NORMALIZED: normalized,
-                DATA_ENTITY: entity,
+                DATA_ENTITIES: [entity],
             }
         }
     }
@@ -156,7 +156,7 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
             "entry-1": {
                 DATA_ADAPTER: adapter,
                 DATA_NORMALIZED: normalized,
-                DATA_ENTITY: entity,
+                DATA_ENTITIES: [entity],
             }
         }
     }

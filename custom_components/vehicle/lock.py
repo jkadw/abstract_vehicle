@@ -7,16 +7,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_ADAPTER, DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
+from .const import DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
 from .entity import VehicleBaseEntity
+from .services import async_execute_entry_action
 
 
 class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
     """Lock entity for the normalized vehicle lock capability."""
 
-    def __init__(self, normalized_data, adapter) -> None:
+    def __init__(self, normalized_data, entry_data) -> None:
         super().__init__(normalized_data, "lock", "Lock")
-        self._adapter = adapter
+        self._entry_data = entry_data
 
     @property
     def is_locked(self) -> bool | None:
@@ -24,11 +25,11 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
 
     async def async_lock(self, **kwargs) -> None:
         _ = kwargs
-        await self._adapter.execute_action("lock")
+        await async_execute_entry_action(self._entry_data, "lock", "lock")
 
     async def async_unlock(self, **kwargs) -> None:
         _ = kwargs
-        await self._adapter.execute_action("unlock")
+        await async_execute_entry_action(self._entry_data, "lock", "unlock")
 
 
 async def async_setup_entry(
@@ -43,6 +44,6 @@ async def async_setup_entry(
     if not normalized.capabilities.lock.state_supported:
         return
 
-    entity = VehicleLockCapabilityEntity(normalized, entry_data[DATA_ADAPTER])
+    entity = VehicleLockCapabilityEntity(normalized, entry_data)
     entry_data[DATA_ENTITIES].append(entity)
     async_add_entities([entity])
