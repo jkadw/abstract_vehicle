@@ -15,6 +15,7 @@ Preferred mapping approach:
 - adapter reads raw Home Assistant entities or integration state
 - adapter returns raw state and raw metrics in a loose, typed structure
 - normalization converts raw values into canonical state, attributes, units, and inferred support
+- adapter exposes a stable friendly name for the config flow
 
 ## Entity Discovery
 
@@ -24,6 +25,7 @@ Discovery guidelines:
 
 - identify one logical vehicle at a time
 - look for stable identifiers first: VIN-like ids, device ids, unique coordinator keys, or integration device registry metadata
+- return discovered vehicles as adapter-owned selections for the config flow
 - collect only the entities needed for v1 capabilities:
   - lock
   - windows
@@ -41,6 +43,11 @@ Selection rules:
 - prefer one authoritative source per concept
 - avoid duplicating the same concept from multiple entities unless one is a fallback
 - treat missing entities as unsupported capability state, not as adapter failure
+
+Current example:
+
+- the `Hyundai-Kia-Connect/kia_uvo` adapter discovers candidate vehicles from Home Assistant device and entity registry data
+- it presents the friendly adapter name `Hyundai / Kia Connect` in the config flow
 
 ## Action Mapping
 
@@ -89,6 +96,7 @@ Examples:
 - Prefer simple mapping tables or helper methods over large conditional branches.
 - Log enough detail to debug mappings, but do not leak OEM-specific structures into the domain model.
 - Add new OEM adapters by implementing the shared adapter interface, not by changing entity or normalization behavior for one manufacturer.
+- Add new OEM adapters with names that clearly reflect the upstream integration or project they map.
 
 Guiding principle:
 

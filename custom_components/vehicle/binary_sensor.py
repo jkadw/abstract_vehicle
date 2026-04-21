@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -19,12 +22,26 @@ class BinarySpec:
     key: str
     name: str
     field: str
+    icon: str | None = None
+    device_class: BinarySensorDeviceClass | None = None
 
 
 BINARY_SPECS: tuple[BinarySpec, ...] = (
-    BinarySpec("windows", "Windows", "windows_open"),
-    BinarySpec("climate", "Climate", "climate_active"),
-    BinarySpec("charging", "Charging", "charging_active"),
+    BinarySpec(
+        "windows",
+        "Windows",
+        "windows_open",
+        "mdi:car-door",
+        BinarySensorDeviceClass.WINDOW,
+    ),
+    BinarySpec("climate", "Climate", "climate_active", "mdi:air-conditioner"),
+    BinarySpec(
+        "charging",
+        "Charging",
+        "charging_active",
+        "mdi:ev-plug-type2",
+        BinarySensorDeviceClass.BATTERY_CHARGING,
+    ),
 )
 
 
@@ -38,6 +55,14 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         return getattr(self._normalized_data, self._spec.field)
+
+    @property
+    def device_class(self) -> BinarySensorDeviceClass | None:
+        return self._spec.device_class
+
+    @property
+    def icon(self) -> str | None:
+        return self._spec.icon
 
 
 async def async_setup_entry(

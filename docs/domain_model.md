@@ -8,6 +8,13 @@ The integration exposes one aggregate entity per vehicle:
 
 - `vehicle.my_vehicle`
 
+When state capabilities are available, the integration may also expose capability-specific entities in standard Home Assistant domains such as:
+
+- `sensor.*`
+- `binary_sensor.*`
+- `lock.*`
+- `device_tracker.*`
+
 Normalized states:
 
 - `unknown`
@@ -25,6 +32,7 @@ Rules:
 - `driving` is only used when a reliable signal exists.
 - `error` is only used for explicit fault conditions.
 - `parked` is the default fallback when the vehicle is available but not otherwise active.
+- the aggregate `vehicle.*` entity is the canonical action target for the integration
 
 ## Capability Model
 
@@ -138,6 +146,7 @@ Rules:
 - Adapters return raw values and source units when available.
 - Normalization converts raw values into configured units.
 - Entities expose normalized values only.
+- Distance-bearing capability entities use normalized display units.
 - v1 keeps conversion behavior minimal and centralized.
 
 ## Service Definitions
@@ -163,5 +172,6 @@ Optional capability-based services:
 Rules:
 
 - Services must check `action_supported` before execution.
+- Services may target the aggregate `vehicle.*` entity or a capability entity for the same vehicle.
 - Services delegate to adapters rather than encoding OEM behavior in entities.
 - Unsupported services should fail clearly and predictably.

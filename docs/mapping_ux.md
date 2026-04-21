@@ -1,6 +1,6 @@
 # Mapping UX
 
-This document describes the intended user experience for mapping source entities into the `vehicle` integration.
+This document describes the intended and current user experience for mapping source entities into the `vehicle` integration.
 
 ## User Selection Flow
 
@@ -10,8 +10,7 @@ Recommended flow:
 
 1. Choose a source integration or adapter type.
 2. Select the source vehicle, device, or entity group that represents one real vehicle.
-3. Review suggested mappings for the core v1 capabilities.
-4. Confirm the mapping and create the vehicle entity.
+3. Create the vehicle entry.
 
 The UX should stay simple in v1:
 
@@ -19,6 +18,13 @@ The UX should stay simple in v1:
 - group mappings by semantic capability, not by raw entity domain
 - show only the fields needed for the minimal stable model
 - allow incomplete setups when some capabilities are missing
+
+Current implementation:
+
+- the config flow shows an adapter dropdown first
+- the selected adapter returns a list of discovered vehicles
+- the user selects one discovered vehicle from a dropdown
+- the integration stores the adapter type, selected vehicle id, and adapter payload for that vehicle
 
 ## How Mapping Works
 
@@ -39,6 +45,7 @@ Rules:
 - one capability may use separate sources for state and action
 - one normalized attribute may be derived from multiple raw sources
 - adapters should keep OEM-specific details hidden from the user where possible
+- the aggregate `vehicle.*` entity remains the primary vehicle abstraction even when capability entities are also created
 
 For aggregated concepts:
 
@@ -94,6 +101,7 @@ To keep the UX minimal and stable in v1:
 - no advanced transformation rules in the UI
 - no OEM-specific setup screens outside what the adapter needs
 - no requirement for full feature parity before setup can complete
+- no scenario selection in the config flow
 
 Guiding principle:
 

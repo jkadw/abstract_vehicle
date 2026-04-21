@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
-from .entity import VehicleBaseEntity
+from .entity import VehicleBaseEntity, VehicleEntity
 from .model import NormalizedVehicleData
 
 
@@ -25,26 +25,23 @@ class SensorSpec:
     name: str
     field: str
     unit: str | None = None
+    icon: str | None = None
+    device_class: SensorDeviceClass | None = None
 
 
 SENSOR_SPECS: tuple[SensorSpec, ...] = (
-    SensorSpec("state", "State", "state"),
-    SensorSpec("battery_level", "Battery", "battery_level", PERCENTAGE),
-    SensorSpec("fuel_level", "Fuel", "fuel_level", PERCENTAGE),
-    SensorSpec("range", "Range", "range", None),
-    SensorSpec("odometer", "Odometer", "odometer", None),
+    SensorSpec(
+        "battery_level",
+        "Battery",
+        "battery_level",
+        PERCENTAGE,
+        "mdi:battery",
+        SensorDeviceClass.BATTERY,
+    ),
+    SensorSpec("fuel_level", "Fuel", "fuel_level", PERCENTAGE, "mdi:gas-station"),
+    SensorSpec("range", "Range", "range", None, "mdi:map-marker-distance"),
+    SensorSpec("odometer", "Odometer", "odometer", None, "mdi:counter"),
 )
-
-
-class VehicleStateSensorEntity(VehicleBaseEntity, SensorEntity):
-    """Sensor for the normalized aggregate vehicle state."""
-
-    def __init__(self, normalized_data: NormalizedVehicleData) -> None:
-        super().__init__(normalized_data, "state", "State")
-
-    @property
-    def native_value(self) -> str:
-        return self._normalized_data.state.value
 
 
 class VehicleValueSensorEntity(VehicleBaseEntity, SensorEntity):
@@ -67,6 +64,14 @@ class VehicleValueSensorEntity(VehicleBaseEntity, SensorEntity):
             return UnitOfLength.KILOMETERS
         return self._spec.unit
 
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        return self._spec.device_class
+
+    @property
+    def icon(self) -> str | None:
+        return self._spec.icon
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -77,16 +82,16 @@ async def async_setup_entry(
 
     entry_data = hass.data[DOMAIN][entry.entry_id]
     normalized = entry_data[DATA_NORMALIZED]
-    entities: list[SensorEntity] = [VehicleStateSensorEntity(normalized)]
+    entities: list[SensorEntity] = [VehicleEntity(normalized)]
 
     if normalized.capabilities.battery.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[1]))
+        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[0]))
     if normalized.capabilities.fuel.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[2]))
+        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[1]))
     if normalized.range is not None:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[3]))
+        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[2]))
     if normalized.capabilities.odometer.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[4]))
+        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[3]))
 
     entry_data[DATA_ENTITIES].extend(entities)
     async_add_entities(entities)

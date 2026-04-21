@@ -25,6 +25,10 @@ class VehicleLocationTrackerEntity(VehicleBaseEntity, TrackerEntity):
     def longitude(self) -> float | None:
         return self._normalized_data.longitude
 
+    @property
+    def icon(self) -> str:
+        return "mdi:map-marker"
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

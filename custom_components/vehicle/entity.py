@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .model import NormalizedVehicleData, VehicleState
@@ -29,10 +30,10 @@ class VehicleBaseEntity(Entity):
         return self._normalized_data.state is not VehicleState.UNAVAILABLE
 
     @property
-    def extra_state_attributes(self) -> dict[str, object]:
-        """Return normalized state attributes."""
+    def extra_state_attributes(self) -> dict[str, object] | None:
+        """Expose detailed attributes only on the aggregate vehicle entity."""
 
-        return build_vehicle_attributes(self._normalized_data)
+        return None
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -62,7 +63,7 @@ class VehicleBaseEntity(Entity):
 
 
 class VehicleEntity(VehicleBaseEntity):
-    """Backward-compatible aggregate state entity."""
+    """Aggregate vehicle entity exposed under the custom `vehicle` domain."""
 
     def __init__(self, normalized_data: NormalizedVehicleData) -> None:
         super().__init__(normalized_data, "state", "State")
@@ -72,3 +73,30 @@ class VehicleEntity(VehicleBaseEntity):
         """Return the canonical vehicle state."""
 
         return self._normalized_data.state.value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Return the aggregate normalized vehicle attributes."""
+
+        return build_vehicle_attributes(self._normalized_data)
+
+    @property
+    def icon(self) -> str:
+        """Return an icon that matches the aggregate vehicle state."""
+
+        if self._normalized_data.state is VehicleState.CHARGING:
+            return "mdi:car-electric"
+        if self._normalized_data.state is VehicleState.DRIVING:
+            return "mdi:car-sports"
+        if self._normalized_data.state is VehicleState.ERROR:
+            return "mdi:car-alert"
+        if self._normalized_data.state in {VehicleState.OFFLINE, VehicleState.UNAVAILABLE}:
+            return "mdi:car-off"
+        return "mdi:car"
+
+    def _sync_entity_metadata(self) -> None:
+        """Expose the aggregate entity using the custom vehicle domain."""
+
+        self._attr_name = self._normalized_data.info.name
+        self._attr_unique_id = self._normalized_data.info.vehicle_id
+        self.entity_id = f"{DOMAIN}.{slugify(self._normalized_data.info.name)}"

@@ -10,16 +10,17 @@ This project is built around three layers:
 
 - adapters collect raw vehicle data and execute actions
 - normalization converts raw values into a canonical model
-- the entity layer exposes one aggregate Home Assistant entity per vehicle
+- the entity layer exposes one aggregate vehicle entity plus capability-specific entities
 
 The current v1 scope focuses on a minimal, stable foundation:
 
 - normalized vehicle state
 - structured capabilities with separate state and action support
 - centralized normalization and unit conversion hooks
-- one aggregate entity per vehicle
+- one aggregate `vehicle.*` entity per vehicle
+- per-capability entities in standard Home Assistant domains
 - a mock adapter for development and tests
-- a `kia_uvo`-based adapter that maps configured vehicles
+- a `Hyundai-Kia-Connect/kia_uvo`-based adapter that discovers vehicles from Home Assistant
 
 ## Setup
 
@@ -29,15 +30,19 @@ Supported paths today:
 
 1. Add the integration through Home Assistant.
 2. Choose an adapter type in the config flow.
-3. For the mock adapter, select a scenario such as `parked`, `charging`, or `offline`.
-4. For `kia_uvo`, provide configured vehicle payloads in the config entry data and select the target `vehicle_id`.
+3. Select one discovered vehicle from the chosen adapter.
 
 At runtime the integration:
 
 - creates the configured adapter
 - reads raw state, raw metrics, and capabilities
 - normalizes the data into the shared model
-- exposes one aggregate sensor-style vehicle entity
+- exposes one aggregate `vehicle.*` entity
+- creates per-capability entities where state support exists:
+  - `sensor.*` for numeric values such as battery, fuel, range, and odometer
+  - `binary_sensor.*` for windows, climate, and charging
+  - `lock.*` for lock state and lock actions
+  - `device_tracker.*` for vehicle location
 
 ## Examples
 
@@ -92,15 +97,15 @@ This repository is still early-stage and intentionally incomplete.
 
 Current limitations:
 
-- no full OEM discovery flow yet
-- no production-ready vehicle mapping UX in the config flow
+- adapter discovery is still intentionally simple
+- OEM signal mapping is still heuristic in the Hyundai/Kia adapter
 - no direct OEM API clients in this repository
 - no UI card
 - no per-window control
 - only a minimal service surface is implemented
 - Home Assistant runtime tests are not executed in this workspace
 
-The `kia_uvo` adapter now supports configured vehicles at runtime, but entry data still needs to supply those mapped vehicle payloads until a richer mapping/setup flow is added.
+The `Hyundai / Kia Connect` adapter currently discovers vehicles from the Home Assistant registry and state model rather than talking to the OEM service directly.
 
 ## More Detail
 
