@@ -48,7 +48,7 @@ class VehicleValueSensorEntity(VehicleBaseEntity, SensorEntity):
     """Sensor for a numeric normalized vehicle field."""
 
     def __init__(self, normalized_data: NormalizedVehicleData, spec: SensorSpec) -> None:
-        super().__init__(normalized_data, spec.key, spec.name, "sensor")
+        super().__init__(normalized_data, spec.key, spec.name)
         self._spec = spec
 
     @property

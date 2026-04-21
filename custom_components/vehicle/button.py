@@ -16,7 +16,7 @@ class VehicleRefreshButtonEntity(VehicleBaseEntity, ButtonEntity):
     """Button entity for the normalized vehicle refresh action."""
 
     def __init__(self, normalized_data, entry_data) -> None:
-        super().__init__(normalized_data, "refresh", "Refresh", "button")
+        super().__init__(normalized_data, "refresh", "Refresh")
         self._entry_data = entry_data
 
     @property

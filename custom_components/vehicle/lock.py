@@ -16,7 +16,7 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
     """Lock entity for the normalized vehicle lock capability."""
 
     def __init__(self, normalized_data, entry_data) -> None:
-        super().__init__(normalized_data, "lock", "Lock", "lock")
+        super().__init__(normalized_data, "lock", "Lock")
         self._entry_data = entry_data
 
     @property

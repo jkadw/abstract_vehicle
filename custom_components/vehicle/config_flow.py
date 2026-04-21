@@ -9,25 +9,16 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .adapters import (
     DiscoveredVehicle,
-    HyundaiKiaConnectKiaUvoVehicleAdapter,
-    MockVehicleAdapter,
+    discover_adapter_vehicles,
+    get_available_adapter_options,
 )
 from .const import (
-    ADAPTER_TYPE_KIA_UVO,
     ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
     CONF_VEHICLE_ID,
     CONF_VEHICLES,
     DOMAIN,
 )
-
-ADAPTER_OPTIONS = {
-    ADAPTER_TYPE_MOCK: ("Mock Adapter", MockVehicleAdapter),
-    ADAPTER_TYPE_KIA_UVO: (
-        HyundaiKiaConnectKiaUvoVehicleAdapter.get_friendly_name(),
-        HyundaiKiaConnectKiaUvoVehicleAdapter,
-    ),
-}
 
 
 class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -38,6 +29,7 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._selected_adapter: str | None = None
         self._discovered_vehicles: list[DiscoveredVehicle] = []
+        self._adapter_options: dict[str, tuple[str, object]] = {}
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Select the adapter to use."""
@@ -46,12 +38,14 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._selected_adapter = user_input[CONF_ADAPTER]
             return await self.async_step_vehicle()
 
+        self._adapter_options = await get_available_adapter_options(self.hass)
+
         schema = vol.Schema(
             {
                 vol.Required(CONF_ADAPTER, default=ADAPTER_TYPE_MOCK): vol.In(
                     {
                         adapter_key: adapter_label
-                        for adapter_key, (adapter_label, _) in ADAPTER_OPTIONS.items()
+                        for adapter_key, (adapter_label, _) in self._adapter_options.items()
                     }
                 ),
             }
@@ -64,9 +58,14 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if self._selected_adapter is None:
             return await self.async_step_user()
 
-        _, adapter_cls = ADAPTER_OPTIONS[self._selected_adapter]
+        if not self._adapter_options:
+            self._adapter_options = await get_available_adapter_options(self.hass)
+        if self._selected_adapter not in self._adapter_options:
+            return self.async_abort(reason="adapter_not_available")
         if not self._discovered_vehicles:
-            self._discovered_vehicles = await adapter_cls.async_discover_vehicles(self.hass)
+            self._discovered_vehicles = await discover_adapter_vehicles(
+                self.hass, self._selected_adapter
+            )
 
         if user_input is not None:
             selected_vehicle = next(

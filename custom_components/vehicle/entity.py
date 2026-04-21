@@ -5,7 +5,6 @@ from __future__ import annotations
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
-from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .model import NormalizedVehicleData, VehicleState
@@ -23,12 +22,10 @@ class VehicleBaseEntity(Entity):
         normalized_data: NormalizedVehicleData,
         key: str,
         name: str,
-        entity_domain: str,
     ) -> None:
         self._normalized_data = normalized_data
         self._entity_key = key
         self._entity_name = name
-        self._entity_domain = entity_domain
         self._sync_entity_metadata()
 
     @property
@@ -52,7 +49,7 @@ class VehicleBaseEntity(Entity):
             identifiers={(DOMAIN, info.vehicle_id)},
             manufacturer=info.manufacturer,
             model=info.model,
-            name=info.name,
+            name=f"my_{info.name}",
         )
 
     def update_normalized_data(self, normalized_data: NormalizedVehicleData) -> None:
@@ -68,16 +65,13 @@ class VehicleBaseEntity(Entity):
         self._attr_unique_id = (
             f"{self._normalized_data.info.vehicle_id}_{self._entity_key}"
         )
-        device_name = slugify(self._normalized_data.info.name)
-        entity_name = slugify(self._entity_key)
-        self.entity_id = f"{self._entity_domain}.vehicle_{device_name}_{entity_name}"
 
 
 class VehicleEntity(VehicleBaseEntity, SensorEntity):
     """Aggregate vehicle state entity exposed in the sensor domain."""
 
     def __init__(self, normalized_data: NormalizedVehicleData) -> None:
-        super().__init__(normalized_data, "state", "State", "sensor")
+        super().__init__(normalized_data, "state", "State")
 
     @property
     def state(self) -> str:
@@ -106,9 +100,7 @@ class VehicleEntity(VehicleBaseEntity, SensorEntity):
         return "mdi:car"
 
     def _sync_entity_metadata(self) -> None:
-        """Expose the aggregate sensor using the shared naming scheme."""
+        """Keep the aggregate sensor metadata aligned with the normalized data."""
 
         self._attr_name = "State"
         self._attr_unique_id = self._normalized_data.info.vehicle_id
-        device_name = slugify(self._normalized_data.info.name)
-        self.entity_id = f"sensor.vehicle_{device_name}_state"

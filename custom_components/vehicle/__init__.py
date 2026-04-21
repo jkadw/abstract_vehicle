@@ -6,16 +6,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .adapters import (
-    HyundaiKiaConnectKiaUvoVehicleAdapter,
-    MockVehicleAdapter,
     VehicleAdapter,
+    create_adapter_from_entry,
 )
 from .const import (
-    ADAPTER_TYPE_KIA_UVO,
-    ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
-    CONF_VEHICLE_ID,
-    CONF_VEHICLES,
     DATA_ADAPTER,
     DATA_ENTITIES,
     DATA_NORMALIZED,
@@ -71,21 +66,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 def _create_adapter(hass: HomeAssistant, entry: ConfigEntry) -> VehicleAdapter:
     """Create the configured adapter instance."""
 
-    adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
-    if adapter_type == ADAPTER_TYPE_MOCK:
-        return MockVehicleAdapter()
-    if adapter_type == ADAPTER_TYPE_KIA_UVO:
-        vehicles = entry.data.get(CONF_VEHICLES)
-        if not isinstance(vehicles, list):
-            raise ValueError("kia_uvo adapter requires configured vehicles")
-        vehicle_id = entry.data.get(CONF_VEHICLE_ID)
-        if vehicle_id is not None and not isinstance(vehicle_id, str):
-            raise ValueError("kia_uvo vehicle_id must be a string when configured")
-        return HyundaiKiaConnectKiaUvoVehicleAdapter(
-            hass=hass, vehicles=vehicles, vehicle_id=vehicle_id
-        )
-
-    raise ValueError(f"Unsupported adapter type: {adapter_type}")
+    adapter_type = entry.data.get(CONF_ADAPTER, "mock")
+    if not isinstance(adapter_type, str):
+        raise ValueError("Configured adapter type must be a string")
+    return create_adapter_from_entry(hass, adapter_type, dict(entry.data))
 
 
 __all__ = ["DOMAIN"]
