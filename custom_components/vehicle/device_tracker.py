@@ -15,7 +15,7 @@ class VehicleLocationTrackerEntity(VehicleBaseEntity, TrackerEntity):
     """Device tracker for normalized vehicle location."""
 
     def __init__(self, normalized_data) -> None:
-        super().__init__(normalized_data, "location", "Location")
+        super().__init__(normalized_data, "location", "Location", "device_tracker")
 
     @property
     def latitude(self) -> float | None:

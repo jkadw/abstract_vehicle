@@ -49,7 +49,7 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
     """Binary sensor for a boolean normalized vehicle field."""
 
     def __init__(self, normalized_data: NormalizedVehicleData, spec: BinarySpec) -> None:
-        super().__init__(normalized_data, spec.key, spec.name)
+        super().__init__(normalized_data, spec.key, spec.name, "binary_sensor")
         self._spec = spec
 
     @property

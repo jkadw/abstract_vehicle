@@ -8,6 +8,7 @@ import voluptuous as vol
 
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 
 from .adapters import UnsupportedVehicleActionError
@@ -34,7 +35,7 @@ SERVICE_ACTIONS: dict[str, tuple[str, str]] = {
 
 SERVICE_SCHEMA = vol.Schema(
     {
-        vol.Required("entity_id"): vol.Any(cv.entity_id, [cv.entity_id]),
+        vol.Required("device_id"): vol.Any(cv.string, [cv.string]),
     }
 )
 
@@ -107,12 +108,12 @@ async def async_execute_entry_action(
 
 def _build_service_handler(hass: HomeAssistant, service_name: str):
     async def _handle_service(call: ServiceCall) -> None:
-        target_entity_ids = _coerce_entity_ids(call.data["entity_id"])
-        target_entries = _find_target_entries(hass, target_entity_ids)
+        target_device_ids = _coerce_device_ids(call.data["device_id"])
+        target_entries = _find_target_entries(hass, target_device_ids)
 
         if not target_entries:
             raise ServiceValidationError(
-                f"No vehicle entity found for entity_id: {', '.join(target_entity_ids)}"
+                f"No vehicle device found for device_id: {', '.join(target_device_ids)}"
             )
 
         capability_name, action_name = SERVICE_ACTIONS[service_name]
@@ -123,26 +124,32 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
     return _handle_service
 
 
-def _coerce_entity_ids(entity_id: str | list[str]) -> list[str]:
-    if isinstance(entity_id, str):
-        return [entity_id]
-    return list(entity_id)
+def _coerce_device_ids(device_id: str | list[str]) -> list[str]:
+    if isinstance(device_id, str):
+        return [device_id]
+    return list(device_id)
 
 
 def _find_target_entries(
-    hass: HomeAssistant, entity_ids: Iterable[str]
+    hass: HomeAssistant, device_ids: Iterable[str]
 ) -> list[dict[str, object]]:
     domain_data = hass.data.get(DOMAIN, {})
-    target_ids = set(entity_ids)
+    target_ids = set(device_ids)
     matched_entries: list[dict[str, object]] = []
+    device_registry = dr.async_get(hass)
 
     for value in domain_data.values():
         if not isinstance(value, dict):
             continue
-        entities = value.get(DATA_ENTITIES, [])
-        for entity in entities:
-            if getattr(entity, "entity_id", None) in target_ids:
-                matched_entries.append(value)
-                break
+        normalized = value.get(DATA_NORMALIZED)
+        if normalized is None:
+            continue
+
+        device = device_registry.async_get_device(
+            identifiers={(DOMAIN, normalized.info.vehicle_id)},
+            connections=set(),
+        )
+        if device is not None and device.id in target_ids:
+            matched_entries.append(value)
 
     return matched_entries

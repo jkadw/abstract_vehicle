@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import slugify
@@ -17,10 +18,17 @@ class VehicleBaseEntity(Entity):
     _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, normalized_data: NormalizedVehicleData, key: str, name: str) -> None:
+    def __init__(
+        self,
+        normalized_data: NormalizedVehicleData,
+        key: str,
+        name: str,
+        entity_domain: str,
+    ) -> None:
         self._normalized_data = normalized_data
         self._entity_key = key
         self._entity_name = name
+        self._entity_domain = entity_domain
         self._sync_entity_metadata()
 
     @property
@@ -56,17 +64,20 @@ class VehicleBaseEntity(Entity):
     def _sync_entity_metadata(self) -> None:
         """Keep core HA-facing metadata aligned with normalized data."""
 
-        self._attr_name = f"{self._normalized_data.info.name} {self._entity_name}"
+        self._attr_name = self._entity_name
         self._attr_unique_id = (
             f"{self._normalized_data.info.vehicle_id}_{self._entity_key}"
         )
+        device_name = slugify(self._normalized_data.info.name)
+        entity_name = slugify(self._entity_key)
+        self.entity_id = f"{self._entity_domain}.vehicle_{device_name}_{entity_name}"
 
 
-class VehicleEntity(VehicleBaseEntity):
-    """Aggregate vehicle entity exposed under the custom `vehicle` domain."""
+class VehicleEntity(VehicleBaseEntity, SensorEntity):
+    """Aggregate vehicle state entity exposed in the sensor domain."""
 
     def __init__(self, normalized_data: NormalizedVehicleData) -> None:
-        super().__init__(normalized_data, "state", "State")
+        super().__init__(normalized_data, "state", "State", "sensor")
 
     @property
     def state(self) -> str:
@@ -95,8 +106,9 @@ class VehicleEntity(VehicleBaseEntity):
         return "mdi:car"
 
     def _sync_entity_metadata(self) -> None:
-        """Expose the aggregate entity using the custom vehicle domain."""
+        """Expose the aggregate sensor using the shared naming scheme."""
 
-        self._attr_name = self._normalized_data.info.name
+        self._attr_name = "State"
         self._attr_unique_id = self._normalized_data.info.vehicle_id
-        self.entity_id = f"{DOMAIN}.{slugify(self._normalized_data.info.name)}"
+        device_name = slugify(self._normalized_data.info.name)
+        self.entity_id = f"sensor.vehicle_{device_name}_state"
