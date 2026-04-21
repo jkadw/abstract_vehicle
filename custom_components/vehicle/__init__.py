@@ -10,13 +10,11 @@ from .const import (
     ADAPTER_TYPE_KIA_UVO,
     ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
-    CONF_SCENARIO,
     CONF_VEHICLE_ID,
     CONF_VEHICLES,
     DATA_ADAPTER,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
-    DEFAULT_MOCK_SCENARIO,
     DOMAIN,
     PLATFORMS,
 )
@@ -69,8 +67,7 @@ def _create_adapter(entry: ConfigEntry) -> VehicleAdapter:
 
     adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
     if adapter_type == ADAPTER_TYPE_MOCK:
-        scenario = entry.data.get(CONF_SCENARIO, DEFAULT_MOCK_SCENARIO)
-        return MockVehicleAdapter(initial_state=scenario)
+        return MockVehicleAdapter()
     if adapter_type == ADAPTER_TYPE_KIA_UVO:
         vehicles = entry.data.get(CONF_VEHICLES)
         if not isinstance(vehicles, list):

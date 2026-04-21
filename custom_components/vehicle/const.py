@@ -6,7 +6,6 @@ DOMAIN: Final = "vehicle"
 PLATFORMS: Final[tuple[str, ...]] = ("sensor",)
 
 CONF_ADAPTER: Final = "adapter"
-CONF_SCENARIO: Final = "scenario"
 CONF_VEHICLE_ID: Final = "vehicle_id"
 CONF_VEHICLES: Final = "vehicles"
 
@@ -14,8 +13,6 @@ ADAPTER_TYPE_MOCK: Final = "mock"
 ADAPTER_TYPE_KIA_UVO: Final = "kia_uvo"
 
 DEFAULT_ENTRY_TITLE: Final = "Vehicle"
-DEFAULT_MOCK_SCENARIO: Final = "parked"
-MOCK_SCENARIOS: Final[tuple[str, ...]] = ("parked", "charging", "offline")
 
 DATA_ADAPTER: Final = "adapter"
 DATA_NORMALIZED: Final = "normalized_data"

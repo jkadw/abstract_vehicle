@@ -14,7 +14,6 @@ from .const import (
     CONF_ADAPTER,
     CONF_VEHICLE_ID,
     CONF_VEHICLES,
-    DEFAULT_ENTRY_TITLE,
     DOMAIN,
 )
 
