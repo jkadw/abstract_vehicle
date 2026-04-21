@@ -1,0 +1,13 @@
+{
+  "domain": "vehicle",
+  "name": "Vehicle",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/example/vehicle",
+  "issue_tracker": "https://github.com/example/vehicle/issues",
+  "requirements": [],
+  "codeowners": [
+    "@example"
+  ],
+  "iot_class": "cloud_polling"
+}

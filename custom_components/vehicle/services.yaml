@@ -1,0 +1,31 @@
+lock:
+  name: Lock Vehicle
+  description: Lock the selected vehicle if lock actions are supported.
+  target:
+    entity:
+      domain: sensor
+      integration: vehicle
+
+unlock:
+  name: Unlock Vehicle
+  description: Unlock the selected vehicle if lock actions are supported.
+  target:
+    entity:
+      domain: sensor
+      integration: vehicle
+
+start_climate:
+  name: Start Climate
+  description: Start climate control for the selected vehicle if supported.
+  target:
+    entity:
+      domain: sensor
+      integration: vehicle
+
+stop_climate:
+  name: Stop Climate
+  description: Stop climate control for the selected vehicle if supported.
+  target:
+    entity:
+      domain: sensor
+      integration: vehicle
