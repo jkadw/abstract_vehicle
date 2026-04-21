@@ -139,3 +139,19 @@ async def test_kia_uvo_adapter_executes_supported_actions_against_selected_vehic
 
     with pytest.raises(UnsupportedVehicleActionError):
         await adapter.execute_action("open_windows")
+
+
+def test_kia_uvo_identifier_parsing_ignores_malformed_entries() -> None:
+    """Discovery should not crash on unexpected identifier shapes."""
+
+    identifiers = {
+        ("other_domain", "ignore-me"),
+        ("kia_uvo", "vehicle-123"),
+        ("kia_uvo", ""),
+        ("broken",),
+        "not-a-tuple",
+    }
+
+    vehicle_id = KiaUvoVehicleAdapter._vehicle_id_from_identifiers(identifiers)
+
+    assert vehicle_id == "vehicle-123"

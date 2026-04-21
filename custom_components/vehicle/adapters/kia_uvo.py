@@ -34,14 +34,7 @@ class KiaUvoVehicleAdapter(VehicleAdapter):
         discovered: list[DiscoveredVehicle] = []
         for device in devices.values():
             identifiers = getattr(device, "identifiers", set())
-            vehicle_id = next(
-                (
-                    identifier_value
-                    for identifier_domain, identifier_value in identifiers
-                    if identifier_domain == "kia_uvo"
-                ),
-                None,
-            )
+            vehicle_id = cls._vehicle_id_from_identifiers(identifiers)
             if vehicle_id is None:
                 continue
 
@@ -214,6 +207,24 @@ class KiaUvoVehicleAdapter(VehicleAdapter):
 
     def _as_str(self, value: Any) -> str | None:
         return value if isinstance(value, str) else None
+
+    @classmethod
+    def _vehicle_id_from_identifiers(cls, identifiers: Any) -> str | None:
+        """Return the kia_uvo vehicle id from a registry identifier set."""
+
+        if not isinstance(identifiers, (set, list, tuple)):
+            return None
+
+        for identifier in identifiers:
+            if not isinstance(identifier, tuple) or len(identifier) != 2:
+                continue
+            identifier_domain, identifier_value = identifier
+            if identifier_domain != "kia_uvo":
+                continue
+            if isinstance(identifier_value, str) and identifier_value:
+                return identifier_value
+
+        return None
 
     @classmethod
     def _build_vehicle_payload_from_device(
