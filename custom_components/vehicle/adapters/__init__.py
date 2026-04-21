@@ -10,7 +10,6 @@ from .base import (
     VehicleAdapterError,
 )
 from .hyundai_kia_connect_kia_uvo import HyundaiKiaConnectKiaUvoVehicleAdapter
-from .kia_uvo import KiaUvoVehicleAdapter
 from .mock import MockVehicleAdapter
 
 __all__ = [
