@@ -1,5 +1,7 @@
 # Vehicle Mapping Schema
 
+Audience: mapping developers who add or maintain YAML mapping files.
+
 This document defines the minimal v1 schema for YAML-driven adapter mappings in the `my_vehicles` integration.
 
 The goal is to move integration-specific mapping rules out of Python heuristics and into explicit mapping files, while keeping the mapping format simple, Home Assistant-friendly, and easy to validate.

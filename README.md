@@ -4,32 +4,34 @@
 
 The goal is to keep dashboards, automations, and scripts stable even when the underlying source integration changes. Instead of exposing integration-specific semantics directly, `my_vehicles` normalizes raw data behind a small shared domain model.
 
-## For Users
+## Why This Exists
 
-This project is built around three layers:
+`my_vehicles` sits on top of one of your existing vehicle-related Home Assistant integrations and presents a more stable, integration-independent view of the vehicle.
 
-- adapters collect raw vehicle data and execute actions
-- normalization converts raw values into a canonical model
-- the entity layer exposes one aggregate state entity plus capability-specific entities
+In practice that means:
 
-The current v1 scope focuses on a minimal, stable foundation:
+- one consistent aggregate entity per vehicle
+- capability-specific entities where supported
+- a small, stable action surface
+- less coupling between your automations and the quirks of one source integration
 
-- normalized vehicle state
-- structured capabilities with separate state and action support
-- centralized normalization and unit conversion hooks
-- one aggregate `sensor.*` entity per vehicle with the friendly name `My <device>`
-- per-capability entities in standard Home Assistant domains
-- YAML-driven mapped adapters that discover vehicles from Home Assistant devices and entities
+## Installation
+
+HACS-style installation:
+
+1. Add this repository to HACS as a custom repository, or install it from HACS if it is already published there.
+2. Install `My Vehicles`.
+3. Restart Home Assistant.
+4. Go to `Settings -> Devices & Services -> Add Integration`.
+5. Add `My Vehicles`.
 
 ## Setup
 
-Current setup is intentionally minimal.
+Current setup is intentionally minimal:
 
-Supported paths today:
-
-1. Add the integration through Home Assistant.
-2. Choose a source mapping in the config flow.
-3. The integration discovers all matching source vehicles for that mapping.
+1. Choose the source mapping that matches an existing vehicle-related integration you already use.
+2. `my_vehicles` discovers all matching source vehicles for that mapping.
+3. One `my_vehicles` config entry manages all discovered vehicles for that selected source mapping.
 
 At runtime the integration:
 
@@ -45,7 +47,7 @@ At runtime the integration:
   - `device_tracker.*` for vehicle location
   - `button.*` for refresh when the adapter supports it
 
-## Examples
+## What You Get
 
 Example normalized state values:
 
@@ -95,8 +97,6 @@ Example normalized attributes:
 
 ## Limitations
 
-This repository is still early-stage and intentionally incomplete.
-
 Current limitations:
 
 - generic discovery is still intentionally simple
@@ -109,24 +109,18 @@ Current limitations:
 
 The current mapped-adapter path discovers vehicles from the Home Assistant registry and state model rather than talking to external vehicle services directly.
 
-## For Mapping Developers
+## Documentation By Audience
 
-Adding a new mapping YAML is the normal way to add support for another existing vehicle-related integration.
+For mapping developers:
 
-Current model:
+- [Mapping Schema](./docs/mapping_schema.md)
 
-- add one YAML mapping file under `custom_components/my_vehicles/adapters/`
-- the filename becomes the adapter key
-- `integration.domain` determines availability
-- `integration.friendly_name` is shown in the config flow
-- no Python registration is needed for normal mapping-backed integrations
+For backend developers:
 
-Only rare cases should need custom Python, and those should stay behind the explicit custom-adapter extension point in the adapter registry layer.
-
-## More Detail
-
-Additional docs:
-
+- [Backend Architecture](./docs/backend_architecture.md)
 - [Domain Model](./docs/domain_model.md)
-- [Adapter Strategy](./docs/oem_adapter_strategy.md)
-- [Mapping UX](./docs/mapping_ux.md)
+
+For maintainers and machine-readable project guidance:
+
+- [PROJECT.md](./PROJECT.md)
+- [PROMPTS.md](./PROMPTS.md)
