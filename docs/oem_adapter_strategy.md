@@ -13,10 +13,10 @@ This document describes how OEM-specific adapters should fit into the `vehicle` 
 Preferred mapping approach:
 
 - adapter-specific files should define explicit source mappings instead of growing Python heuristics
-- adapter code should resolve those mappings against Home Assistant state, registry, and services
+- generic adapter code should resolve those mappings against Home Assistant state, registry, and services
 - adapters return raw state and raw metrics in a loose, typed structure
 - normalization converts raw values into canonical state, attributes, units, and inferred support
-- adapters expose a stable friendly name for the config flow
+- adapter definitions expose a stable friendly name for the config flow
 
 ## Entity Discovery
 
@@ -24,9 +24,9 @@ Adapters should discover source entities by semantic role, not by copying every 
 
 Discovery guidelines:
 
-- identify one logical vehicle at a time
+- discover all source devices for the selected upstream integration
 - look for stable identifiers first: VIN-like ids, device ids, unique coordinator keys, or integration device registry metadata
-- return discovered vehicles as adapter-owned selections for the config flow
+- derive one logical vehicle from each matching source device
 - collect only the entities needed for v1 capabilities:
   - lock
   - windows
@@ -47,8 +47,8 @@ Selection rules:
 
 Current example:
 
-- the `Hyundai-Kia-Connect/kia_uvo` adapter discovers candidate vehicles from Home Assistant device and entity registry data
-- it presents the friendly adapter name `Hyundai / Kia Connect` in the config flow
+- the `Hyundai-Kia-Connect/kia_uvo` mapping is resolved through the generic mapped-adapter runtime
+- generic discovery uses the upstream integration domain plus entity-pattern matching to derive each vehicle token
 
 ## Action Mapping
 
@@ -96,8 +96,8 @@ Examples:
 - Keep adapters async-first and non-blocking.
 - Prefer explicit mapping files and small helper methods over large conditional branches.
 - Log enough detail to debug mappings, but do not leak OEM-specific structures into the domain model.
-- Add new OEM adapters by implementing the shared adapter interface, not by changing entity or normalization behavior for one manufacturer.
-- Add new OEM adapters with names that clearly reflect the upstream integration or project they map.
+- Add new OEM integrations by adding mapping-backed adapter definitions whenever generic discovery and runtime behavior are sufficient.
+- Only add dedicated OEM Python hooks when the generic mapped-adapter path cannot express the needed behavior cleanly.
 
 Guiding principle:
 

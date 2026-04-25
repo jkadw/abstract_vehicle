@@ -20,7 +20,7 @@ The current v1 scope focuses on a minimal, stable foundation:
 - one aggregate `sensor.*` entity per vehicle with the friendly name `My <device>`
 - per-capability entities in standard Home Assistant domains
 - a mock adapter for development and tests
-- a `Hyundai-Kia-Connect/kia_uvo`-based adapter that discovers vehicles from Home Assistant
+- YAML-driven mapped adapters that discover vehicles from Home Assistant devices and entities
 
 ## Setup
 
@@ -30,14 +30,15 @@ Supported paths today:
 
 1. Add the integration through Home Assistant.
 2. Choose an adapter type in the config flow.
-3. Select one discovered vehicle from the chosen adapter.
+3. The integration discovers all matching source vehicles for that mapping or adapter.
 
 At runtime the integration:
 
-- creates the configured adapter
-- reads raw state, raw metrics, and capabilities
+- creates the configured mapping-backed adapter or mock adapter
+- discovers source vehicles for the selected upstream integration
+- reads raw state, raw metrics, and capabilities for each discovered vehicle
 - normalizes the data into the shared model
-- exposes one aggregate sensor entity for the vehicle state
+- exposes one aggregate sensor entity for each discovered vehicle state
 - creates per-capability entities where state support exists:
   - `sensor.*` for numeric values such as battery, fuel, range, and odometer
   - `binary_sensor.*` for windows, climate, and charging
@@ -99,15 +100,15 @@ This repository is still early-stage and intentionally incomplete.
 
 Current limitations:
 
-- adapter discovery is still intentionally simple
-- the Hyundai/Kia adapter still contains legacy Python-side mapping logic while YAML-driven mapping support is being introduced
+- generic discovery is still intentionally simple
+- startup reconciliation and add/remove sync are not complete yet
 - no direct OEM API clients in this repository
 - no UI card
 - no per-window control
 - only a minimal service surface is implemented
 - Home Assistant runtime tests are not executed in this workspace
 
-The `Hyundai / Kia Connect` adapter currently discovers vehicles from the Home Assistant registry and state model rather than talking to the OEM service directly.
+The current mapped-adapter path discovers vehicles from the Home Assistant registry and state model rather than talking to OEM services directly.
 
 ## More Detail
 

@@ -4,13 +4,13 @@ This document describes the intended and current user experience for mapping sou
 
 ## User Selection Flow
 
-The user should map one logical vehicle at a time.
+The user should select one source mapping or adapter at a time.
 
 Recommended flow:
 
 1. Choose a source integration or adapter type.
-2. Select the source vehicle, device, or entity group that represents one real vehicle.
-3. Create the vehicle entry.
+2. Create one `My Vehicle` entry for that source mapping.
+3. Let the integration discover all source vehicles or devices that match the selected mapping.
 
 The UX should stay simple in v1:
 
@@ -22,9 +22,9 @@ The UX should stay simple in v1:
 Current implementation:
 
 - the config flow shows an adapter dropdown first
-- the selected adapter returns a list of discovered vehicles
-- the user selects one discovered vehicle from a dropdown
-- the integration stores the adapter type, selected vehicle id, and adapter payload for that vehicle
+- the selected adapter or mapping becomes one config entry
+- the integration discovers all matching source devices for that entry
+- one config entry owns multiple discovered `My Vehicle` devices when the source integration exposes multiple vehicles
 
 ## How Mapping Works
 
@@ -84,7 +84,7 @@ Useful debugging signals:
 - which raw entities were selected for each capability
 - which capabilities are state-only, action-only, or unsupported
 - current normalized state and attributes
-- which device-targeted actions are available for the selected vehicle
+- which device-targeted actions are available for each discovered vehicle
 - last adapter refresh result
 - last action result or error message
 

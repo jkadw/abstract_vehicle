@@ -19,7 +19,7 @@ The mapping file does not define:
 - canonical state precedence
 - advanced unit conversion logic
 - asynchronous startup or retry behavior
-- Home Assistant registry access details
+- Home Assistant registry access details beyond generic discovery by `integration.domain`
 
 Those remain in Python.
 
@@ -74,6 +74,7 @@ Rules:
 - `domain` must match the upstream Home Assistant integration domain
 - `friendly_name` is user-facing only
 - v1 supports exactly one upstream integration per mapping file
+- generic discovery uses `integration.domain` to find candidate Home Assistant devices
 
 ## Capability Definitions
 
@@ -335,7 +336,7 @@ Rules:
 
 - `{device}`
 - `{device}` resolves to the selected Home Assistant device id used for actions
-- `{vehicle}` resolves to the selected source vehicle token used in entity-id patterns
+- `{vehicle}` resolves to the discovered source vehicle token derived from that device's entity ids
 - placeholders that cannot be resolved must fail clearly
 
 v1 boundary:
