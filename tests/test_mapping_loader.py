@@ -25,6 +25,90 @@ from custom_components.my_vehicles.adapters.registry import (
 )
 
 
+_MINIMAL_CANONICAL_CAPABILITIES = """
+capabilities:
+  lock_vehicle:
+    state:
+      entity: lock.{vehicle}_door_lock
+    actions:
+      lock:
+        action: kia_uvo.lock
+        data:
+          device_id: "{device}"
+      unlock:
+        action: kia_uvo.unlock
+        data:
+          device_id: "{device}"
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  warning_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      entity: device_tracker.{vehicle}_vehicle
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      entity: sensor.{vehicle}_total_driving_range
+  range_warning:
+    state:
+      domain: binary_sensor
+      template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
+  odometer:
+    state:
+      entity: sensor.{vehicle}_odometer
+  tire_pressure:
+    state:
+      unavailable: true
+  critical_warnings:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        data:
+          device_id: "{device}"
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      entity: sensor.{vehicle}_ev_battery_level
+  refresh:
+    state:
+      unavailable: true
+    actions:
+      refresh:
+        action: button.press
+        data:
+          entity_id: button.{vehicle}_force_refresh
+""".strip()
+
+
 def test_load_adapter_mapping_for_kia_yaml() -> None:
     """The Hyundai/Kia example mapping should load successfully."""
 
@@ -32,18 +116,21 @@ def test_load_adapter_mapping_for_kia_yaml() -> None:
 
     assert mapping.integration.domain == "kia_uvo"
     assert mapping.integration.friendly_name == "Hyundai / Kia Connect"
-    assert "lock" in mapping.capabilities
-    assert mapping.capability("lock") is not None
-    assert mapping.capability("lock").actions["lock"].action == "lock"
-    assert mapping.capability("windows").actions["open"].action == "set_windows"
+    assert "lock_vehicle" in mapping.capabilities
+    assert mapping.capability("lock_vehicle") is not None
+    assert mapping.capability("lock_vehicle").actions["lock"].action == "kia_uvo.lock"
+    assert mapping.capability("windows").actions["open"].action == "kia_uvo.set_windows"
     assert mapping.capability("windows").state.any == (
         "binary_sensor.{vehicle}_front_left_window",
         "binary_sensor.{vehicle}_front_right_window",
         "binary_sensor.{vehicle}_rear_left_window",
         "binary_sensor.{vehicle}_rear_right_window",
     )
-    assert mapping.metric("range").state == "sensor.{vehicle}_total_driving_range"
-    assert mapping.derived_entity("range_warning").domain == "binary_sensor"
+    assert (
+        mapping.capability("driving_range").state.entity
+        == "sensor.{vehicle}_total_driving_range"
+    )
+    assert mapping.capability("range_warning").state.domain == "binary_sensor"
 
 
 def test_load_mapping_file_rejects_missing_integration(tmp_path: Path) -> None:
@@ -51,11 +138,7 @@ def test_load_mapping_file_rejects_missing_integration(tmp_path: Path) -> None:
 
     mapping_path = tmp_path / "invalid.yaml"
     mapping_path.write_text(
-        """
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
-""".strip(),
+        _MINIMAL_CANONICAL_CAPABILITIES,
         encoding="utf-8",
     )
 
@@ -68,50 +151,172 @@ def test_load_mapping_file_rejects_multiple_state_modes(tmp_path: Path) -> None:
 
     mapping_path = tmp_path / "invalid_modes.yaml"
     mapping_path.write_text(
-        """
+        f"""
 integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
-capabilities:
-  windows:
-    state: binary_sensor.{vehicle}_front_left_window
-    any:
-      - binary_sensor.{vehicle}_front_left_window
-      - binary_sensor.{vehicle}_front_right_window
+{_MINIMAL_CANONICAL_CAPABILITIES.replace(
+    "  windows:\\n    state:\\n      any:\\n        - binary_sensor.{vehicle}_front_left_window\\n        - binary_sensor.{vehicle}_front_right_window",
+    "  windows:\\n    state:\\n      entity: binary_sensor.{vehicle}_front_left_window\\n      any:\\n        - binary_sensor.{vehicle}_front_left_window\\n        - binary_sensor.{vehicle}_front_right_window",
+)}
 """.strip(),
         encoding="utf-8",
     )
 
-    with pytest.raises(MappingValidationError, match="only one of state/template/any/all"):
+    with pytest.raises(
+        MappingValidationError,
+        match="exactly one of entity/template/any/all/unavailable",
+    ):
         load_mapping_file(mapping_path)
 
 
-def test_load_mapping_file_allows_simple_state_without_any_or_all(tmp_path: Path) -> None:
-    """Missing optional any/all fields should not fail simple state mappings."""
+def test_load_mapping_file_requires_full_canonical_capability_set(tmp_path: Path) -> None:
+    """Mappings must list every canonical capability explicitly."""
 
-    mapping_path = tmp_path / "simple_state.yaml"
+    mapping_path = tmp_path / "missing_caps.yaml"
     mapping_path.write_text(
         """
 integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
-    actions:
-      lock:
-        action: lock
-        data:
-          device_id: "{device}"
+  lock_vehicle:
+    state:
+      entity: lock.{vehicle}_door_lock
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="Missing canonical capabilities"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_rejects_unknown_capability_name(tmp_path: Path) -> None:
+    """Mappings may not invent capability names outside the registry."""
+
+    mapping_path = tmp_path / "unknown_capability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+""".strip()
+        + "\n"
+        + _MINIMAL_CANONICAL_CAPABILITIES.replace(
+            "capabilities:\n",
+            "capabilities:\n  unknown_capability:\n    state:\n      unavailable: true\n",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="Unknown canonical capabilities"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_rejects_old_metrics_section(tmp_path: Path) -> None:
+    """Old top-level metrics are no longer supported."""
+
+    mapping_path = tmp_path / "old_metrics.yaml"
+    mapping_path.write_text(
+        f"""
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+{_MINIMAL_CANONICAL_CAPABILITIES}
+metrics:
+  range:
+    state: sensor.{{vehicle}}_total_driving_range
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="metrics is not supported"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_rejects_old_derived_section(tmp_path: Path) -> None:
+    """Old top-level derived entities are no longer supported."""
+
+    mapping_path = tmp_path / "old_derived.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+""".strip()
+        + "\n"
+        + _MINIMAL_CANONICAL_CAPABILITIES
+        + """
+derived:
+  range_warning:
+    domain: binary_sensor
+    template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="derived is not supported"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_rejects_invalid_action_verb(tmp_path: Path) -> None:
+    """Action verbs must match the canonical verbs for that capability."""
+
+    mapping_path = tmp_path / "bad_action_verb.yaml"
+    mapping_path.write_text(
+        f"""
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("      open:\\n        action: kia_uvo.set_windows", "      lock:\\n        action: kia_uvo.set_windows")}
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="not a valid canonical verb"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_requires_fully_qualified_action(tmp_path: Path) -> None:
+    """Actions must now be explicit domain.service strings."""
+
+    mapping_path = tmp_path / "short_action.yaml"
+    mapping_path.write_text(
+        f"""
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("kia_uvo.lock", "lock")}
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="fully qualified domain.service"):
+        load_mapping_file(mapping_path)
+
+
+def test_load_mapping_file_parses_nested_state_block(tmp_path: Path) -> None:
+    """Simple nested entity state mappings should load cleanly."""
+
+    mapping_path = tmp_path / "simple_state.yaml"
+    mapping_path.write_text(
+        f"""
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+{_MINIMAL_CANONICAL_CAPABILITIES}
 """.strip(),
         encoding="utf-8",
     )
 
     mapping = load_mapping_file(mapping_path)
 
-    assert mapping.capability("lock") is not None
-    assert mapping.capability("lock").state is not None
-    assert mapping.capability("lock").state.state == "lock.{vehicle}_door_lock"
+    assert mapping.capability("lock_vehicle") is not None
+    assert (
+        mapping.capability("lock_vehicle").state.entity
+        == "lock.{vehicle}_door_lock"
+    )
 
 
 def test_registry_discovers_adapter_definition_from_mapping_yaml() -> None:
@@ -165,18 +370,11 @@ def test_registry_discovers_additional_mapping_yaml_without_python_changes(
 
     extra_mapping = tmp_path / "example_oem.yaml"
     extra_mapping.write_text(
-        """
+        f"""
 integration:
   domain: example_oem
   friendly_name: Example OEM
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
-    actions:
-      lock:
-        action: lock
-        data:
-          device_id: "{device}"
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("kia_uvo", "example_oem").replace("Hyundai / Kia Connect", "Example OEM")}
 """.strip(),
         encoding="utf-8",
     )
@@ -222,24 +420,20 @@ async def test_available_adapter_definitions_are_filtered_by_installed_integrati
     """Only mappings whose upstream integration is installed should be offered."""
 
     (tmp_path / "example_oem.yaml").write_text(
-        """
+        f"""
 integration:
   domain: example_oem
   friendly_name: Example OEM
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("kia_uvo", "example_oem").replace("Hyundai / Kia Connect", "Example OEM")}
 """.strip(),
         encoding="utf-8",
     )
     (tmp_path / "other_oem.yaml").write_text(
-        """
+        f"""
 integration:
   domain: other_oem
   friendly_name: Other OEM
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("kia_uvo", "other_oem").replace("Hyundai / Kia Connect", "Other OEM")}
 """.strip(),
         encoding="utf-8",
     )
@@ -259,13 +453,11 @@ async def test_available_adapter_options_use_mapping_metadata_labels(
     """Config-flow options should come from YAML keys and friendly names."""
 
     (tmp_path / "example_oem.yaml").write_text(
-        """
+        f"""
 integration:
   domain: example_oem
   friendly_name: Example OEM
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
+{_MINIMAL_CANONICAL_CAPABILITIES.replace("kia_uvo", "example_oem").replace("Hyundai / Kia Connect", "Example OEM")}
 """.strip(),
         encoding="utf-8",
     )

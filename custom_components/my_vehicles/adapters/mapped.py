@@ -93,7 +93,7 @@ class MappedVehicleAdapter(VehicleAdapter):
 
         vehicle = self._vehicle
         resolved = self._resolve_runtime()
-        locked = _coerce_lock_state(resolved.capability_states.get("lock"))
+        locked = _coerce_lock_state(resolved.capability_states.get("lock_vehicle"))
         climate_active = _coerce_bool_state(resolved.capability_states.get("climate"))
         charging_active = _coerce_bool_state(
             resolved.capability_states.get("charging")
@@ -135,10 +135,12 @@ class MappedVehicleAdapter(VehicleAdapter):
         runtime = self._runtime()
         latitude, longitude = self._resolve_coordinates(runtime)
         return {
-            "battery_level": self._as_float(resolved.metrics.get("battery_level")),
-            "fuel_level": self._as_float(resolved.metrics.get("fuel_level")),
-            "range": self._as_float(resolved.metrics.get("range")),
-            "odometer": self._as_float(resolved.metrics.get("odometer")),
+            "battery_level": self._as_float(
+                resolved.capability_states.get("battery_level")
+            ),
+            "fuel_level": None,
+            "range": self._as_float(resolved.capability_states.get("driving_range")),
+            "odometer": self._as_float(resolved.capability_states.get("odometer")),
             "latitude": latitude,
             "longitude": longitude,
             "openings": self._resolve_openings(runtime),
@@ -180,34 +182,12 @@ class MappedVehicleAdapter(VehicleAdapter):
             "raw_state": dict(raw_state),
             "raw_metrics": dict(raw_metrics),
             "resolved_capability_states": dict(resolved.capability_states),
-            "resolved_metrics": dict(resolved.metrics),
-            "resolved_derived": {
-                name: {
-                    "value": derived.value,
-                    "domain": derived.domain,
-                    "metadata": dict(derived.metadata),
-                }
-                for name, derived in resolved.derived.items()
-            },
             "capabilities": {
                 capability_name: {
                     "state_supported": support.state_supported,
                     "action_supported": support.action_supported,
                 }
-                for capability_name, support in (
-                    (field_name, getattr(resolved.capabilities, field_name))
-                    for field_name in (
-                        "lock",
-                        "windows",
-                        "climate",
-                        "charging",
-                        "location",
-                        "battery",
-                        "fuel",
-                        "odometer",
-                        "refresh",
-                    )
-                )
+                for capability_name, support in resolved.capabilities.items()
             },
             "actions": {
                 capability_name: {
@@ -255,13 +235,12 @@ class MappedVehicleAdapter(VehicleAdapter):
         location_mapping = self._mapping.capability("location")
         if (
             location_mapping is None
-            or location_mapping.state is None
-            or location_mapping.state.state is None
+            or location_mapping.state.entity is None
         ):
             return None, None
 
         entity_id = _substitute_string(
-            location_mapping.state.state,
+            location_mapping.state.entity,
             self._source_vehicle_token(),
             self._source_device_id(),
         )
@@ -293,12 +272,12 @@ class MappedVehicleAdapter(VehicleAdapter):
         return openings
 
     def _resolve_source_units(self, runtime: MappingRuntime) -> dict[str, str]:
-        for metric_name in ("range", "odometer"):
-            metric_mapping = self._mapping.metric(metric_name)
-            if metric_mapping is None or metric_mapping.state is None:
+        for capability_name in ("driving_range", "odometer"):
+            capability_mapping = self._mapping.capability(capability_name)
+            if capability_mapping is None or capability_mapping.state.entity is None:
                 continue
             entity_id = _substitute_string(
-                metric_mapping.state,
+                capability_mapping.state.entity,
                 self._source_vehicle_token(),
                 self._source_device_id(),
             )

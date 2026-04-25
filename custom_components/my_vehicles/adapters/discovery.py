@@ -159,23 +159,12 @@ def _collect_vehicle_patterns(mapping: VehicleAdapterMapping) -> set[str]:
     patterns: set[str] = set()
 
     for capability in mapping.capabilities.values():
-        if capability.state is not None:
-            for entity_id in capability.state.source_entities():
-                if "{vehicle}" in entity_id:
-                    patterns.add(entity_id)
+        for entity_id in capability.state.source_entities():
+            if "{vehicle}" in entity_id:
+                patterns.add(entity_id)
         for action in capability.actions.values():
             _collect_patterns_from_value(action.data, patterns)
             _collect_patterns_from_value(action.target, patterns)
-
-    for metric in mapping.metrics.values():
-        for entity_id in metric.source_entities():
-            if "{vehicle}" in entity_id:
-                patterns.add(entity_id)
-
-    for derived in mapping.derived.values():
-        for entity_id in derived.source_entities():
-            if "{vehicle}" in entity_id:
-                patterns.add(entity_id)
 
     return patterns
 

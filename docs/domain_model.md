@@ -1,6 +1,7 @@
 # Vehicle Domain Model
 
-This document defines the stable v1 domain model for the `my_vehicles` integration.
+This document defines the stable domain model for the `my_vehicles`
+integration.
 
 ## State Model
 
@@ -17,7 +18,7 @@ When state capabilities are available, the integration may also expose capabilit
 - `lock.*`
 - `device_tracker.*`
 
-Normalized states:
+Normalized aggregate states:
 
 - `unknown`
 - `unavailable`
@@ -29,93 +30,205 @@ Normalized states:
 
 Rules:
 
-- `charging` dominates other states.
-- `offline` means the source backend or API is not reachable.
-- `driving` is only used when a reliable signal exists.
-- `error` is only used for explicit fault conditions.
-- `parked` is the default fallback when the vehicle is available but not otherwise active.
-- the aggregate `sensor.*` entity is the canonical overview entity for the integration
-- actions target the vehicle device, not individual entities
+- `charging` dominates other states
+- `offline` means the source backend or API is not reachable
+- `driving` is only used when a reliable signal exists
+- `error` is only used for explicit fault conditions
+- `parked` is the default fallback when the vehicle is available but not
+  otherwise active
+- the aggregate `sensor.*` entity is the canonical overview entity for the
+  integration
+- actions target the `my_vehicles` device, not individual entities
 
 ## Capability Model
 
-Capabilities are structured, not simple booleans.
+The mapping model is organized around canonical capabilities, not around a
+split between capabilities, metrics, and derived entities.
 
-Each capability exposes:
+Every supported source integration is normalized onto the same capability list.
+Each mapping file must declare every canonical capability explicitly, even when
+unsupported.
+
+Canonical capabilities:
+
+- `lock_vehicle`
+- `climate`
+- `charging`
+- `horn`
+- `flash_lights`
+- `warning_lights`
+- `location`
+- `ignition`
+- `driving_range`
+- `range_warning`
+- `odometer`
+- `tire_pressure`
+- `critical_warnings`
+- `info_messages`
+- `windows`
+- `doors`
+- `lids`
+- `battery_level`
+- `refresh`
+
+Each capability has:
+
+- one required `state` definition in the mapping
+- optional `actions`
+
+Capability support is still represented in runtime attributes as:
 
 - `state_supported`
 - `action_supported`
 
-Core capabilities in v1:
+The meaning of each capability is fixed here, not in individual mapping files.
 
-- `lock`
-- `windows`
+Canonical verbs are also fixed per capability in the Python registry. Mapping
+files may only use those verbs.
+
+Examples:
+
+- `lock_vehicle`
+  Semantics: vehicle door locking state plus `lock` and `unlock` actions when
+  available.
 - `climate`
+  Semantics: cabin climate state plus `start` and `stop` actions when
+  available.
 - `charging`
+  Semantics: EV charging state plus optional `start` and `stop` actions when
+  the source integration supports them.
+- `horn`
+  Semantics: horn trigger action and any corresponding state if a source
+  integration exposes one.
+- `flash_lights`
+  Semantics: headlight flash action and any corresponding state if exposed.
+- `warning_lights`
+  Semantics: warning or hazard light state and `on` / `off` actions when
+  available.
 - `location`
-- `battery`
-- `fuel`
+  Semantics: current vehicle position.
+- `ignition`
+  Semantics: ignition or vehicle-on state.
+- `driving_range`
+  Semantics: remaining estimated range.
+- `range_warning`
+  Semantics: low-range warning, often derived from range.
 - `odometer`
+  Semantics: total distance traveled.
+- `tire_pressure`
+  Semantics: tire pressure status or measurement exposure.
+- `critical_warnings`
+  Semantics: critical warning indicators.
+- `info_messages`
+  Semantics: informational vehicle messages.
+- `windows`
+  Semantics: combined window status plus optional window actions if a source
+  integration supports them.
+- `doors`
+  Semantics: combined door-open status.
+- `lids`
+  Semantics: hood, trunk, frunk, or similar lid status plus optional actions.
+- `battery_level`
+  Semantics: traction-battery level where available.
 - `refresh`
+  Semantics: explicit refresh action exposed by the source integration.
 
-Example:
+Example mapping shape:
 
 ```yaml
 capabilities:
-  lock:
-    state_supported: true
-    action_supported: true
+  lock_vehicle:
+    state:
+      entity: lock.{vehicle}_door_lock
+    actions:
+      lock:
+        action: lock
+        data:
+          device_id: {device}
+      unlock:
+        action: unlock
+        data:
+          device_id: {device}
   windows:
-    state_supported: true
-    action_supported: false
-  climate:
-    state_supported: true
-    action_supported: true
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window
+  horn:
+    state:
+      unavailable: true
 ```
 
 ## Attribute Schema
 
-Core attributes:
+The aggregate vehicle entity exposes normalized attributes describing the
+current vehicle snapshot and capability support. The exact runtime payload can
+grow, but the stable shape is:
 
 - `manufacturer: str`
 - `model: str`
 - `vehicle_type: ev|phev|ice|hybrid|unknown`
 - `battery_level: float | null`
-- `fuel_level: float | null`
-- `range: float | null`
+- `driving_range: float | null`
 - `locked: true|false|unknown`
 - `windows_open: true|false|unknown`
 - `climate_active: true|false|unknown`
 - `charging_active: true|false|unknown`
 - `charging_plugged: true|false|unknown`
+- `ignition_on: true|false|unknown`
 - `latitude: float | null`
 - `longitude: float | null`
 - `odometer: float | null`
+- `critical_warnings: object | null`
+- `info_messages: object | null`
 
 Capability support flags:
 
-- `lock_state_supported: bool`
-- `lock_action_supported: bool`
-- `windows_state_supported: bool`
-- `windows_action_supported: bool`
+- `lock_vehicle_state_supported: bool`
+- `lock_vehicle_action_supported: bool`
 - `climate_state_supported: bool`
 - `climate_action_supported: bool`
 - `charging_state_supported: bool`
 - `charging_action_supported: bool`
+- `horn_state_supported: bool`
+- `horn_action_supported: bool`
+- `flash_lights_state_supported: bool`
+- `flash_lights_action_supported: bool`
+- `warning_lights_state_supported: bool`
+- `warning_lights_action_supported: bool`
 - `location_state_supported: bool`
 - `location_action_supported: bool`
-- `battery_state_supported: bool`
-- `battery_action_supported: bool`
-- `fuel_state_supported: bool`
-- `fuel_action_supported: bool`
+- `ignition_state_supported: bool`
+- `ignition_action_supported: bool`
+- `driving_range_state_supported: bool`
+- `driving_range_action_supported: bool`
+- `range_warning_state_supported: bool`
+- `range_warning_action_supported: bool`
 - `odometer_state_supported: bool`
 - `odometer_action_supported: bool`
+- `tire_pressure_state_supported: bool`
+- `tire_pressure_action_supported: bool`
+- `critical_warnings_state_supported: bool`
+- `critical_warnings_action_supported: bool`
+- `info_messages_state_supported: bool`
+- `info_messages_action_supported: bool`
+- `windows_state_supported: bool`
+- `windows_action_supported: bool`
+- `doors_state_supported: bool`
+- `doors_action_supported: bool`
+- `lids_state_supported: bool`
+- `lids_action_supported: bool`
+- `battery_level_state_supported: bool`
+- `battery_level_action_supported: bool`
+- `refresh_state_supported: bool`
+- `refresh_action_supported: bool`
 
-The schema is stable by name. Validation can remain lightweight in v1.
+The schema is stable by name. Unsupported capabilities should still appear in
+support flags as `false`.
 
 ## Windows Aggregation
 
-All openings are aggregated into one semantic attribute:
+All openings are aggregated into one semantic capability result:
 
 - `windows_open`
 
@@ -147,11 +260,13 @@ Supported configuration:
 
 Rules:
 
-- Adapters return raw values and source units when available.
-- Normalization converts raw values into configured units.
-- Entities expose normalized values only.
-- Distance-bearing capability entities use normalized display units.
-- v1 keeps conversion behavior minimal and centralized.
+- mappings may inherit source metadata or override it where needed
+- adapters return raw values and source units when available
+- normalization converts raw values into configured units
+- entities expose normalized values only
+- distance-bearing capability entities use normalized display units
+- conversion behavior stays centralized rather than being reimplemented per
+  mapping
 
 ## Service Definitions
 
@@ -161,11 +276,20 @@ Core services:
 - `my_vehicles.unlock`
 - `my_vehicles.start_climate`
 - `my_vehicles.stop_climate`
+- `my_vehicles.start_charging`
+- `my_vehicles.stop_charging`
+- `my_vehicles.flash_lights`
+- `my_vehicles.honk`
+- `my_vehicles.warning_lights_on`
+- `my_vehicles.warning_lights_off`
 - `my_vehicles.refresh`
 
 Rules:
 
-- Services must check `action_supported` before execution.
-- Services target the vehicle device exposed by the integration.
-- Services delegate to adapters rather than encoding source-integration-specific behavior in entities.
-- Unsupported services should fail clearly and predictably.
+- services must check `action_supported` before execution
+- services target the `my_vehicles` device exposed by the integration
+- services delegate to adapters rather than encoding source-integration-specific
+  behavior in entities
+- canonical service verbs should match the canonical action verbs defined by the
+  registry
+- unsupported services should fail clearly and predictably

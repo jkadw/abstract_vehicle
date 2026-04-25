@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from typing import Any, TypedDict
 
 from ..model import VehicleCapabilities
@@ -121,7 +121,5 @@ def _serialize_capabilities(capabilities: VehicleCapabilities) -> dict[str, dict
             "state_supported": support.state_supported,
             "action_supported": support.action_supported,
         }
-        for capability_name, support in (
-            (field.name, getattr(capabilities, field.name)) for field in fields(capabilities)
-        )
+        for capability_name, support in capabilities.items()
     }

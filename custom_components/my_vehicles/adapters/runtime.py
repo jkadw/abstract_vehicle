@@ -9,11 +9,7 @@ from jinja2 import Environment, StrictUndefined
 
 from .base import ActionResult, UnsupportedVehicleActionError, VehicleAdapterError
 from ..model import CapabilitySupport, VehicleCapabilities
-from .mapping import (
-    ActionMapping,
-    StateMapping,
-    VehicleAdapterMapping,
-)
+from .mapping import ActionMapping, StateMapping, VehicleAdapterMapping
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,22 +23,10 @@ class PreparedAction:
 
 
 @dataclass(frozen=True, slots=True)
-class ResolvedDerivedEntity:
-    """Resolved value for one derived entity definition."""
-
-    name: str
-    value: Any
-    domain: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True, slots=True)
 class ResolvedMappingRuntime:
     """Resolved read-only view of one mapping against one source vehicle."""
 
     capability_states: dict[str, Any]
-    metrics: dict[str, Any]
-    derived: dict[str, ResolvedDerivedEntity]
     capabilities: VehicleCapabilities
     actions: dict[str, dict[str, PreparedAction]]
 
@@ -68,14 +52,10 @@ class MappingRuntime:
         """Resolve one mapping against the current HA state model."""
 
         capability_states = self._resolve_capability_states()
-        metrics = self._resolve_metrics()
-        derived = self._resolve_derived()
-        capabilities = self._build_capabilities(capability_states, metrics)
+        capabilities = self._build_capabilities()
         actions = self._prepare_actions()
         return ResolvedMappingRuntime(
             capability_states=capability_states,
-            metrics=metrics,
-            derived=derived,
             capabilities=capabilities,
             actions=actions,
         )
@@ -173,68 +153,21 @@ class MappingRuntime:
         return snapshot
 
     def _resolve_capability_states(self) -> dict[str, Any]:
-        resolved: dict[str, Any] = {}
-        for capability_name, capability in self._mapping.capabilities.items():
-            if capability.state is None:
-                continue
-            resolved[capability_name] = self._resolve_state_mapping(capability.state)
-        return resolved
+        return {
+            capability_name: self._resolve_state_mapping(capability.state)
+            for capability_name, capability in self._mapping.capabilities.items()
+        }
 
-    def _resolve_metrics(self) -> dict[str, Any]:
-        resolved: dict[str, Any] = {}
-        for metric_name, metric in self._mapping.metrics.items():
-            resolved[metric_name] = self._resolve_state_mapping(metric)
-        return resolved
-
-    def _resolve_derived(self) -> dict[str, ResolvedDerivedEntity]:
-        resolved: dict[str, ResolvedDerivedEntity] = {}
-        for name, derived in self._mapping.derived.items():
-            resolved[name] = ResolvedDerivedEntity(
-                name=name,
-                value=self._resolve_state_mapping(derived),
-                domain=derived.domain,
-                metadata=_metadata_dict(derived),
-            )
-        return resolved
-
-    def _build_capabilities(
-        self, capability_states: dict[str, Any], metrics: dict[str, Any]
-    ) -> VehicleCapabilities:
-        supports: dict[str, CapabilitySupport] = {}
-        for capability_name in (
-            "lock",
-            "windows",
-            "climate",
-            "charging",
-            "location",
-            "battery",
-            "fuel",
-            "odometer",
-            "refresh",
-        ):
-            mapping = self._mapping.capability(capability_name)
-            if mapping is None:
-                supports[capability_name] = CapabilitySupport(
-                    state_supported=_metric_backed_state_support(
-                        capability_name, metrics
-                    ),
-                    action_supported=False,
+    def _build_capabilities(self) -> VehicleCapabilities:
+        return VehicleCapabilities(
+            **{
+                capability_name: CapabilitySupport(
+                    state_supported=not capability.state.unavailable,
+                    action_supported=bool(capability.actions),
                 )
-                continue
-
-            state_supported = False
-            if mapping.state is not None:
-                state_supported = capability_states.get(capability_name) is not None
-            if not state_supported:
-                state_supported = _metric_backed_state_support(
-                    capability_name, metrics
-                )
-            action_supported = bool(mapping.actions)
-            supports[capability_name] = CapabilitySupport(
-                state_supported=state_supported,
-                action_supported=action_supported,
-            )
-        return VehicleCapabilities(**supports)
+                for capability_name, capability in self._mapping.capabilities.items()
+            }
+        )
 
     def _prepare_actions(self) -> dict[str, dict[str, PreparedAction]]:
         prepared: dict[str, dict[str, PreparedAction]] = {}
@@ -254,18 +187,21 @@ class MappingRuntime:
     ) -> PreparedAction:
         return PreparedAction(
             canonical_action=canonical_action,
-            service=f"{self._mapping.integration.domain}.{action.action}",
+            service=action.action,
             data=_substitute_placeholders(action.data, self._vehicle, self._device),
             target=_substitute_placeholders(action.target, self._vehicle, self._device),
         )
 
     def _resolve_state_mapping(self, mapping: StateMapping) -> Any:
-        if mapping.state is not None:
-            entity_id = _substitute_string(mapping.state, self._vehicle, self._device)
+        if mapping.unavailable:
+            return None
+        if mapping.entity is not None:
+            entity_id = _substitute_string(mapping.entity, self._vehicle, self._device)
             return self.state_value(entity_id)
         if mapping.template is not None:
             template = _substitute_string(mapping.template, self._vehicle, self._device)
-            return self._template_env.from_string(template).render()
+            rendered = self._template_env.from_string(template).render()
+            return _coerce_template_value(rendered)
         if mapping.any:
             return any(
                 _state_to_bool(
@@ -298,19 +234,12 @@ class MappingRuntime:
     def _referenced_entity_ids(self) -> list[str]:
         entity_ids: list[str] = []
         for capability in self._mapping.capabilities.values():
-            if capability.state is not None:
-                entity_ids.extend(
-                    self._resolve_source_entities(capability.state.source_entities())
-                )
+            entity_ids.extend(
+                self._resolve_source_entities(capability.state.source_entities())
+            )
             for action in capability.actions.values():
                 self._collect_entity_ids_from_value(action.data, entity_ids)
                 self._collect_entity_ids_from_value(action.target, entity_ids)
-
-        for metric in self._mapping.metrics.values():
-            entity_ids.extend(self._resolve_source_entities(metric.source_entities()))
-
-        for derived in self._mapping.derived.values():
-            entity_ids.extend(self._resolve_source_entities(derived.source_entities()))
 
         unique_ids: list[str] = []
         for entity_id in entity_ids:
@@ -384,37 +313,19 @@ def _substitute_string(value: str, vehicle: str, device: str) -> str:
     return value.replace("{vehicle}", vehicle).replace("{device}", device)
 
 
-def _metadata_dict(mapping: StateMapping) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    if mapping.domain is not None:
-        metadata["domain"] = mapping.domain
-    if mapping.metadata.device_class is not None:
-        metadata["device_class"] = mapping.metadata.device_class
-    if mapping.metadata.state_class is not None:
-        metadata["state_class"] = mapping.metadata.state_class
-    if mapping.metadata.unit_of_measurement is not None:
-        metadata["unit_of_measurement"] = mapping.metadata.unit_of_measurement
-    if mapping.metadata.icon is not None:
-        metadata["icon"] = mapping.metadata.icon
-    if mapping.metadata.attributes:
-        metadata["attributes"] = list(mapping.metadata.attributes)
-    return metadata
-
-
-def _metric_backed_state_support(
-    capability_name: str, metrics: dict[str, Any]
-) -> bool:
-    if capability_name == "battery":
-        return metrics.get("battery_level") is not None
-    if capability_name == "fuel":
-        return metrics.get("fuel_level") is not None
-    if capability_name == "odometer":
-        return metrics.get("odometer") is not None
-    return False
-
-
 def _split_service_name(service_name: str) -> tuple[str, str]:
     parts = service_name.split(".", 1)
     if len(parts) != 2 or not parts[0] or not parts[1]:
         raise VehicleAdapterError(f"Invalid mapped service name: {service_name}")
     return parts[0], parts[1]
+
+
+def _coerce_template_value(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    normalized = value.strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    return value

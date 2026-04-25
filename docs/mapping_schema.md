@@ -2,26 +2,30 @@
 
 Audience: mapping developers who add or maintain YAML mapping files.
 
-This document defines the minimal v1 schema for YAML-driven adapter mappings in the `my_vehicles` integration.
+This document defines the current mapping schema for YAML-driven integrations in
+`my_vehicles`.
 
-The goal is to move integration-specific mapping rules out of Python heuristics and into explicit mapping files, while keeping the mapping format simple, Home Assistant-friendly, and easy to validate.
+The schema is intentionally strict. A mapping file is not a loose collection of
+signals. It is a declaration of how one existing vehicle-related integration
+maps onto one canonical `my_vehicles` domain model.
 
 ## Purpose
 
 A mapping file defines:
 
-- which source integration the adapter depends on
-- how source entities map to canonical vehicle capabilities
-- how measurement-like values map to canonical metrics
-- how optional derived entities are exposed
-- how canonical actions map to Home Assistant service calls
+- which source integration the mapping depends on
+- how every canonical vehicle capability is represented
+- which canonical actions are available for those capabilities
+- how `{vehicle}` and `{device}` placeholders are used in resolved entity ids and
+  action payloads
 
 The mapping file does not define:
 
-- canonical state precedence
-- advanced unit conversion logic
-- asynchronous startup or retry behavior
-- Home Assistant registry access details beyond generic discovery by `integration.domain`
+- aggregate vehicle state precedence such as `charging` vs `parked`
+- normalization rules outside a capability's own mapped state
+- startup sequencing or retry behavior
+- Home Assistant registry access details beyond generic discovery by
+  `integration.domain`
 
 Those remain in Python.
 
@@ -32,10 +36,12 @@ Each mapping file must contain:
 - `integration`
 - `capabilities`
 
-Optional sections:
+No other top-level modeling sections are used. In particular:
 
-- `metrics`
-- `derived`
+- there is no `metrics`
+- there is no `derived`
+
+Everything is modeled as a canonical capability.
 
 Example shape:
 
@@ -45,8 +51,9 @@ integration:
   friendly_name: Hyundai / Kia Connect
 
 capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
+  lock_vehicle:
+    state:
+      entity: lock.{vehicle}_door_lock
     actions:
       lock:
         action: lock
@@ -57,14 +64,20 @@ capabilities:
         data:
           device_id: {device}
 
-metrics:
-  range:
-    state: sensor.{vehicle}_total_driving_range
+  driving_range:
+    state:
+      entity: sensor.{vehicle}_total_driving_range
+
+  range_warning:
+    state:
+      domain: binary_sensor
+      template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
+      device_class: problem
 ```
 
 ## Integration Metadata
 
-`integration` defines metadata about the upstream Home Assistant integration.
+`integration` defines metadata about the source Home Assistant integration.
 
 Required fields:
 
@@ -73,107 +86,163 @@ Required fields:
 
 Rules:
 
-- `domain` must match the upstream Home Assistant integration domain
+- `domain` must match the source Home Assistant integration domain
 - `friendly_name` is user-facing only
-- v1 supports exactly one upstream integration per mapping file
-- generic discovery uses `integration.domain` to find candidate Home Assistant devices
+- one mapping file supports one source integration
+- generic discovery uses `integration.domain` to find candidate Home Assistant
+  devices
 
-## Capability Definitions
+## Canonical Capability Set
 
-`capabilities` defines how canonical `my_vehicles` capabilities are derived from source entities and actions.
+Every mapping file must define exactly this set of canonical capabilities:
 
-Supported v1 capability names:
-
-- `lock`
-- `windows`
+- `lock_vehicle`
 - `climate`
 - `charging`
+- `horn`
+- `flash_lights`
+- `warning_lights`
 - `location`
+- `ignition`
+- `driving_range`
+- `range_warning`
+- `odometer`
+- `tire_pressure`
+- `critical_warnings`
+- `info_messages`
+- `windows`
+- `doors`
+- `lids`
+- `battery_level`
 - `refresh`
 
-Each capability may define:
+Rules:
+
+- every listed capability must appear in the YAML
+- unknown capability names are invalid
+- omission is invalid, even when the source integration does not support that
+  capability
+- unsupported capabilities must still be declared via `state.unavailable: true`
+
+This is intentional. It prevents drift between mapping files and makes support
+levels explicit instead of implicit.
+
+## Capability Structure
+
+Each capability must contain:
 
 - `state`
+
+Each capability may contain:
+
 - `actions`
 
-Either section may be omitted.
+`actions` is optional. If it is absent, the capability is treated as not
+actionable by that mapping.
 
-This preserves state/action separation.
-
-Capability boundary:
-
-- capabilities should represent semantic feature areas
-- measurement-like values such as battery level, fuel level, range, and odometer should be modeled in `metrics`
-- `location` remains a capability because it represents support for exposing vehicle position, while `latitude` and `longitude` remain metrics
-
-## Capability State Mapping
-
-A capability `state` block defines how to derive canonical state support and raw values.
-
-Supported v1 state forms:
-
-1. Direct source reference
-2. Template-derived value
-3. Simple aggregation
-
-### Direct Source Reference
-
-```yaml
-capabilities:
-  location:
-    state: device_tracker.{vehicle}_vehicle
-```
-
-Rules:
-
-- `state` points to the primary source entity for passthrough mappings
-- for direct `state` mappings, default Home Assistant metadata should be inherited automatically when available
-- direct `state` mappings are the preferred v1 style
-
-### Template-Derived Value
-
-```yaml
-capabilities:
-  charging:
-    template: "{{ states('sensor.{vehicle}_charging_state') == 'Charging' }}"
-```
-
-Rules:
-
-- `template` is an optional escape hatch for simple derived values
-- `template` should stay read-only and simple
-- templates should not replace structured action or aggregation mappings when a simpler structure exists
-
-### Aggregated State
+Example:
 
 ```yaml
 capabilities:
   windows:
-    any:
-      - binary_sensor.{vehicle}_front_left_window
-      - binary_sensor.{vehicle}_front_right_window
-      - binary_sensor.{vehicle}_rear_left_window
-      - binary_sensor.{vehicle}_rear_right_window
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window
+        - binary_sensor.{vehicle}_rear_left_window
+        - binary_sensor.{vehicle}_rear_right_window
+    actions:
+      open:
+        action: set_windows
+        data:
+          device_id: {device}
+          flwindow: "0"
+          frwindow: "0"
+          rrwindow: "0"
+          rlwindow: "0"
 ```
 
-Supported v1 aggregation operators:
+## State Mapping
+
+Every capability must define exactly one `state` mode.
+
+Supported modes:
+
+1. `entity`
+2. `any`
+3. `all`
+4. `template`
+5. `unavailable: true`
+
+Exactly one of those modes must be present.
+
+### Direct Entity Reference
+
+```yaml
+state:
+  entity: sensor.{vehicle}_odometer
+```
+
+Rules:
+
+- `entity` points to one source entity
+- direct entity mappings are the preferred default
+- default Home Assistant metadata should be inherited automatically when
+  available
+
+### Aggregation
+
+```yaml
+state:
+  any:
+    - binary_sensor.{vehicle}_front_left_window
+    - binary_sensor.{vehicle}_front_right_window
+```
+
+Supported aggregation operators:
 
 - `any`
 - `all`
 
 Rules:
 
-- `any` means true when any mapped source evaluates true
-- `all` means true when all mapped sources evaluate true
-- aggregation is intended for simple multi-entity feature state such as windows
-- aggregation is preferred over templates when the intent is simple boolean combination
+- `any` is true when any mapped source evaluates true
+- `all` is true when all mapped sources evaluate true
+- aggregation should be used instead of templates for simple boolean
+  combinations
 
-## Capability State Metadata
+### Template State
 
-Capability state blocks may optionally define metadata overrides.
+```yaml
+state:
+  domain: binary_sensor
+  template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
+  device_class: problem
+```
 
-Supported optional fields:
+Rules:
 
+- `template` is an escape hatch for simple derived state
+- templates should stay read-only and simple
+- `domain` is required when the runtime cannot infer the resulting entity kind
+
+### Explicit Unavailability
+
+```yaml
+state:
+  unavailable: true
+```
+
+Rules:
+
+- this is the required representation for unsupported canonical capabilities
+- it is not valid to omit the capability instead
+
+## State Metadata
+
+State blocks may optionally define metadata overrides:
+
+- `domain`
 - `device_class`
 - `state_class`
 - `unit_of_measurement`
@@ -183,45 +252,38 @@ Supported optional fields:
 Example:
 
 ```yaml
-capabilities:
-  location:
-    state: device_tracker.{vehicle}_vehicle
-    attributes:
-      - source
-      - gps_accuracy
+state:
+  entity: sensor.{vehicle}_total_driving_range
+  unit_of_measurement: km
+  device_class: distance
+  attributes:
+    - source
 ```
 
 Rules:
 
-- default source metadata should always be included automatically for direct `state` mappings, even when not mentioned
-- explicit metadata fields override inherited values only when needed
-- `attributes` lists additional source attributes to copy through
-- `attributes` should normally be omitted unless extra passthrough attributes are needed
+- source metadata should be inherited automatically for direct `entity` mappings
+- explicit values override inherited metadata
+- `attributes` lists extra source attributes to copy through
+- metadata should only be added when needed
 
-## Capability Actions
+## Actions
 
-A capability `actions` block defines which canonical actions are supported and how they call Home Assistant services. The runtime prefixes `integration.domain` automatically, so mapped action names are relative to that domain unless explicitly marked otherwise.
+`actions` maps canonical verbs to source-integration service calls.
 
 Example:
 
 ```yaml
-capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
-    actions:
-      lock:
-        action: lock
-        data:
-          device_id: {device}
-      unlock:
-        action: unlock
-        data:
-          device_id: {device}
+actions:
+  refresh:
+    action: button.press
+    data:
+      entity_id: button.{vehicle}_force_refresh
 ```
 
 Each action definition must contain:
 
-- `action: <service name>`
+- `action: <domain.service>`
 
 Optional fields:
 
@@ -230,33 +292,43 @@ Optional fields:
 
 Rules:
 
-- action names must match canonical action names used by the `my_vehicles` integration
-- `action` is resolved as `integration.domain + "." + action` by default
-- `data` may contain placeholders
-- `target` remains optional for cases where Home Assistant target selectors are preferable
+- action keys must match the canonical verbs registered in Python for that
+  capability
+- `action` must be fully qualified and unambiguous, for example `kia_uvo.lock`
+  or `button.press`
+- `{device}` is available for runtime device-id substitution
+- `{vehicle}` is available for resolved per-vehicle entity-id substitution
 
-## Metrics Section
+## Placeholder Rules
 
-`metrics` is optional and defines canonical raw metric extraction for measurement-like values that do not belong in `capabilities`.
+Supported placeholders:
 
-Example:
+- `{vehicle}` for the resolved source-vehicle token inside entity ids
+- `{device}` for the target Home Assistant device id in action payloads
 
-```yaml
-metrics:
-  battery_level:
-    state: sensor.{vehicle}_ev_battery_level
+Rules:
 
-  range:
-    state: sensor.{vehicle}_total_driving_range
-    attributes:
-      - source
-      - last_reset
+- `{vehicle}` is resolved per discovered source device
+- `{device}` is resolved at action-execution time
+- no additional placeholders are assumed unless the runtime explicitly adds them
 
-  odometer:
-    state: sensor.{vehicle}_odometer
-```
+## Validation Rules
 
-Supported v1 metric names:
+The loader should reject mappings when any of the following are true:
+
+- `integration` is missing
+- `capabilities` is missing
+- a canonical capability is missing
+- an unknown capability is present
+- a capability has no `state`
+- a `state` block defines zero or multiple modes
+- `unavailable` is present but not `true`
+- `actions` contains verbs that are not canonical for that capability
+- an action definition is missing `action`
+
+There is no backward compatibility with the older split model. Files using
+top-level `metrics` or `derived`, or older capability names, should fail
+validation.
 
 - `range`
 - `odometer`

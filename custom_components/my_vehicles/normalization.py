@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Mapping
 from typing import Any
 
-from .const import CORE_CAPABILITIES
+from .capability_registry import CORE_CAPABILITIES
 from .model import (
     CapabilitySupport,
     NormalizedVehicleData,
@@ -15,17 +14,6 @@ from .model import (
     VehicleInfo,
     VehicleState,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class NormalizationConfig:
-    """Integration-level unit preferences for normalization."""
-
-    distance_unit: str = "km"
-    temperature_unit: str = "C"
-    power_unit: str = "kW"
-    energy_unit: str = "kWh"
-
 
 def normalize_vehicle_state(raw_state: Mapping[str, Any]) -> VehicleState:
     """Map raw state signals into the canonical vehicle state."""
@@ -83,35 +71,78 @@ def infer_capabilities(
     raw_metrics: Mapping[str, Any],
     declared_capabilities: VehicleCapabilities | None = None,
 ) -> VehicleCapabilities:
-    """Infer state support from raw payloads while preserving declared actions."""
+    """Return canonical capability support without drifting from declared mapping support."""
 
-    declared = declared_capabilities or VehicleCapabilities()
+    if declared_capabilities is not None:
+        return VehicleCapabilities(
+            **{
+                capability_name: declared_capabilities.get(capability_name)
+                for capability_name in CORE_CAPABILITIES
+            }
+        )
 
     inferred: dict[str, CapabilitySupport] = {}
+    capability_values = build_capability_values(raw_state, raw_metrics)
     for capability_name in CORE_CAPABILITIES:
-        declared_support = getattr(declared, capability_name)
-        inferred_state = declared_support.state_supported or _infer_state_supported(
-            capability_name, raw_state, raw_metrics
-        )
         inferred[capability_name] = CapabilitySupport(
-            state_supported=inferred_state,
-            action_supported=declared_support.action_supported,
+            state_supported=capability_values.get(capability_name) is not None,
+            action_supported=False,
         )
 
     return VehicleCapabilities(**inferred)
+
+
+def build_capability_values(
+    raw_state: Mapping[str, Any], raw_metrics: Mapping[str, Any]
+) -> dict[str, object]:
+    """Build canonical capability-state values from raw adapter payloads."""
+
+    latitude = _as_float(raw_metrics.get("latitude"))
+    longitude = _as_float(raw_metrics.get("longitude"))
+    location_value: object | None = None
+    if latitude is not None and longitude is not None:
+        location_value = {
+            "latitude": latitude,
+            "longitude": longitude,
+        }
+
+    return {
+        "lock_vehicle": _as_bool(raw_state.get("locked")),
+        "climate": _as_bool(raw_state.get("climate_active")),
+        "charging": _as_bool(raw_state.get("charging_active")),
+        "horn": _as_bool(raw_state.get("horn_active")),
+        "flash_lights": _as_bool(raw_state.get("flash_lights_active")),
+        "warning_lights": _as_bool(raw_state.get("warning_lights_active")),
+        "location": location_value,
+        "ignition": _as_bool(raw_state.get("ignition_on")),
+        "driving_range": _as_float(raw_metrics.get("range")),
+        "range_warning": _as_boolish(
+            raw_state.get("range_warning", raw_metrics.get("range_warning"))
+        ),
+        "odometer": _as_float(raw_metrics.get("odometer")),
+        "tire_pressure": raw_metrics.get("tire_pressure"),
+        "critical_warnings": raw_state.get("critical_warnings"),
+        "info_messages": raw_state.get("info_messages"),
+        "windows": normalize_openings(_as_mapping(raw_metrics.get("openings"))),
+        "doors": _as_boolish(raw_metrics.get("doors_open")),
+        "lids": _as_boolish(raw_metrics.get("lids_open")),
+        "battery_level": _as_float(raw_metrics.get("battery_level")),
+        "refresh": None,
+    }
 
 
 def normalize_vehicle_data(
     raw_state: Mapping[str, Any],
     raw_metrics: Mapping[str, Any],
     capabilities: VehicleCapabilities,
-    config: NormalizationConfig | None = None,
 ) -> NormalizedVehicleData:
     """Build a canonical vehicle snapshot from raw adapter payloads."""
 
-    normalization_config = config or NormalizationConfig()
     source_units = normalize_source_units(raw_metrics)
+    capability_values = build_capability_values(raw_state, raw_metrics)
     normalized_capabilities = infer_capabilities(raw_state, raw_metrics, capabilities)
+    driving_range = _as_float(capability_values.get("driving_range"))
+    odometer = _as_float(capability_values.get("odometer"))
 
     info = VehicleInfo(
         vehicle_id=_as_str(raw_state.get("vehicle_id")) or "unknown-vehicle",
@@ -125,32 +156,25 @@ def normalize_vehicle_data(
         info=info,
         state=normalize_vehicle_state(raw_state),
         capabilities=normalized_capabilities,
+        capability_values=capability_values,
         battery_level=_as_float(raw_metrics.get("battery_level")),
         fuel_level=_as_float(raw_metrics.get("fuel_level")),
-        range=_normalize_distance(
-            raw_metrics.get("range"),
-            source_units.distance_unit,
-            normalization_config.distance_unit,
-        ),
+        driving_range=driving_range,
+        range=driving_range,
         locked=_as_bool(raw_state.get("locked")),
         windows_open=normalize_openings(_as_mapping(raw_metrics.get("openings"))),
         climate_active=_as_bool(raw_state.get("climate_active")),
         charging_active=_as_bool(raw_state.get("charging_active")),
         charging_plugged=_as_bool(raw_state.get("charging_plugged")),
+        ignition_on=_as_bool(raw_state.get("ignition_on")),
+        range_warning=_as_boolish(capability_values.get("range_warning")),
         latitude=_as_float(raw_metrics.get("latitude")),
         longitude=_as_float(raw_metrics.get("longitude")),
-        odometer=_normalize_distance(
-            raw_metrics.get("odometer"),
-            source_units.distance_unit,
-            normalization_config.distance_unit,
-        ),
+        odometer=odometer,
+        critical_warnings=capability_values.get("critical_warnings"),
+        info_messages=capability_values.get("info_messages"),
         source_units=source_units,
-        display_units=SourceUnits(
-            distance_unit=normalization_config.distance_unit,
-            temperature_unit=normalization_config.temperature_unit,
-            power_unit=normalization_config.power_unit,
-            energy_unit=normalization_config.energy_unit,
-        ),
+        display_units=source_units,
     )
 
 
@@ -162,94 +186,28 @@ def build_vehicle_attributes(data: NormalizedVehicleData) -> dict[str, Any]:
         "model": data.info.model,
         "vehicle_type": data.info.vehicle_type,
         "battery_level": data.battery_level,
-        "fuel_level": data.fuel_level,
+        "driving_range": data.driving_range,
         "range": data.range,
         "locked": data.locked,
         "windows_open": data.windows_open,
         "climate_active": data.climate_active,
         "charging_active": data.charging_active,
         "charging_plugged": data.charging_plugged,
+        "ignition_on": data.ignition_on,
+        "range_warning": data.range_warning,
         "latitude": data.latitude,
         "longitude": data.longitude,
         "odometer": data.odometer,
+        "critical_warnings": data.critical_warnings,
+        "info_messages": data.info_messages,
     }
 
-    for capability_name in (
-        "lock",
-        "windows",
-        "climate",
-        "charging",
-        "location",
-        "battery",
-        "fuel",
-        "odometer",
-        "refresh",
-    ):
-        support = getattr(data.capabilities, capability_name)
+    for capability_name in CORE_CAPABILITIES:
+        support = data.capabilities.get(capability_name)
         attributes[f"{capability_name}_state_supported"] = support.state_supported
         attributes[f"{capability_name}_action_supported"] = support.action_supported
 
     return attributes
-
-
-def _normalize_distance(
-    value: Any, source_unit: str | None, target_unit: str
-) -> float | None:
-    """Normalize distance-based values into the configured unit."""
-
-    numeric_value = _as_float(value)
-    if numeric_value is None:
-        return None
-
-    normalized_source = _normalize_distance_unit(source_unit)
-    normalized_target = _normalize_distance_unit(target_unit)
-    if normalized_source is None or normalized_source == normalized_target:
-        return numeric_value
-    if normalized_source == "km" and normalized_target == "mi":
-        return round(numeric_value * 0.621371, 3)
-    if normalized_source == "mi" and normalized_target == "km":
-        return round(numeric_value / 0.621371, 3)
-    return numeric_value
-
-
-def _infer_state_supported(
-    capability_name: str, raw_state: Mapping[str, Any], raw_metrics: Mapping[str, Any]
-) -> bool:
-    if capability_name == "lock":
-        return isinstance(raw_state.get("locked"), bool)
-    if capability_name == "windows":
-        return isinstance(raw_metrics.get("openings"), Mapping)
-    if capability_name == "climate":
-        return isinstance(raw_state.get("climate_active"), bool)
-    if capability_name == "charging":
-        return any(
-            isinstance(raw_state.get(key), bool)
-            for key in ("charging_active", "charging_plugged")
-        )
-    if capability_name == "location":
-        return _as_float(raw_metrics.get("latitude")) is not None and _as_float(
-            raw_metrics.get("longitude")
-        ) is not None
-    if capability_name == "battery":
-        return _as_float(raw_metrics.get("battery_level")) is not None
-    if capability_name == "fuel":
-        return _as_float(raw_metrics.get("fuel_level")) is not None
-    if capability_name == "odometer":
-        return _as_float(raw_metrics.get("odometer")) is not None
-    if capability_name == "refresh":
-        return False
-    return False
-
-
-def _normalize_distance_unit(unit: str | None) -> str | None:
-    if unit is None:
-        return None
-    normalized = unit.lower()
-    if normalized in {"km", "kilometer", "kilometers"}:
-        return "km"
-    if normalized in {"mi", "mile", "miles"}:
-        return "mi"
-    return None
 
 
 def _as_mapping(value: Any) -> Mapping[str, Any] | None:
@@ -262,6 +220,18 @@ def _as_str(value: Any) -> str | None:
 
 def _as_bool(value: Any) -> bool | None:
     return value if isinstance(value, bool) else None
+
+
+def _as_boolish(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "on", "open", "1", "locked", "charging"}:
+            return True
+        if normalized in {"false", "off", "closed", "0", "unlocked"}:
+            return False
+    return None
 
 
 def _as_float(value: Any) -> float | None:

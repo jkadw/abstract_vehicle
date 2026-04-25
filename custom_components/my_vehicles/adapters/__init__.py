@@ -33,7 +33,6 @@ from .mapped import MappedVehicleAdapter
 from .runtime import (
     MappingRuntime,
     PreparedAction,
-    ResolvedDerivedEntity,
     ResolvedMappingRuntime,
 )
 from .registry import (
@@ -69,7 +68,6 @@ __all__ = [
     "PreparedAction",
     "RawMetricsPayload",
     "RawStatePayload",
-    "ResolvedDerivedEntity",
     "ResolvedMappingRuntime",
     "StateMapping",
     "UnsupportedVehicleActionError",

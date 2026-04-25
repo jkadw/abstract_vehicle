@@ -3,27 +3,85 @@ integration:
   friendly_name: Hyundai / Kia Connect
 
 capabilities:
-  lock:
-    state: lock.{vehicle}_door_lock
+  lock_vehicle:
+    state:
+      entity: lock.{vehicle}_door_lock
     actions:
       lock:
-        action: lock
+        action: kia_uvo.lock
         data:
           device_id: {device}
       unlock:
-        action: unlock
+        action: kia_uvo.unlock
         data:
           device_id: {device}
 
+  climate:
+    state:
+      unavailable: true
+
+  charging:
+    state:
+      unavailable: true
+
+  horn:
+    state:
+      unavailable: true
+
+  flash_lights:
+    state:
+      unavailable: true
+
+  warning_lights:
+    state:
+      unavailable: true
+
+  location:
+    state:
+      entity: device_tracker.{vehicle}_vehicle
+
+  ignition:
+    state:
+      unavailable: true
+
+  driving_range:
+    state:
+      entity: sensor.{vehicle}_total_driving_range
+
+  range_warning:
+    state:
+      domain: binary_sensor
+      template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
+      device_class: problem
+
+  odometer:
+    state:
+      entity: sensor.{vehicle}_odometer
+      device_class: distance
+      state_class: total_increasing
+
+  tire_pressure:
+    state:
+      unavailable: true
+
+  critical_warnings:
+    state:
+      unavailable: true
+
+  info_messages:
+    state:
+      unavailable: true
+
   windows:
-    any:
-      - binary_sensor.{vehicle}_front_left_window
-      - binary_sensor.{vehicle}_front_right_window
-      - binary_sensor.{vehicle}_rear_left_window
-      - binary_sensor.{vehicle}_rear_right_window
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window
+        - binary_sensor.{vehicle}_rear_left_window
+        - binary_sensor.{vehicle}_rear_right_window
     actions:
       open:
-        action: set_windows
+        action: kia_uvo.set_windows
         data:
           device_id: {device}
           flwindow: "0"
@@ -31,27 +89,23 @@ capabilities:
           rrwindow: "0"
           rlwindow: "0"
 
-  location:
-    state: device_tracker.{vehicle}_vehicle
+  doors:
+    state:
+      unavailable: true
+
+  lids:
+    state:
+      unavailable: true
+
+  battery_level:
+    state:
+      entity: sensor.{vehicle}_ev_battery_level
 
   refresh:
+    state:
+      unavailable: true
     actions:
       refresh:
-        action: press
+        action: button.press
         data:
           entity_id: button.{vehicle}_force_refresh
-
-metrics:
-  battery_level:
-    state: sensor.{vehicle}_ev_battery_level
-
-  range:
-    state: sensor.{vehicle}_total_driving_range
-
-  odometer:
-    state: sensor.{vehicle}_odometer
-
-derived:
-  range_warning:
-    domain: binary_sensor
-    template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"

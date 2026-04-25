@@ -10,7 +10,6 @@ from custom_components.my_vehicles.adapters.loader import _load_adapter_class
 from custom_components.my_vehicles.adapters.registry import get_adapter_definition
 from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
 from custom_components.my_vehicles.normalization import (
-    NormalizationConfig,
     normalize_vehicle_data,
 )
 
@@ -215,14 +214,14 @@ async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> No
     assert raw_metrics["range"] == 198.0
     assert raw_metrics["latitude"] == 33.749
     assert raw_metrics["openings"]["santa_fe_front_right_window"] == "open"
-    assert capabilities.lock.action_supported is True
+    assert capabilities.lock_vehicle.action_supported is True
     assert capabilities.windows.state_supported is True
     assert capabilities.refresh.action_supported is True
 
 
 @pytest.mark.asyncio
-async def test_kia_uvo_adapter_relies_on_normalization_for_units_and_entities() -> None:
-    """Mapped raw values should still be normalized centrally."""
+async def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -> None:
+    """Mapped raw values should normalize into the unified capability model."""
 
     adapter = _kia_uvo_adapter_class()(
         hass=_fake_hass(),
@@ -233,14 +232,14 @@ async def test_kia_uvo_adapter_relies_on_normalization_for_units_and_entities() 
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
         await adapter.get_capabilities(),
-        config=NormalizationConfig(distance_unit="km"),
     )
 
     assert normalized.state.value == "parked"
-    assert normalized.range == 318.65
-    assert normalized.odometer == 20036.463
+    assert normalized.driving_range == 198.0
+    assert normalized.range == 198.0
+    assert normalized.odometer == 12450.0
     assert normalized.capabilities.location.state_supported is True
-    assert normalized.capabilities.battery.state_supported is True
+    assert normalized.capabilities.battery_level.state_supported is True
 
 
 @pytest.mark.asyncio

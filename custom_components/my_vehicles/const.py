@@ -2,6 +2,8 @@
 
 from typing import Final
 
+from .capability_registry import DOCUMENTED_ATTRIBUTE_SCHEMA as REGISTRY_ATTRIBUTE_SCHEMA
+
 DOMAIN: Final = "my_vehicles"
 PLATFORMS: Final[tuple[str, ...]] = (
     "sensor",
@@ -41,49 +43,4 @@ NORMALIZED_STATES: Final[tuple[str, ...]] = (
     "error",
 )
 
-CORE_CAPABILITIES: Final[tuple[str, ...]] = (
-    "lock",
-    "windows",
-    "climate",
-    "charging",
-    "location",
-    "battery",
-    "fuel",
-    "odometer",
-    "refresh",
-)
-
-DOCUMENTED_ATTRIBUTE_SCHEMA: Final[tuple[str, ...]] = (
-    "manufacturer",
-    "model",
-    "vehicle_type",
-    "battery_level",
-    "fuel_level",
-    "range",
-    "locked",
-    "windows_open",
-    "climate_active",
-    "charging_active",
-    "charging_plugged",
-    "latitude",
-    "longitude",
-    "odometer",
-    "lock_state_supported",
-    "lock_action_supported",
-    "windows_state_supported",
-    "windows_action_supported",
-    "climate_state_supported",
-    "climate_action_supported",
-    "charging_state_supported",
-    "charging_action_supported",
-    "location_state_supported",
-    "location_action_supported",
-    "battery_state_supported",
-    "battery_action_supported",
-    "fuel_state_supported",
-    "fuel_action_supported",
-    "odometer_state_supported",
-    "odometer_action_supported",
-    "refresh_state_supported",
-    "refresh_action_supported",
-)
+DOCUMENTED_ATTRIBUTE_SCHEMA: Final[tuple[str, ...]] = REGISTRY_ATTRIBUTE_SCHEMA

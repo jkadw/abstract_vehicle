@@ -8,10 +8,11 @@ from typing import Any
 
 import yaml
 
+from ..capability_registry import CANONICAL_ACTIONS, CORE_CAPABILITIES
+
 
 class MappingValidationError(ValueError):
     """Raised when a mapping file is structurally invalid."""
-
 
 _METADATA_KEYS = {
     "device_class",
@@ -52,20 +53,21 @@ class ActionMapping:
 
 @dataclass(frozen=True, slots=True)
 class StateMapping:
-    """Shared shape for capability, metric, and derived value mappings."""
+    """Validated state definition for one canonical capability."""
 
-    state: str | None = None
+    entity: str | None = None
     template: str | None = None
     any: tuple[str, ...] = ()
     all: tuple[str, ...] = ()
+    unavailable: bool = False
     domain: str | None = None
     metadata: MappingMetadata = field(default_factory=MappingMetadata)
 
     def source_entities(self) -> tuple[str, ...]:
         """Return all referenced source entities for this mapping."""
 
-        if self.state is not None:
-            return (self.state,)
+        if self.entity is not None:
+            return (self.entity,)
         if self.any:
             return self.any
         if self.all:
@@ -75,23 +77,25 @@ class StateMapping:
     def mode(self) -> str:
         """Return the primary mapping mode name."""
 
-        if self.state is not None:
-            return "state"
+        if self.entity is not None:
+            return "entity"
         if self.template is not None:
             return "template"
         if self.any:
             return "any"
         if self.all:
             return "all"
+        if self.unavailable:
+            return "unavailable"
         return "empty"
 
 
 @dataclass(frozen=True, slots=True)
 class CapabilityMapping:
-    """Canonical capability mapping with optional state and actions."""
+    """Canonical capability mapping with required state and optional actions."""
 
     name: str
-    state: StateMapping | None = None
+    state: StateMapping
     actions: dict[str, ActionMapping] = field(default_factory=dict)
 
 
@@ -101,23 +105,11 @@ class VehicleAdapterMapping:
 
     integration: MappingIntegration
     capabilities: dict[str, CapabilityMapping]
-    metrics: dict[str, StateMapping] = field(default_factory=dict)
-    derived: dict[str, StateMapping] = field(default_factory=dict)
 
     def capability(self, name: str) -> CapabilityMapping | None:
         """Return one capability mapping by canonical name."""
 
         return self.capabilities.get(name)
-
-    def metric(self, name: str) -> StateMapping | None:
-        """Return one metric mapping by canonical name."""
-
-        return self.metrics.get(name)
-
-    def derived_entity(self, name: str) -> StateMapping | None:
-        """Return one derived entity mapping by name."""
-
-        return self.derived.get(name)
 
 
 def load_mapping_file(path: str | Path) -> VehicleAdapterMapping:
@@ -147,14 +139,14 @@ def load_adapter_mapping(adapter_name: str) -> VehicleAdapterMapping:
 
 def _parse_mapping(raw_data: dict[str, Any]) -> VehicleAdapterMapping:
     integration = _parse_integration(raw_data.get("integration"))
+    if "metrics" in raw_data:
+        raise MappingValidationError("metrics is not supported in the unified schema")
+    if "derived" in raw_data:
+        raise MappingValidationError("derived is not supported in the unified schema")
     capabilities = _parse_capabilities(raw_data.get("capabilities"))
-    metrics = _parse_named_state_mappings(raw_data.get("metrics"), "metrics")
-    derived = _parse_named_state_mappings(raw_data.get("derived"), "derived")
     return VehicleAdapterMapping(
         integration=integration,
         capabilities=capabilities,
-        metrics=metrics,
-        derived=derived,
     )
 
 
@@ -177,6 +169,22 @@ def _parse_capabilities(raw_capabilities: Any) -> dict[str, CapabilityMapping]:
     if not isinstance(raw_capabilities, dict) or not raw_capabilities:
         raise MappingValidationError("capabilities must be a non-empty dictionary")
 
+    unknown = sorted(set(raw_capabilities) - set(CORE_CAPABILITIES))
+    if unknown:
+        raise MappingValidationError(
+            f"Unknown canonical capabilities: {', '.join(unknown)}"
+        )
+
+    missing = [
+        capability
+        for capability in CORE_CAPABILITIES
+        if capability not in raw_capabilities
+    ]
+    if missing:
+        raise MappingValidationError(
+            f"Missing canonical capabilities: {', '.join(missing)}"
+        )
+
     capabilities: dict[str, CapabilityMapping] = {}
     for capability_name, raw_mapping in raw_capabilities.items():
         if not isinstance(capability_name, str) or not capability_name:
@@ -186,19 +194,21 @@ def _parse_capabilities(raw_capabilities: Any) -> dict[str, CapabilityMapping]:
                 f"capabilities.{capability_name} must be a dictionary"
             )
 
+        raw_state = raw_mapping.get("state")
+        if not isinstance(raw_state, dict):
+            raise MappingValidationError(
+                f"capabilities.{capability_name}.state must be a dictionary"
+            )
+
         actions = _parse_actions(
             raw_mapping.get("actions"),
             context=f"capabilities.{capability_name}.actions",
+            capability_name=capability_name,
         )
         state_mapping = _parse_state_mapping(
-            raw_mapping,
-            context=f"capabilities.{capability_name}",
-            require_domain=False,
+            raw_state,
+            context=f"capabilities.{capability_name}.state",
         )
-        if state_mapping is None and not actions:
-            raise MappingValidationError(
-                f"capabilities.{capability_name} must define state/template/any/all or actions"
-            )
         capabilities[capability_name] = CapabilityMapping(
             name=capability_name,
             state=state_mapping,
@@ -208,64 +218,45 @@ def _parse_capabilities(raw_capabilities: Any) -> dict[str, CapabilityMapping]:
     return capabilities
 
 
-def _parse_named_state_mappings(
-    raw_section: Any, section_name: str
-) -> dict[str, StateMapping]:
-    if raw_section is None:
-        return {}
-    if not isinstance(raw_section, dict):
-        raise MappingValidationError(f"{section_name} must be a dictionary")
-
-    parsed: dict[str, StateMapping] = {}
-    for name, raw_mapping in raw_section.items():
-        if not isinstance(name, str) or not name:
-            raise MappingValidationError(
-                f"{section_name} keys must be non-empty strings"
-            )
-        if not isinstance(raw_mapping, dict):
-            raise MappingValidationError(f"{section_name}.{name} must be a dictionary")
-        mapping = _parse_state_mapping(
-            raw_mapping,
-            context=f"{section_name}.{name}",
-            require_domain=section_name == "derived",
-        )
-        if mapping is None:
-            raise MappingValidationError(
-                f"{section_name}.{name} must define state/template/any/all"
-            )
-        parsed[name] = mapping
-
-    return parsed
-
-
 def _parse_state_mapping(
     raw_mapping: dict[str, Any],
     *,
     context: str,
-    require_domain: bool,
-) -> StateMapping | None:
+) -> StateMapping:
     mode_values = {
-        "state": raw_mapping.get("state"),
+        "entity": raw_mapping.get("entity"),
         "template": raw_mapping.get("template"),
         "any": raw_mapping.get("any"),
         "all": raw_mapping.get("all"),
+        "unavailable": raw_mapping.get("unavailable"),
     }
     present_modes = [
         key
         for key, value in mode_values.items()
-        if value not in (None, [], ())
+        if value not in (None, [], (), False)
     ]
-    if not present_modes:
-        return None
-    if len(present_modes) > 1:
+    if len(present_modes) != 1:
         raise MappingValidationError(
-            f"{context} must define only one of state/template/any/all"
+            f"{context} must define exactly one of entity/template/any/all/unavailable"
         )
 
-    state_value = raw_mapping.get("state")
+    entity_value = raw_mapping.get("entity")
     template_value = raw_mapping.get("template")
     raw_any = raw_mapping.get("any")
     raw_all = raw_mapping.get("all")
+    unavailable_value = raw_mapping.get("unavailable", False)
+
+    if entity_value is not None and not isinstance(entity_value, str):
+        raise MappingValidationError(f"{context}.entity must be a string")
+    if template_value is not None and not isinstance(template_value, str):
+        raise MappingValidationError(f"{context}.template must be a string")
+    if unavailable_value not in (False, True):
+        raise MappingValidationError(f"{context}.unavailable must be true when set")
+    if unavailable_value is True and present_modes != ["unavailable"]:
+        raise MappingValidationError(
+            f"{context}.unavailable may not be combined with other state modes"
+        )
+
     any_value = (
         _as_string_tuple(raw_any, context=f"{context}.any")
         if raw_any not in (None, ())
@@ -279,35 +270,39 @@ def _parse_state_mapping(
     domain_value = raw_mapping.get("domain")
     if domain_value is not None and not isinstance(domain_value, str):
         raise MappingValidationError(f"{context}.domain must be a string when set")
-    if require_domain and not isinstance(domain_value, str):
-        raise MappingValidationError(f"{context}.domain is required")
-
-    if state_value is not None and not isinstance(state_value, str):
-        raise MappingValidationError(f"{context}.state must be a string")
-    if template_value is not None and not isinstance(template_value, str):
-        raise MappingValidationError(f"{context}.template must be a string")
 
     metadata = _parse_metadata(raw_mapping, context=context)
     return StateMapping(
-        state=state_value if isinstance(state_value, str) else None,
+        entity=entity_value if isinstance(entity_value, str) else None,
         template=template_value if isinstance(template_value, str) else None,
         any=any_value,
         all=all_value,
+        unavailable=unavailable_value is True,
         domain=domain_value if isinstance(domain_value, str) else None,
         metadata=metadata,
     )
 
 
-def _parse_actions(raw_actions: Any, *, context: str) -> dict[str, ActionMapping]:
+def _parse_actions(
+    raw_actions: Any,
+    *,
+    context: str,
+    capability_name: str,
+) -> dict[str, ActionMapping]:
     if raw_actions is None:
         return {}
     if not isinstance(raw_actions, dict):
         raise MappingValidationError(f"{context} must be a dictionary")
 
+    allowed_verbs = set(CANONICAL_ACTIONS[capability_name])
     parsed: dict[str, ActionMapping] = {}
     for action_name, raw_action in raw_actions.items():
         if not isinstance(action_name, str) or not action_name:
             raise MappingValidationError(f"{context} keys must be non-empty strings")
+        if action_name not in allowed_verbs:
+            raise MappingValidationError(
+                f"{context}.{action_name} is not a valid canonical verb for {capability_name}"
+            )
         if not isinstance(raw_action, dict):
             raise MappingValidationError(f"{context}.{action_name} must be a dictionary")
 
@@ -315,6 +310,15 @@ def _parse_actions(raw_actions: Any, *, context: str) -> dict[str, ActionMapping
         if not isinstance(action, str) or not action:
             raise MappingValidationError(
                 f"{context}.{action_name}.action must be a non-empty string"
+            )
+        if "." not in action:
+            raise MappingValidationError(
+                f"{context}.{action_name}.action must be a fully qualified domain.service"
+            )
+        action_domain, action_service = action.split(".", 1)
+        if not action_domain or not action_service:
+            raise MappingValidationError(
+                f"{context}.{action_name}.action must be a fully qualified domain.service"
             )
         data = raw_action.get("data", {})
         target = raw_action.get("target", {})

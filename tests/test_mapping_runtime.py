@@ -88,22 +88,24 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
     )
     resolved = runtime.resolve()
 
-    assert resolved.capability_states["lock"] == "locked"
+    assert resolved.capability_states["lock_vehicle"] == "locked"
     assert resolved.capability_states["windows"] is True
     assert resolved.capability_states["location"] == "home"
-    assert resolved.metrics["battery_level"] == "76.5"
-    assert resolved.metrics["range"] == "42"
-    assert resolved.metrics["odometer"] == "12001"
-    assert resolved.derived["range_warning"].value == "True"
-    assert resolved.capabilities.lock.state_supported is True
+    assert resolved.capability_states["battery_level"] == "76.5"
+    assert resolved.capability_states["driving_range"] == "42"
+    assert resolved.capability_states["odometer"] == "12001"
+    assert resolved.capability_states["range_warning"] is True
+    assert resolved.capabilities.lock_vehicle.state_supported is True
     assert resolved.capabilities.windows.state_supported is True
     assert resolved.capabilities.refresh.action_supported is True
-    assert resolved.actions["lock"]["lock"].service == "kia_uvo.lock"
-    assert resolved.actions["lock"]["lock"].data["device_id"] == "device-123"
+    assert resolved.actions["lock_vehicle"]["lock"].service == "kia_uvo.lock"
+    assert (
+        resolved.actions["lock_vehicle"]["lock"].data["device_id"] == "device-123"
+    )
     assert resolved.actions["windows"]["open"].service == "kia_uvo.set_windows"
     assert resolved.actions["windows"]["open"].data["device_id"] == "device-123"
     assert resolved.actions["windows"]["open"].data["flwindow"] == "0"
-    assert resolved.actions["refresh"]["refresh"].service == "kia_uvo.press"
+    assert resolved.actions["refresh"]["refresh"].service == "button.press"
     assert (
         resolved.actions["refresh"]["refresh"].data["entity_id"]
         == "button.santa_fe_force_refresh"

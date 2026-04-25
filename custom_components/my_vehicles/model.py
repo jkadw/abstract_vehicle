@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Iterator
 
-from .const import CORE_CAPABILITIES, DOCUMENTED_ATTRIBUTE_SCHEMA, NORMALIZED_STATES
+from .capability_registry import (
+    CANONICAL_ACTIONS,
+    CORE_CAPABILITIES,
+    DOCUMENTED_ATTRIBUTE_SCHEMA,
+)
+from .const import NORMALIZED_STATES
 
 
 class VehicleState(str, Enum):
@@ -30,17 +36,36 @@ class CapabilitySupport:
 
 @dataclass(frozen=True, slots=True)
 class VehicleCapabilities:
-    """Capability support matrix for the normalized vehicle model."""
+    """Capability support matrix keyed by canonical capability name."""
 
-    lock: CapabilitySupport = field(default_factory=CapabilitySupport)
-    windows: CapabilitySupport = field(default_factory=CapabilitySupport)
-    climate: CapabilitySupport = field(default_factory=CapabilitySupport)
-    charging: CapabilitySupport = field(default_factory=CapabilitySupport)
-    location: CapabilitySupport = field(default_factory=CapabilitySupport)
-    battery: CapabilitySupport = field(default_factory=CapabilitySupport)
-    fuel: CapabilitySupport = field(default_factory=CapabilitySupport)
-    odometer: CapabilitySupport = field(default_factory=CapabilitySupport)
-    refresh: CapabilitySupport = field(default_factory=CapabilitySupport)
+    _supports: dict[str, CapabilitySupport] = field(init=False, repr=False)
+
+    def __init__(self, **supports: CapabilitySupport) -> None:
+        unknown = sorted(set(supports) - set(CORE_CAPABILITIES))
+        if unknown:
+            raise ValueError(
+                f"Unknown canonical capabilities: {', '.join(unknown)}"
+            )
+        normalized = {
+            capability_name: supports.get(capability_name, CapabilitySupport())
+            for capability_name in CORE_CAPABILITIES
+        }
+        object.__setattr__(self, "_supports", normalized)
+
+    def __getattr__(self, name: str) -> CapabilitySupport:
+        try:
+            return self._supports[name]
+        except KeyError as err:
+            raise AttributeError(name) from err
+
+    def get(self, name: str) -> CapabilitySupport:
+        return self._supports.get(name, CapabilitySupport())
+
+    def items(self) -> Iterator[tuple[str, CapabilitySupport]]:
+        return iter(self._supports.items())
+
+    def as_dict(self) -> dict[str, CapabilitySupport]:
+        return dict(self._supports)
 
 
 DOCUMENTED_CAPABILITY_SCHEMA = CORE_CAPABILITIES
@@ -74,16 +99,22 @@ class NormalizedVehicleData:
     info: VehicleInfo
     state: VehicleState
     capabilities: VehicleCapabilities
+    capability_values: dict[str, object] = field(default_factory=dict)
     battery_level: float | None = None
     fuel_level: float | None = None
+    driving_range: float | None = None
     range: float | None = None
     locked: bool | None = None
     windows_open: bool | None = None
     climate_active: bool | None = None
     charging_active: bool | None = None
     charging_plugged: bool | None = None
+    ignition_on: bool | None = None
+    range_warning: bool | None = None
     latitude: float | None = None
     longitude: float | None = None
     odometer: float | None = None
+    critical_warnings: object | None = None
+    info_messages: object | None = None
     source_units: SourceUnits = field(default_factory=SourceUnits)
     display_units: SourceUnits = field(default_factory=SourceUnits)
