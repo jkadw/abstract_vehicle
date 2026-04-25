@@ -102,6 +102,7 @@ def build_vehicle_payload_from_device(
         or getattr(device, "name", None)
         or f"{mapping.integration.domain} vehicle",
         "manufacturer": getattr(device, "manufacturer", None) or "Unknown",
+        "model": getattr(device, "model", None) or "Unknown",
         "source_device_id": getattr(device, "id", None),
         "source_vehicle": source_vehicle,
         "source_entity_ids": sorted(source_entity_ids),

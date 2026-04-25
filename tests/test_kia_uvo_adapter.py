@@ -59,12 +59,14 @@ class _Device:
         identifiers,
         name: str,
         manufacturer: str,
+        model: str = "EV6",
     ) -> None:
         self.id = device_id
         self.identifiers = identifiers
         self.name = name
         self.name_by_user = None
         self.manufacturer = manufacturer
+        self.model = model
 
 
 class _DeviceRegistry:
@@ -185,6 +187,7 @@ async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> Non
     assert len(discovered) == 1
     assert discovered[0].vehicle_id == "kia-1"
     assert discovered[0].title == "Kia EV6"
+    assert discovered[0].payload["model"] == "EV6"
     assert discovered[0].payload["source_vehicle"] == "santa_fe"
     assert discovered[0].payload["source_device_id"] == "device-123"
 
@@ -205,6 +208,7 @@ async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> No
 
     assert raw_state["vehicle_id"] == "kia-1"
     assert raw_state["manufacturer"] == "Kia"
+    assert raw_state["model"] == "EV6"
     assert raw_state["status"] == "parked"
     assert raw_state["locked"] is True
     assert raw_metrics["battery_level"] == 61.5
