@@ -39,12 +39,14 @@ if "voluptuous" not in sys.modules:
 
 if "homeassistant" not in sys.modules:
     homeassistant = types.ModuleType("homeassistant")
+    const = types.ModuleType("homeassistant.const")
     config_entries = types.ModuleType("homeassistant.config_entries")
     core = types.ModuleType("homeassistant.core")
     exceptions = types.ModuleType("homeassistant.exceptions")
     helpers = types.ModuleType("homeassistant.helpers")
     entity_module = types.ModuleType("homeassistant.helpers.entity")
     device_registry_module = types.ModuleType("homeassistant.helpers.device_registry")
+    entity_registry_module = types.ModuleType("homeassistant.helpers.entity_registry")
     config_validation_module = types.ModuleType("homeassistant.helpers.config_validation")
     data_entry_flow = types.ModuleType("homeassistant.data_entry_flow")
     components = types.ModuleType("homeassistant.components")
@@ -64,6 +66,10 @@ if "homeassistant" not in sys.modules:
     class HomeAssistant:
         def __init__(self):
             self.data = {}
+
+    class Event:
+        def __init__(self, data: dict | None = None):
+            self.data = data or {}
 
     class ServiceCall:
         def __init__(self, data: dict):
@@ -86,22 +92,28 @@ if "homeassistant" not in sys.modules:
     class SensorEntity(Entity):
         pass
 
+    const.EVENT_HOMEASSISTANT_STARTED = "homeassistant_started"
     config_entries.ConfigFlow = ConfigFlow
     config_entries.ConfigEntry = ConfigEntry
     core.HomeAssistant = HomeAssistant
+    core.Event = Event
     core.ServiceCall = ServiceCall
     exceptions.HomeAssistantError = HomeAssistantError
     exceptions.ServiceValidationError = ServiceValidationError
     entity_module.Entity = Entity
     device_registry_module.DeviceInfo = DeviceInfo
+    entity_registry_module.async_get = lambda hass: None
     config_validation_module.entity_id = lambda value: value
+    config_validation_module.string = lambda value: value
     data_entry_flow.FlowResult = dict
     sensor.SensorEntity = SensorEntity
     entity_platform.AddEntitiesCallback = object
 
     helpers.entity = entity_module
     helpers.device_registry = device_registry_module
+    helpers.entity_registry = entity_registry_module
     helpers.config_validation = config_validation_module
+    homeassistant.const = const
     homeassistant.config_entries = config_entries
     homeassistant.core = core
     homeassistant.exceptions = exceptions
@@ -111,12 +123,14 @@ if "homeassistant" not in sys.modules:
     components.sensor = sensor
 
     sys.modules["homeassistant"] = homeassistant
+    sys.modules["homeassistant.const"] = const
     sys.modules["homeassistant.config_entries"] = config_entries
     sys.modules["homeassistant.core"] = core
     sys.modules["homeassistant.exceptions"] = exceptions
     sys.modules["homeassistant.helpers"] = helpers
     sys.modules["homeassistant.helpers.entity"] = entity_module
     sys.modules["homeassistant.helpers.device_registry"] = device_registry_module
+    sys.modules["homeassistant.helpers.entity_registry"] = entity_registry_module
     sys.modules["homeassistant.helpers.config_validation"] = config_validation_module
     sys.modules["homeassistant.data_entry_flow"] = data_entry_flow
     sys.modules["homeassistant.components"] = components
