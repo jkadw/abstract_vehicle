@@ -6,19 +6,19 @@ import logging
 
 import pytest
 
-from custom_components.vehicle import (
+from custom_components.my_vehicles import (
     _log_vehicle_reconciliation,
     _snapshot_vehicle_ids,
     async_setup_entry,
 )
-from custom_components.vehicle.adapters.base import DiscoveredVehicle
-from custom_components.vehicle.const import (
+from custom_components.my_vehicles.adapters.base import DiscoveredVehicle
+from custom_components.my_vehicles.const import (
     CONF_ADAPTER,
     DATA_DISCOVERY_SNAPSHOTS,
     DATA_VEHICLES,
     DOMAIN,
 )
-from custom_components.vehicle.model import VehicleCapabilities
+from custom_components.my_vehicles.model import VehicleCapabilities
 
 
 class _FakeEntry:

@@ -3,39 +3,39 @@ lock:
   description: Lock the selected vehicle if lock actions are supported.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles
 
 unlock:
   name: Unlock Vehicle
   description: Unlock the selected vehicle if lock actions are supported.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles
 
 start_climate:
   name: Start Climate
   description: Start climate control for the selected vehicle if supported.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles
 
 stop_climate:
   name: Stop Climate
   description: Stop climate control for the selected vehicle if supported.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles
 
 refresh:
   name: Refresh Vehicle
   description: Trigger a refresh for the selected vehicle if the adapter supports it.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles
 
 diagnostics:
   name: Vehicle Diagnostics
   description: Collect read-only diagnostics for the selected vehicle without executing upstream actions.
   target:
     device:
-      integration: vehicle
+      integration: my_vehicles

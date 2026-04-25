@@ -6,10 +6,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.vehicle.adapters.loader import _load_adapter_class
-from custom_components.vehicle.adapters.registry import get_adapter_definition
-from custom_components.vehicle.adapters.base import UnsupportedVehicleActionError
-from custom_components.vehicle.normalization import (
+from custom_components.my_vehicles.adapters.loader import _load_adapter_class
+from custom_components.my_vehicles.adapters.registry import get_adapter_definition
+from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
+from custom_components.my_vehicles.normalization import (
     NormalizationConfig,
     normalize_vehicle_data,
 )
@@ -140,7 +140,7 @@ def _fake_hass() -> _FakeHass:
 
 
 def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
-    from custom_components.vehicle.adapters import discovery as discovery_module
+    from custom_components.my_vehicles.adapters import discovery as discovery_module
 
     device = _Device(
         "device-123",
@@ -168,7 +168,7 @@ def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
 
 
 def _kia_uvo_adapter_class():
-    definition = get_adapter_definition("kia_uvo")
+    definition = get_adapter_definition("hyundai_kia_connect_kia_uvo")
     assert definition is not None
     return _load_adapter_class(definition)
 

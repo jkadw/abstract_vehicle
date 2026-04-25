@@ -1,17 +1,17 @@
 # Release Checklist
 
-Use this checklist before publishing a HACS release for `vehicle`.
+Use this checklist before publishing a HACS release for `my_vehicles`.
 
 ## Metadata
 
-- `custom_components/vehicle/manifest.json` has the correct version.
+- `custom_components/my_vehicles/manifest.json` has the correct version.
 - `hacs.json` reflects the current minimum Home Assistant version and integration metadata.
 - `README.md` matches the current behavior and setup path.
 - documentation links in the manifest are valid.
 
 ## Package Structure
 
-- `custom_components/vehicle/` contains the complete integration package.
+- `custom_components/my_vehicles/` contains the complete integration package.
 - translation files are present.
 - `services.yaml` matches the implemented service surface.
 - internal planning files are not included in sync or release packaging when not intended.

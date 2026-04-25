@@ -1,4 +1,4 @@
-"""Service registration and dispatch for vehicle actions."""
+"""Service registration and dispatch for My Vehicles actions."""
 
 from __future__ import annotations
 
@@ -151,7 +151,7 @@ def _build_diagnostics_handler(hass: HomeAssistant):
 
         for entry_data in target_entries:
             diagnostics = await _collect_entry_diagnostics(entry_data)
-            LOGGER.info("My Vehicle diagnostics: %s", diagnostics)
+            LOGGER.info("My Vehicles diagnostics: %s", diagnostics)
 
     return _handle_diagnostics
 

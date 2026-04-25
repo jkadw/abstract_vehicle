@@ -1,8 +1,8 @@
-"""Constants for the vehicle integration."""
+"""Constants for the My Vehicles integration."""
 
 from typing import Final
 
-DOMAIN: Final = "vehicle"
+DOMAIN: Final = "my_vehicles"
 PLATFORMS: Final[tuple[str, ...]] = (
     "sensor",
     "binary_sensor",
@@ -15,9 +15,7 @@ CONF_ADAPTER: Final = "adapter"
 CONF_VEHICLE_ID: Final = "vehicle_id"
 CONF_VEHICLES: Final = "vehicles"
 
-ADAPTER_TYPE_KIA_UVO: Final = "kia_uvo"
-
-DEFAULT_ENTRY_TITLE: Final = "Vehicle"
+DEFAULT_ENTRY_TITLE: Final = "My Vehicles"
 
 DATA_ADAPTER: Final = "adapter"
 DATA_NORMALIZED: Final = "normalized_data"

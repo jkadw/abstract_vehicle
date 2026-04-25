@@ -1,10 +1,10 @@
-# My Vehicle
+# My Vehicles
 
-`vehicle` is a Home Assistant custom integration that provides a stable, manufacturer-agnostic vehicle abstraction.
+`my_vehicles` is a Home Assistant custom integration that provides a stable vehicle abstraction on top of existing vehicle-related integrations.
 
-The goal is to keep dashboards, automations, and scripts stable even when the underlying vehicle integration changes. Instead of exposing OEM-specific semantics directly, `vehicle` normalizes raw data behind a small shared domain model.
+The goal is to keep dashboards, automations, and scripts stable even when the underlying source integration changes. Instead of exposing integration-specific semantics directly, `my_vehicles` normalizes raw data behind a small shared domain model.
 
-## Purpose
+## For Users
 
 This project is built around three layers:
 
@@ -28,8 +28,8 @@ Current setup is intentionally minimal.
 Supported paths today:
 
 1. Add the integration through Home Assistant.
-2. Choose an adapter type in the config flow.
-3. The integration discovers all matching source vehicles for that mapping or adapter.
+2. Choose a source mapping in the config flow.
+3. The integration discovers all matching source vehicles for that mapping.
 
 At runtime the integration:
 
@@ -74,11 +74,11 @@ capabilities:
 
 Example services:
 
-- `vehicle.lock`
-- `vehicle.unlock`
-- `vehicle.start_climate`
-- `vehicle.stop_climate`
-- `vehicle.refresh`
+- `my_vehicles.lock`
+- `my_vehicles.unlock`
+- `my_vehicles.start_climate`
+- `my_vehicles.stop_climate`
+- `my_vehicles.refresh`
 
 Example normalized attributes:
 
@@ -101,18 +101,32 @@ Current limitations:
 
 - generic discovery is still intentionally simple
 - startup reconciliation and add/remove sync are not complete yet
-- no direct OEM API clients in this repository
+- no direct vehicle-cloud API clients in this repository
 - no UI card
 - no per-window control
 - only a minimal service surface is implemented
 - Home Assistant runtime tests are not executed in this workspace
 
-The current mapped-adapter path discovers vehicles from the Home Assistant registry and state model rather than talking to OEM services directly.
+The current mapped-adapter path discovers vehicles from the Home Assistant registry and state model rather than talking to external vehicle services directly.
+
+## For Mapping Developers
+
+Adding a new mapping YAML is the normal way to add support for another existing vehicle-related integration.
+
+Current model:
+
+- add one YAML mapping file under `custom_components/my_vehicles/adapters/`
+- the filename becomes the adapter key
+- `integration.domain` determines availability
+- `integration.friendly_name` is shown in the config flow
+- no Python registration is needed for normal mapping-backed integrations
+
+Only rare cases should need custom Python, and those should stay behind the explicit custom-adapter extension point in the adapter registry layer.
 
 ## More Detail
 
 Additional docs:
 
 - [Domain Model](./docs/domain_model.md)
-- [OEM Adapter Strategy](./docs/oem_adapter_strategy.md)
+- [Adapter Strategy](./docs/oem_adapter_strategy.md)
 - [Mapping UX](./docs/mapping_ux.md)

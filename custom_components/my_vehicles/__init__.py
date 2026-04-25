@@ -1,4 +1,4 @@
-"""Vehicle integration package."""
+"""My Vehicles integration package."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the vehicle integration."""
+    """Set up the My Vehicles integration."""
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
@@ -36,7 +36,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a vehicle config entry."""
+    """Set up a My Vehicles config entry."""
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
@@ -168,7 +168,7 @@ def _log_vehicle_reconciliation(
 
     if added or removed:
         LOGGER.info(
-            "Reconciled My Vehicle entry '%s' for adapter '%s': added=%s removed=%s kept=%s",
+            "Reconciled My Vehicles entry '%s' for adapter '%s': added=%s removed=%s kept=%s",
             entry.entry_id,
             adapter_type,
             added or ["-"],
@@ -178,7 +178,7 @@ def _log_vehicle_reconciliation(
         return
 
     LOGGER.debug(
-        "My Vehicle entry '%s' for adapter '%s' is unchanged with vehicles=%s",
+        "My Vehicles entry '%s' for adapter '%s' is unchanged with vehicles=%s",
         entry.entry_id,
         adapter_type,
         unchanged or ["-"],

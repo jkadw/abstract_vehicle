@@ -1,6 +1,6 @@
 {
-  "domain": "vehicle",
-  "name": "My Vehicle",
+  "domain": "my_vehicles",
+  "name": "My Vehicles",
   "version": "0.1.0",
   "config_flow": true,
   "documentation": "https://github.com/jkadw/abstract_vehicle",

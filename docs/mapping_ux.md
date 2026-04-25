@@ -1,6 +1,6 @@
 # Mapping UX
 
-This document describes the intended and current user experience for mapping source entities into the `vehicle` integration.
+This document describes the intended and current user experience for mapping source entities into the `my_vehicles` integration.
 
 ## User Selection Flow
 
@@ -9,7 +9,7 @@ The user should select one source mapping or adapter at a time.
 Recommended flow:
 
 1. Choose a source integration or adapter type.
-2. Create one `My Vehicle` entry for that source mapping.
+2. Create one `My Vehicles` entry for that source mapping.
 3. Let the integration discover all source vehicles or devices that match the selected mapping.
 
 The UX should stay simple in v1:
@@ -24,7 +24,7 @@ Current implementation:
 - the config flow shows an adapter dropdown first
 - the selected adapter or mapping becomes one config entry
 - the integration discovers all matching source devices for that entry
-- one config entry owns multiple discovered `My Vehicle` devices when the source integration exposes multiple vehicles
+- one config entry owns multiple discovered `My Vehicles` devices when the source integration exposes multiple vehicles
 
 ## How Mapping Works
 
@@ -44,7 +44,7 @@ Rules:
 - users should not need to understand the internal normalized model to complete setup
 - one capability may use separate sources for state and action
 - one normalized attribute may be derived from multiple raw sources
-- adapters should keep OEM-specific details hidden from the user where possible
+- adapters should keep source-integration-specific details hidden from the user where possible
 - the aggregate `sensor.*` entity remains the primary vehicle overview even when capability entities are also created
 - actions should target the vehicle device, not individual capability entities
 
@@ -101,10 +101,10 @@ To keep the UX minimal and stable in v1:
 
 - no per-window control
 - no advanced transformation rules in the UI
-- no OEM-specific setup screens outside what the adapter needs
+- no integration-specific setup screens outside what the adapter needs
 - no requirement for full feature parity before setup can complete
 - no scenario selection in the config flow
 
 Guiding principle:
 
-- users map vehicle concepts, not OEM implementation details
+- users map vehicle concepts, not implementation details from a specific source integration

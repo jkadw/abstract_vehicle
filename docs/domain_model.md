@@ -1,6 +1,6 @@
 # Vehicle Domain Model
 
-This document defines the stable v1 domain model for the `vehicle` integration.
+This document defines the stable v1 domain model for the `my_vehicles` integration.
 
 ## State Model
 
@@ -157,15 +157,15 @@ Rules:
 
 Core services:
 
-- `vehicle.lock`
-- `vehicle.unlock`
-- `vehicle.start_climate`
-- `vehicle.stop_climate`
-- `vehicle.refresh`
+- `my_vehicles.lock`
+- `my_vehicles.unlock`
+- `my_vehicles.start_climate`
+- `my_vehicles.stop_climate`
+- `my_vehicles.refresh`
 
 Rules:
 
 - Services must check `action_supported` before execution.
 - Services target the vehicle device exposed by the integration.
-- Services delegate to adapters rather than encoding OEM behavior in entities.
+- Services delegate to adapters rather than encoding source-integration-specific behavior in entities.
 - Unsupported services should fail clearly and predictably.

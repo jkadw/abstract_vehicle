@@ -1,8 +1,8 @@
 # Vehicle Mapping Schema
 
-This document defines the minimal v1 schema for YAML-driven adapter mappings in the `vehicle` integration.
+This document defines the minimal v1 schema for YAML-driven adapter mappings in the `my_vehicles` integration.
 
-The goal is to move OEM-specific mapping rules out of Python heuristics and into explicit mapping files, while keeping the mapping format simple, Home Assistant-friendly, and easy to validate.
+The goal is to move integration-specific mapping rules out of Python heuristics and into explicit mapping files, while keeping the mapping format simple, Home Assistant-friendly, and easy to validate.
 
 ## Purpose
 
@@ -78,7 +78,7 @@ Rules:
 
 ## Capability Definitions
 
-`capabilities` defines how canonical `vehicle` capabilities are derived from source entities and actions.
+`capabilities` defines how canonical `my_vehicles` capabilities are derived from source entities and actions.
 
 Supported v1 capability names:
 
@@ -228,7 +228,7 @@ Optional fields:
 
 Rules:
 
-- action names must match canonical action names used by the `vehicle` integration
+- action names must match canonical action names used by the `my_vehicles` integration
 - `action` is resolved as `integration.domain + "." + action` by default
 - `data` may contain placeholders
 - `target` remains optional for cases where Home Assistant target selectors are preferable
@@ -363,7 +363,7 @@ Runtime validation should fail early and clearly with file/section context.
 To keep v1 stable, the schema intentionally does not support:
 
 - arbitrary Python expressions
-- OEM-specific parser code inside YAML
+- integration-specific parser code inside YAML
 - deep nested condition trees
 - UI-driven mapping generation
 - per-window control semantics

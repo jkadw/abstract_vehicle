@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.vehicle.adapters.base import UnsupportedVehicleActionError
-from custom_components.vehicle.const import (
+from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
+from custom_components.my_vehicles.const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
     DATA_NORMALIZED,
@@ -15,10 +15,10 @@ from custom_components.vehicle.const import (
     SERVICE_START_CLIMATE,
     SERVICE_UNLOCK,
 )
-from custom_components.vehicle.model import CapabilitySupport, VehicleCapabilities
-from custom_components.vehicle.normalization import normalize_vehicle_data
-from custom_components.vehicle import services as services_module
-from custom_components.vehicle.services import _build_service_handler
+from custom_components.my_vehicles.model import CapabilitySupport, VehicleCapabilities
+from custom_components.my_vehicles.normalization import normalize_vehicle_data
+from custom_components.my_vehicles import services as services_module
+from custom_components.my_vehicles.services import _build_service_handler
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
@@ -301,5 +301,5 @@ async def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None
     assert refreshed_state["locked"] is True
     assert entity.updated_data is None
     assert entity.write_calls == 0
-    assert "My Vehicle diagnostics:" in caplog.text
+    assert "My Vehicles diagnostics:" in caplog.text
     assert "vehicle-123" in caplog.text

@@ -36,19 +36,25 @@ from .runtime import (
     ResolvedDerivedEntity,
     ResolvedMappingRuntime,
 )
-from .registry import ADAPTER_DEFINITIONS, AdapterDefinition, get_adapter_definition
+from .registry import (
+    AdapterDefinition,
+    CUSTOM_ADAPTER_DEFINITIONS,
+    get_adapter_definition,
+    get_adapter_definitions,
+)
 
 __all__ = [
     "ActionResult",
-    "ADAPTER_DEFINITIONS",
     "ActionMapping",
     "AdapterDefinition",
+    "CUSTOM_ADAPTER_DEFINITIONS",
     "CapabilityMapping",
     "create_adapter_from_entry",
     "create_adapter_from_discovered_vehicle",
     "discover_adapter_vehicles",
     "DiscoveredVehicle",
     "get_adapter_definition",
+    "get_adapter_definitions",
     "get_available_adapter_definitions",
     "get_available_adapter_options",
     "is_adapter_available",

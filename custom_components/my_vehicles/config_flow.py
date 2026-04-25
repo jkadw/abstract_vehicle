@@ -15,13 +15,13 @@ from .const import (
 
 
 class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow driven by adapter selection."""
+    """Config flow driven by discovered mapping files."""
 
     VERSION = 1
 
     def __init__(self) -> None:
         self._selected_adapter: str | None = None
-        self._adapter_options: dict[str, tuple[str, object]] = {}
+        self._adapter_options: dict[str, str] = {}
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Select the adapter to use."""
@@ -37,9 +37,8 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(self._selected_adapter)
             self._abort_if_unique_id_configured()
 
-            adapter_label, _adapter_class = self._adapter_options[self._selected_adapter]
             return self.async_create_entry(
-                title=adapter_label,
+                title=self._adapter_options[self._selected_adapter],
                 data={CONF_ADAPTER: self._selected_adapter},
             )
 
@@ -50,10 +49,7 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_ADAPTER, default=default_adapter): vol.In(
-                    {
-                        adapter_key: adapter_label
-                        for adapter_key, (adapter_label, _) in self._adapter_options.items()
-                    }
+                    self._adapter_options
                 ),
             }
         )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import types
 
-from custom_components.vehicle.model import (
+from custom_components.my_vehicles.model import (
     CapabilitySupport,
     NormalizedVehicleData,
     VehicleCapabilities,
@@ -41,7 +41,7 @@ if "homeassistant" not in sys.modules:
     sys.modules["homeassistant.helpers.device_registry"] = device_registry_module
 
 
-from custom_components.vehicle.entity import VehicleEntity
+from custom_components.my_vehicles.entity import VehicleEntity
 
 
 def _normalized_vehicle_data(state: VehicleState) -> NormalizedVehicleData:
@@ -102,7 +102,7 @@ def test_vehicle_entity_device_info_is_stable() -> None:
     assert device_info["manufacturer"] == "Mock Motors"
     assert device_info["model"] == "Atlas"
     assert device_info["name"] == "My Family EV"
-    assert ("vehicle", "vehicle-123") in device_info["identifiers"]
+    assert ("my_vehicles", "vehicle-123") in device_info["identifiers"]
 
 
 def test_vehicle_entity_updates_metadata_when_snapshot_changes() -> None:

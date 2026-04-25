@@ -9,18 +9,25 @@ from homeassistant.core import HomeAssistant
 
 from .base import DiscoveredVehicle, VehicleAdapter
 from .mapped import MappedVehicleAdapter
-from .registry import ADAPTER_DEFINITIONS, AdapterDefinition, get_adapter_definition
+from .registry import AdapterDefinition, get_adapter_definition, get_adapter_definitions
 from ..const import CONF_VEHICLE_ID, CONF_VEHICLES
 
 
 def _load_adapter_class(definition: AdapterDefinition) -> type[VehicleAdapter]:
     """Import and return the adapter class for a registry definition."""
 
+    if definition.kind == "mapping":
+        if not definition.mapping_name:
+            raise ValueError(f"Mapping adapter '{definition.key}' requires mapping_name")
+        return _build_mapped_adapter_class(definition, MappedVehicleAdapter)
+
+    if not definition.module_path or not definition.class_name:
+        raise ValueError(
+            f"Custom adapter '{definition.key}' requires module_path and class_name"
+        )
+
     module = importlib.import_module(definition.module_path)
-    adapter_class = getattr(module, definition.class_name)
-    if definition.mapping_name and issubclass(adapter_class, MappedVehicleAdapter):
-        return _build_mapped_adapter_class(definition, adapter_class)
-    return adapter_class
+    return getattr(module, definition.class_name)
 
 
 def _build_mapped_adapter_class(
@@ -34,7 +41,7 @@ def _build_mapped_adapter_class(
         class_name,
         (adapter_class,),
         {
-            "mapping_name": definition.mapping_name,
+            "mapping_name": definition.mapping_name or "",
             "friendly_name": definition.fallback_label,
         },
     )
@@ -53,12 +60,6 @@ async def is_adapter_available(
 ) -> bool:
     """Return whether the adapter should be offered in this HA instance."""
 
-    if definition.always_available:
-        return True
-
-    if definition.source_integration is None:
-        return True
-
     if definition.source_integration in hass.config.components:
         return True
 
@@ -71,7 +72,7 @@ async def get_available_adapter_definitions(
     """Return registry entries that are usable in the current HA instance."""
 
     available: list[AdapterDefinition] = []
-    for definition in ADAPTER_DEFINITIONS:
+    for definition in get_adapter_definitions():
         if await is_adapter_available(hass, definition):
             available.append(definition)
     return available
@@ -79,19 +80,12 @@ async def get_available_adapter_definitions(
 
 async def get_available_adapter_options(
     hass: HomeAssistant,
-) -> dict[str, tuple[str, type[VehicleAdapter]]]:
-    """Return config-flow adapter choices keyed by adapter id."""
+) -> dict[str, str]:
+    """Return config-flow adapter choices keyed by mapping-backed adapter id."""
 
-    options: dict[str, tuple[str, type[VehicleAdapter]]] = {}
+    options: dict[str, str] = {}
     for definition in await get_available_adapter_definitions(hass):
-        try:
-            adapter_class = await load_adapter_class(hass, definition)
-        except Exception:
-            continue
-        options[definition.key] = (
-            adapter_class.get_friendly_name() or definition.fallback_label,
-            adapter_class,
-        )
+        options[definition.key] = definition.fallback_label
     return options
 
 
@@ -124,7 +118,7 @@ async def create_adapter_from_entry(
 
     adapter_class = await load_adapter_class(hass, definition)
 
-    if definition.mapping_name is not None:
+    if definition.kind == "mapping":
         vehicles = entry_data.get(CONF_VEHICLES)
         if not isinstance(vehicles, list):
             raise ValueError(

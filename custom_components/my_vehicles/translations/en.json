@@ -1,5 +1,5 @@
 {
-  "title": "My Vehicle",
+  "title": "My Vehicles",
   "entity": {
     "sensor": {
       "vehicle_state": {
@@ -18,15 +18,15 @@
   "config": {
     "step": {
       "user": {
-        "title": "Select adapter",
-        "description": "Choose the source mapping or adapter to manage vehicles from.",
+        "title": "Select source mapping",
+        "description": "Choose the source mapping to manage vehicles from.",
         "data": {
-          "adapter": "Adapter"
+          "adapter": "Source mapping"
         }
       }
     },
     "error": {
-      "adapter_not_available": "The selected adapter is not currently available."
+      "adapter_not_available": "The selected source mapping is not currently available."
     },
     "abort": {
       "no_adapters_available": "No supported source integrations are currently available."

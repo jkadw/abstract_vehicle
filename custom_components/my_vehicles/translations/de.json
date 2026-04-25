@@ -1,5 +1,5 @@
 {
-  "title": "My Vehicle",
+  "title": "My Vehicles",
   "entity": {
     "sensor": {
       "vehicle_state": {
@@ -18,15 +18,15 @@
   "config": {
     "step": {
       "user": {
-        "title": "Adapter auswählen",
-        "description": "Wähle das Quell-Mapping oder den Adapter aus, über den Fahrzeuge verwaltet werden sollen.",
+        "title": "Quell-Mapping auswählen",
+        "description": "Wähle das Quell-Mapping aus, über das Fahrzeuge verwaltet werden sollen.",
         "data": {
-          "adapter": "Adapter"
+          "adapter": "Quell-Mapping"
         }
       }
     },
     "error": {
-      "adapter_not_available": "Der ausgewählte Adapter ist derzeit nicht verfügbar."
+      "adapter_not_available": "Das ausgewählte Quell-Mapping ist derzeit nicht verfügbar."
     },
     "abort": {
       "no_adapters_available": "Derzeit sind keine unterstützten Quell-Integrationen verfügbar."

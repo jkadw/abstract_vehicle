@@ -1,18 +1,18 @@
-# OEM Adapter Strategy
+# Adapter Strategy
 
-This document describes how OEM-specific adapters should fit into the `vehicle` integration without changing the shared domain model.
+This document describes how mappings for existing vehicle-related integrations should fit into the `my_vehicles` integration without changing the shared domain model.
 
 ## Mapping Principles
 
-- Adapters must map OEM-specific source entities and services into the stable `vehicle` domain model.
-- OEM naming must stop at the adapter boundary. The rest of the integration should only see canonical fields and capabilities.
+- Adapters must map integration-specific source entities and services into the stable `my_vehicles` domain model.
+- Integration-specific naming must stop at the adapter boundary. The rest of the integration should only see canonical fields and capabilities.
 - Adapters should prefer the smallest reliable set of signals needed for v1 behavior.
 - State support and action support must be modeled separately for every capability.
 - When a source exposes multiple low-level signals for one concept, adapters should return the raw pieces and let normalization aggregate them.
 
 Preferred mapping approach:
 
-- adapter-specific files should define explicit source mappings instead of growing Python heuristics
+- mapping files should define explicit source mappings instead of growing Python heuristics
 - generic adapter code should resolve those mappings against Home Assistant state, registry, and services
 - adapters return raw state and raw metrics in a loose, typed structure
 - normalization converts raw values into canonical state, attributes, units, and inferred support
@@ -52,7 +52,7 @@ Current example:
 
 ## Action Mapping
 
-Adapters should translate canonical actions into the OEM integration’s existing Home Assistant service calls.
+Adapters should translate canonical actions into the existing vehicle-related integration’s Home Assistant service calls.
 
 Canonical v1 actions:
 
@@ -65,15 +65,15 @@ Action mapping rules:
 
 - only expose `action_supported = true` when the adapter can actually execute the action reliably
 - keep action names canonical inside the adapter interface
-- perform OEM-specific argument building inside the adapter or adapter mapping, not in services or entities
+- perform integration-specific argument building inside the adapter or adapter mapping, not in services or entities
 - raise a clear adapter-level error for unsupported or failed actions
 - refresh raw state after action execution so the normalized snapshot can be rebuilt
 
-If an OEM integration uses unusual service names or payloads, the adapter should absorb that complexity and still present the same canonical action surface.
+If an existing vehicle-related integration uses unusual service names or payloads, the adapter should absorb that complexity and still present the same canonical action surface.
 
 ## Handling Missing Features
 
-OEM integrations will vary in completeness. Missing features should degrade cleanly.
+Existing vehicle-related integrations will vary in completeness. Missing features should degrade cleanly.
 
 Rules:
 
@@ -95,9 +95,9 @@ Examples:
 
 - Keep adapters async-first and non-blocking.
 - Prefer explicit mapping files and small helper methods over large conditional branches.
-- Log enough detail to debug mappings, but do not leak OEM-specific structures into the domain model.
-- Add new OEM integrations by adding mapping-backed adapter definitions whenever generic discovery and runtime behavior are sufficient.
-- Only add dedicated OEM Python hooks when the generic mapped-adapter path cannot express the needed behavior cleanly.
+- Log enough detail to debug mappings, but do not leak integration-specific structures into the domain model.
+- Add new integrations by adding mapping-backed adapter definitions whenever generic discovery and runtime behavior are sufficient.
+- Only add dedicated Python hooks when the generic mapped-adapter path cannot express the needed behavior cleanly.
 
 Guiding principle:
 
