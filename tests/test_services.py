@@ -10,6 +10,7 @@ from custom_components.vehicle.const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
     DATA_NORMALIZED,
+    DATA_VEHICLES,
     DOMAIN,
     SERVICE_START_CLIMATE,
     SERVICE_UNLOCK,
@@ -75,9 +76,13 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     hass.data = {
         DOMAIN: {
             "entry-1": {
-                DATA_ADAPTER: adapter,
-                DATA_NORMALIZED: normalized,
-                DATA_ENTITIES: [entity],
+                DATA_VEHICLES: [
+                    {
+                        DATA_ADAPTER: adapter,
+                        DATA_NORMALIZED: normalized,
+                        DATA_ENTITIES: [entity],
+                    }
+                ],
             }
         }
     }
@@ -112,9 +117,13 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
     hass.data = {
         DOMAIN: {
             "entry-1": {
-                DATA_ADAPTER: adapter,
-                DATA_NORMALIZED: normalized,
-                DATA_ENTITIES: [entity],
+                DATA_VEHICLES: [
+                    {
+                        DATA_ADAPTER: adapter,
+                        DATA_NORMALIZED: normalized,
+                        DATA_ENTITIES: [entity],
+                    }
+                ],
             }
         }
     }
@@ -147,9 +156,13 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
     hass.data = {
         DOMAIN: {
             "entry-1": {
-                DATA_ADAPTER: adapter,
-                DATA_NORMALIZED: normalized,
-                DATA_ENTITIES: [entity],
+                DATA_VEHICLES: [
+                    {
+                        DATA_ADAPTER: adapter,
+                        DATA_NORMALIZED: normalized,
+                        DATA_ENTITIES: [entity],
+                    }
+                ],
             }
         }
     }
@@ -176,9 +189,13 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     hass.data = {
         DOMAIN: {
             "entry-1": {
-                DATA_ADAPTER: adapter,
-                DATA_NORMALIZED: normalized,
-                DATA_ENTITIES: [entity],
+                DATA_VEHICLES: [
+                    {
+                        DATA_ADAPTER: adapter,
+                        DATA_NORMALIZED: normalized,
+                        DATA_ENTITIES: [entity],
+                    }
+                ],
             }
         }
     }

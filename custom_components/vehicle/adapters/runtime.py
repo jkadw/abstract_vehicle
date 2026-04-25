@@ -70,7 +70,7 @@ class MappingRuntime:
         capability_states = self._resolve_capability_states()
         metrics = self._resolve_metrics()
         derived = self._resolve_derived()
-        capabilities = self._build_capabilities(capability_states)
+        capabilities = self._build_capabilities(capability_states, metrics)
         actions = self._prepare_actions()
         return ResolvedMappingRuntime(
             capability_states=capability_states,
@@ -178,7 +178,7 @@ class MappingRuntime:
         return resolved
 
     def _build_capabilities(
-        self, capability_states: dict[str, Any]
+        self, capability_states: dict[str, Any], metrics: dict[str, Any]
     ) -> VehicleCapabilities:
         supports: dict[str, CapabilitySupport] = {}
         for capability_name in (
@@ -194,12 +194,21 @@ class MappingRuntime:
         ):
             mapping = self._mapping.capability(capability_name)
             if mapping is None:
-                supports[capability_name] = CapabilitySupport()
+                supports[capability_name] = CapabilitySupport(
+                    state_supported=_metric_backed_state_support(
+                        capability_name, metrics
+                    ),
+                    action_supported=False,
+                )
                 continue
 
             state_supported = False
             if mapping.state is not None:
                 state_supported = capability_states.get(capability_name) is not None
+            if not state_supported:
+                state_supported = _metric_backed_state_support(
+                    capability_name, metrics
+                )
             action_supported = bool(mapping.actions)
             supports[capability_name] = CapabilitySupport(
                 state_supported=state_supported,
@@ -327,6 +336,18 @@ def _metadata_dict(mapping: StateMapping) -> dict[str, Any]:
     if mapping.metadata.attributes:
         metadata["attributes"] = list(mapping.metadata.attributes)
     return metadata
+
+
+def _metric_backed_state_support(
+    capability_name: str, metrics: dict[str, Any]
+) -> bool:
+    if capability_name == "battery":
+        return metrics.get("battery_level") is not None
+    if capability_name == "fuel":
+        return metrics.get("fuel_level") is not None
+    if capability_name == "odometer":
+        return metrics.get("odometer") is not None
+    return False
 
 
 def _split_service_name(service_name: str) -> tuple[str, str]:

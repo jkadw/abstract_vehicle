@@ -17,6 +17,7 @@ from .const import (
     DATA_ENTITIES,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
+    DATA_VEHICLES,
     DOMAIN,
     SERVICE_LOCK,
     SERVICE_REFRESH,
@@ -143,15 +144,21 @@ def _find_target_entries(
     for value in domain_data.values():
         if not isinstance(value, dict):
             continue
-        normalized = value.get(DATA_NORMALIZED)
-        if normalized is None:
+        vehicle_entries = value.get(DATA_VEHICLES, [])
+        if not isinstance(vehicle_entries, list):
             continue
+        for vehicle_entry in vehicle_entries:
+            if not isinstance(vehicle_entry, dict):
+                continue
+            normalized = vehicle_entry.get(DATA_NORMALIZED)
+            if normalized is None:
+                continue
 
-        device = device_registry.async_get_device(
-            identifiers={(DOMAIN, normalized.info.vehicle_id)},
-            connections=set(),
-        )
-        if device is not None and device.id in target_ids:
-            matched_entries.append(value)
+            device = device_registry.async_get_device(
+                identifiers={(DOMAIN, normalized.info.vehicle_id)},
+                connections=set(),
+            )
+            if device is not None and device.id in target_ids:
+                matched_entries.append(vehicle_entry)
 
     return matched_entries

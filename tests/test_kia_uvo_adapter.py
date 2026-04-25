@@ -1,6 +1,8 @@
-"""Tests for the kia_uvo-backed adapter."""
+"""Tests for the kia_uvo-backed mapped adapter."""
 
 from __future__ import annotations
+
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,6 +14,74 @@ from custom_components.vehicle.normalization import (
 )
 
 
+class _StateStore(dict):
+    def get(self, entity_id: str):
+        return super().get(entity_id)
+
+
+class _ServiceRegistry:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    async def async_call(
+        self,
+        domain: str,
+        service: str,
+        *,
+        service_data=None,
+        target=None,
+        blocking: bool = False,
+    ) -> None:
+        self.calls.append(
+            {
+                "domain": domain,
+                "service": service,
+                "service_data": service_data,
+                "target": target,
+                "blocking": blocking,
+            }
+        )
+
+
+class _FakeHass:
+    def __init__(self, states: dict[str, SimpleNamespace]):
+        self.states = _StateStore(states)
+        self.services = _ServiceRegistry()
+        self.is_running = False
+
+
+class _Device:
+    def __init__(
+        self,
+        device_id: str,
+        *,
+        identifiers,
+        name: str,
+        manufacturer: str,
+    ) -> None:
+        self.id = device_id
+        self.identifiers = identifiers
+        self.name = name
+        self.name_by_user = None
+        self.manufacturer = manufacturer
+
+
+class _DeviceRegistry:
+    def __init__(self, devices: dict[str, _Device]) -> None:
+        self.devices = devices
+
+
+class _EntityEntry:
+    def __init__(self, entity_id: str, device_id: str) -> None:
+        self.entity_id = entity_id
+        self.device_id = device_id
+
+
+class _EntityRegistry:
+    def __init__(self, entities: dict[str, _EntityEntry]) -> None:
+        self.entities = entities
+
+
 def _configured_vehicles() -> list[dict]:
     return [
         {
@@ -20,96 +90,134 @@ def _configured_vehicles() -> list[dict]:
             "manufacturer": "Kia",
             "model": "EV6",
             "vehicle_type": "ev",
+            "source_vehicle": "santa_fe",
+            "source_device_id": "device-123",
             "available": True,
             "backend_online": True,
             "has_error": False,
             "driving": False,
-            "charging_active": True,
             "charging_plugged": True,
-            "locked": True,
-            "climate_active": False,
-            "metrics": {
-                "battery_level": 61.5,
-                "range": 198.0,
-                "odometer": 12450.0,
-                "latitude": 33.7490,
-                "longitude": -84.3880,
-            },
-            "openings": {
-                "front_left_window": "closed",
-                "sunroof": "closed",
-            },
-            "source_units": {
-                "distance_unit": "mi",
-                "temperature_unit": "F",
-                "power_unit": "kW",
-                "energy_unit": "kWh",
-            },
-            "capabilities": {
-                "lock": {"state_supported": True, "action_supported": True},
-                "windows": {"state_supported": False, "action_supported": False},
-                "climate": {"state_supported": True, "action_supported": True},
-                "charging": {"state_supported": True, "action_supported": False},
-                "location": {"state_supported": False, "action_supported": False},
-                "battery": {"state_supported": True, "action_supported": False},
-                "fuel": {"state_supported": False, "action_supported": False},
-                "odometer": {"state_supported": True, "action_supported": False},
-            },
-        },
-        {
-            "vehicle_id": "hyundai-2",
-            "name": "Hyundai Kona",
-            "manufacturer": "Hyundai",
-            "model": "Kona Electric",
-            "vehicle_type": "ev",
-            "available": True,
-            "backend_online": False,
-            "has_error": False,
-            "charging_active": False,
-            "charging_plugged": False,
-            "locked": False,
-            "metrics": {
-                "battery_level": 44.0,
-                "range": 140.0,
-                "odometer": 9021.0,
-            },
-            "source_units": {
-                "distance_unit": "mi",
-            },
-            "capabilities": {
-                "lock": {"state_supported": True, "action_supported": True},
-                "climate": {"state_supported": True, "action_supported": True},
-                "battery": {"state_supported": True, "action_supported": False},
-                "charging": {"state_supported": True, "action_supported": False},
-                "odometer": {"state_supported": True, "action_supported": False},
-            },
-        },
+        }
     ]
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_maps_selected_configured_vehicle() -> None:
-    """The adapter should select the configured vehicle from entry data."""
+def _fake_hass() -> _FakeHass:
+    return _FakeHass(
+        {
+            "lock.santa_fe_door_lock": SimpleNamespace(state="locked", attributes={}),
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_front_right_window": SimpleNamespace(
+                state="on", attributes={}
+            ),
+            "binary_sensor.santa_fe_rear_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_rear_right_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "device_tracker.santa_fe_vehicle": SimpleNamespace(
+                state="home",
+                attributes={"latitude": 33.7490, "longitude": -84.3880},
+            ),
+            "sensor.santa_fe_ev_battery_level": SimpleNamespace(
+                state="61.5", attributes={"unit_of_measurement": "%"}
+            ),
+            "sensor.santa_fe_total_driving_range": SimpleNamespace(
+                state="198", attributes={"unit_of_measurement": "mi"}
+            ),
+            "sensor.santa_fe_odometer": SimpleNamespace(
+                state="12450", attributes={"unit_of_measurement": "mi"}
+            ),
+            "button.santa_fe_force_refresh": SimpleNamespace(
+                state="unknown",
+                attributes={},
+            ),
+        }
+    )
 
-    adapter = KiaUvoVehicleAdapter(vehicles=_configured_vehicles(), vehicle_id="hyundai-2")
+
+def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
+    from custom_components.vehicle.adapters import discovery as discovery_module
+
+    device = _Device(
+        "device-123",
+        identifiers=identifiers,
+        name="Kia EV6",
+        manufacturer="Kia",
+    )
+    entities = {
+        entity_id: _EntityEntry(entity_id, "device-123")
+        for entity_id in hass.states.keys()
+    }
+
+    monkeypatch.setattr(
+        discovery_module.dr,
+        "async_get",
+        lambda _hass: _DeviceRegistry({"device-123": device}),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        discovery_module.er,
+        "async_get",
+        lambda _hass: _EntityRegistry(entities),
+        raising=False,
+    )
+
+
+@pytest.mark.asyncio
+async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> None:
+    """The adapter should discover vehicles via integration.domain and mapping patterns."""
+
+    hass = _fake_hass()
+    _patch_registries(monkeypatch, hass, {("kia_uvo", "kia-1")})
+
+    discovered = await KiaUvoVehicleAdapter.async_discover_vehicles(hass)
+
+    assert len(discovered) == 1
+    assert discovered[0].vehicle_id == "kia-1"
+    assert discovered[0].title == "Kia EV6"
+    assert discovered[0].payload["source_vehicle"] == "santa_fe"
+    assert discovered[0].payload["source_device_id"] == "device-123"
+
+
+@pytest.mark.asyncio
+async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
+    """The adapter should build raw data from the generic mapped runtime."""
+
+    adapter = KiaUvoVehicleAdapter(
+        hass=_fake_hass(),
+        vehicles=_configured_vehicles(),
+        vehicle_id="kia-1",
+    )
 
     raw_state = await adapter.get_raw_state()
     raw_metrics = await adapter.get_raw_metrics()
     capabilities = await adapter.get_capabilities()
 
-    assert raw_state["vehicle_id"] == "hyundai-2"
-    assert raw_state["manufacturer"] == "Hyundai"
-    assert raw_state["status"] == "offline"
-    assert raw_metrics["battery_level"] == 44.0
+    assert raw_state["vehicle_id"] == "kia-1"
+    assert raw_state["manufacturer"] == "Kia"
+    assert raw_state["status"] == "parked"
+    assert raw_state["locked"] is True
+    assert raw_metrics["battery_level"] == 61.5
+    assert raw_metrics["range"] == 198.0
+    assert raw_metrics["latitude"] == 33.749
+    assert raw_metrics["openings"]["santa_fe_front_right_window"] == "open"
     assert capabilities.lock.action_supported is True
-    assert capabilities.windows.state_supported is False
+    assert capabilities.windows.state_supported is True
+    assert capabilities.refresh.action_supported is True
 
 
 @pytest.mark.asyncio
-async def test_kia_uvo_adapter_relies_on_normalization_for_capability_inference_and_units() -> None:
-    """Raw configured metrics should be normalized centrally."""
+async def test_kia_uvo_adapter_relies_on_normalization_for_units_and_entities() -> None:
+    """Mapped raw values should still be normalized centrally."""
 
-    adapter = KiaUvoVehicleAdapter(vehicles=_configured_vehicles(), vehicle_id="kia-1")
+    adapter = KiaUvoVehicleAdapter(
+        hass=_fake_hass(),
+        vehicles=_configured_vehicles(),
+        vehicle_id="kia-1",
+    )
     normalized = normalize_vehicle_data(
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
@@ -117,41 +225,65 @@ async def test_kia_uvo_adapter_relies_on_normalization_for_capability_inference_
         config=NormalizationConfig(distance_unit="km"),
     )
 
-    assert normalized.state.value == "charging"
+    assert normalized.state.value == "parked"
     assert normalized.range == 318.65
     assert normalized.odometer == 20036.463
     assert normalized.capabilities.location.state_supported is True
+    assert normalized.capabilities.battery.state_supported is True
 
 
 @pytest.mark.asyncio
-async def test_kia_uvo_adapter_executes_supported_actions_against_selected_vehicle() -> None:
-    """Actions should mutate the configured vehicle payload, not a fixed stub scenario."""
+async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> None:
+    """Mapped actions should execute via HA services rather than OEM-specific code."""
 
-    adapter = KiaUvoVehicleAdapter(vehicles=_configured_vehicles(), vehicle_id="kia-1")
+    hass = _fake_hass()
+    adapter = KiaUvoVehicleAdapter(
+        hass=hass,
+        vehicles=_configured_vehicles(),
+        vehicle_id="kia-1",
+    )
 
     await adapter.execute_action("unlock")
-    await adapter.execute_action("start_climate")
-    raw_state = await adapter.get_raw_state()
+    await adapter.execute_action("refresh")
 
-    assert raw_state["locked"] is False
-    assert raw_state["climate_active"] is True
-    assert raw_state["vehicle_id"] == "kia-1"
+    assert hass.services.calls == [
+        {
+            "domain": "kia_uvo",
+            "service": "unlock",
+            "service_data": {"device_id": "device-123"},
+            "target": None,
+            "blocking": True,
+        },
+        {
+            "domain": "kia_uvo",
+            "service": "press",
+            "service_data": {"entity_id": "button.santa_fe_force_refresh"},
+            "target": None,
+            "blocking": True,
+        },
+    ]
 
     with pytest.raises(UnsupportedVehicleActionError):
-        await adapter.execute_action("open_windows")
+        await adapter.execute_action("start_climate")
 
 
-def test_kia_uvo_identifier_parsing_ignores_malformed_entries() -> None:
-    """Discovery should not crash on unexpected identifier shapes."""
+@pytest.mark.asyncio
+async def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatch) -> None:
+    """Generic discovery should not crash on unexpected identifier shapes."""
 
-    identifiers = {
-        ("other_domain", "ignore-me"),
-        ("kia_uvo", "vehicle-123"),
-        ("kia_uvo", ""),
-        ("broken",),
-        "not-a-tuple",
-    }
+    hass = _fake_hass()
+    _patch_registries(
+        monkeypatch,
+        hass,
+        {
+            ("other_domain", "ignore-me"),
+            ("kia_uvo", "vehicle-123"),
+            ("kia_uvo", ""),
+            ("broken",),
+            "not-a-tuple",
+        },
+    )
 
-    vehicle_id = KiaUvoVehicleAdapter._vehicle_id_from_identifiers(identifiers)
+    discovered = await KiaUvoVehicleAdapter.async_discover_vehicles(hass)
 
-    assert vehicle_id == "vehicle-123"
+    assert discovered[0].vehicle_id == "vehicle-123"

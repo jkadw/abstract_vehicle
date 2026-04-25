@@ -10,6 +10,7 @@ from .base import (
     VehicleAdapterError,
 )
 from .loader import (
+    create_adapter_from_discovered_vehicle,
     create_adapter_from_entry,
     discover_adapter_vehicles,
     get_available_adapter_definitions,
@@ -28,6 +29,7 @@ from .mapping import (
     load_adapter_mapping,
     load_mapping_file,
 )
+from .mapped import MappedVehicleAdapter
 from .runtime import (
     MappingRuntime,
     PreparedAction,
@@ -43,6 +45,7 @@ __all__ = [
     "AdapterDefinition",
     "CapabilityMapping",
     "create_adapter_from_entry",
+    "create_adapter_from_discovered_vehicle",
     "discover_adapter_vehicles",
     "DiscoveredVehicle",
     "get_adapter_definition",
@@ -55,6 +58,7 @@ __all__ = [
     "MappingIntegration",
     "MappingMetadata",
     "MappingValidationError",
+    "MappedVehicleAdapter",
     "MappingRuntime",
     "PreparedAction",
     "RawMetricsPayload",

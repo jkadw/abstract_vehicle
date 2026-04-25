@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
+from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .entity import VehicleBaseEntity
 from .model import NormalizedVehicleData
 
@@ -73,15 +73,20 @@ async def async_setup_entry(
     """Set up vehicle binary sensor entities for a config entry."""
 
     entry_data = hass.data[DOMAIN][entry.entry_id]
-    normalized = entry_data[DATA_NORMALIZED]
     entities: list[BinarySensorEntity] = []
 
-    if normalized.capabilities.windows.state_supported:
-        entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[0]))
-    if normalized.capabilities.climate.state_supported:
-        entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[1]))
-    if normalized.capabilities.charging.state_supported:
-        entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[2]))
+    for vehicle_data in entry_data[DATA_VEHICLES]:
+        normalized = vehicle_data[DATA_NORMALIZED]
+        vehicle_entities: list[BinarySensorEntity] = []
 
-    entry_data[DATA_ENTITIES].extend(entities)
+        if normalized.capabilities.windows.state_supported:
+            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[0]))
+        if normalized.capabilities.climate.state_supported:
+            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[1]))
+        if normalized.capabilities.charging.state_supported:
+            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[2]))
+
+        vehicle_data[DATA_ENTITIES].extend(vehicle_entities)
+        entities.extend(vehicle_entities)
+
     async_add_entities(entities)

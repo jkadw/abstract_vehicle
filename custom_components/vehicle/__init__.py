@@ -6,10 +6,7 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
 
-from .adapters import (
-    VehicleAdapter,
-    create_adapter_from_entry,
-)
+from .adapters import create_adapter_from_discovered_vehicle, discover_adapter_vehicles
 from .const import (
     ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
@@ -17,6 +14,7 @@ from .const import (
     DATA_ENTITIES,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
+    DATA_VEHICLES,
     DOMAIN,
     PLATFORMS,
 )
@@ -50,16 +48,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         )
 
-    adapter = await _create_adapter(hass, entry)
-    raw_state = await adapter.get_raw_state()
-    raw_metrics = await adapter.get_raw_metrics()
-    capabilities = await adapter.get_capabilities()
-    normalized_data = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+    discovered_vehicles = await _discover_entry_vehicles(hass, entry)
+    vehicle_entries = []
+    for discovered_vehicle in discovered_vehicles:
+        vehicle_adapter = await create_adapter_from_discovered_vehicle(
+            hass,
+            adapter_type,
+            discovered_vehicle,
+        )
+        raw_state = await vehicle_adapter.get_raw_state()
+        raw_metrics = await vehicle_adapter.get_raw_metrics()
+        capabilities = await vehicle_adapter.get_capabilities()
+        normalized_data = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+        vehicle_entries.append(
+            {
+                DATA_ADAPTER: vehicle_adapter,
+                DATA_ENTITIES: [],
+                DATA_NORMALIZED: normalized_data,
+            }
+        )
 
     hass.data[DOMAIN][entry.entry_id] = {
-        DATA_ADAPTER: adapter,
-        DATA_ENTITIES: [],
-        DATA_NORMALIZED: normalized_data,
+        DATA_ADAPTER: adapter_type,
+        DATA_VEHICLES: vehicle_entries,
     }
 
     await async_register_services(hass)
@@ -78,13 +89,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def _create_adapter(hass: HomeAssistant, entry: ConfigEntry) -> VehicleAdapter:
-    """Create the configured adapter instance."""
+async def _discover_entry_vehicles(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> list:
+    """Discover all source vehicles for the selected adapter entry."""
 
     adapter_type = entry.data.get(CONF_ADAPTER, "mock")
     if not isinstance(adapter_type, str):
         raise ValueError("Configured adapter type must be a string")
-    return await create_adapter_from_entry(hass, adapter_type, dict(entry.data))
+    return await discover_adapter_vehicles(hass, adapter_type)
 
 
 __all__ = ["DOMAIN"]

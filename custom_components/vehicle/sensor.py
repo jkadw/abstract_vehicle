@@ -14,7 +14,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
+from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .entity import VehicleBaseEntity, VehicleEntity
 from .model import NormalizedVehicleData
 
@@ -81,17 +81,22 @@ async def async_setup_entry(
     """Set up vehicle sensor entities for a config entry."""
 
     entry_data = hass.data[DOMAIN][entry.entry_id]
-    normalized = entry_data[DATA_NORMALIZED]
-    entities: list[SensorEntity] = [VehicleEntity(normalized)]
+    entities: list[SensorEntity] = []
 
-    if normalized.capabilities.battery.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[0]))
-    if normalized.capabilities.fuel.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[1]))
-    if normalized.range is not None:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[2]))
-    if normalized.capabilities.odometer.state_supported:
-        entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[3]))
+    for vehicle_data in entry_data[DATA_VEHICLES]:
+        normalized = vehicle_data[DATA_NORMALIZED]
+        vehicle_entities: list[SensorEntity] = [VehicleEntity(normalized)]
 
-    entry_data[DATA_ENTITIES].extend(entities)
+        if normalized.capabilities.battery.state_supported:
+            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[0]))
+        if normalized.capabilities.fuel.state_supported:
+            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[1]))
+        if normalized.range is not None:
+            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[2]))
+        if normalized.capabilities.odometer.state_supported:
+            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[3]))
+
+        vehicle_data[DATA_ENTITIES].extend(vehicle_entities)
+        entities.extend(vehicle_entities)
+
     async_add_entities(entities)

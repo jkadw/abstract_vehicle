@@ -19,23 +19,17 @@
     "step": {
       "user": {
         "title": "Select adapter",
-        "description": "Choose the source adapter to discover vehicles from.",
+        "description": "Choose the source mapping or adapter to manage vehicles from.",
         "data": {
           "adapter": "Adapter"
-        }
-      },
-      "vehicle": {
-        "title": "Select vehicle",
-        "description": "Choose one of the vehicles discovered by the selected adapter.",
-        "data": {
-          "vehicle_id": "Vehicle"
         }
       }
     },
     "error": {
-      "adapter_not_available": "The selected adapter is not currently available.",
-      "no_vehicles_found": "No vehicles were discovered for the selected adapter.",
-      "vehicle_not_found": "The selected vehicle could not be found."
+      "adapter_not_available": "The selected adapter is not currently available."
+    },
+    "abort": {
+      "no_adapters_available": "No supported source integrations are currently available."
     }
   }
 }

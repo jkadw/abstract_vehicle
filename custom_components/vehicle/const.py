@@ -23,6 +23,7 @@ DEFAULT_ENTRY_TITLE: Final = "Vehicle"
 DATA_ADAPTER: Final = "adapter"
 DATA_NORMALIZED: Final = "normalized_data"
 DATA_ENTITIES: Final = "entities"
+DATA_VEHICLES: Final = "vehicles"
 DATA_SERVICES_REGISTERED: Final = "services_registered"
 
 SERVICE_LOCK: Final = "lock"

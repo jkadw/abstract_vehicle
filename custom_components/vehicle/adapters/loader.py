@@ -117,3 +117,20 @@ async def create_adapter_from_entry(
         return adapter_class(hass=hass, vehicles=vehicles, vehicle_id=vehicle_id)
 
     raise ValueError(f"Unsupported adapter type: {adapter_key}")
+
+
+async def create_adapter_from_discovered_vehicle(
+    hass: HomeAssistant,
+    adapter_key: str,
+    discovered_vehicle: DiscoveredVehicle,
+) -> VehicleAdapter:
+    """Instantiate one adapter from one discovered vehicle payload."""
+
+    return await create_adapter_from_entry(
+        hass,
+        adapter_key,
+        {
+            CONF_VEHICLE_ID: discovered_vehicle.vehicle_id,
+            CONF_VEHICLES: [discovered_vehicle.payload],
+        },
+    )

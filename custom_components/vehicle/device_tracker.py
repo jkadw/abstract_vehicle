@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DOMAIN
+from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .entity import VehicleBaseEntity
 
 
@@ -38,10 +38,15 @@ async def async_setup_entry(
     """Set up vehicle location entities for a config entry."""
 
     entry_data = hass.data[DOMAIN][entry.entry_id]
-    normalized = entry_data[DATA_NORMALIZED]
-    if not normalized.capabilities.location.state_supported:
-        return
+    entities = []
+    for vehicle_data in entry_data[DATA_VEHICLES]:
+        normalized = vehicle_data[DATA_NORMALIZED]
+        if not normalized.capabilities.location.state_supported:
+            continue
 
-    entity = VehicleLocationTrackerEntity(normalized)
-    entry_data[DATA_ENTITIES].append(entity)
-    async_add_entities([entity])
+        entity = VehicleLocationTrackerEntity(normalized)
+        vehicle_data[DATA_ENTITIES].append(entity)
+        entities.append(entity)
+
+    if entities:
+        async_add_entities(entities)
