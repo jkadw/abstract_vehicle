@@ -160,6 +160,68 @@ class MappedVehicleAdapter(VehicleAdapter):
             raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
         return await runtime.async_execute_action(capability_name, action)
 
+    async def get_diagnostics(self) -> dict[str, Any]:
+        """Return read-only mapping diagnostics for the selected source vehicle."""
+
+        runtime = self._runtime()
+        resolved = runtime.resolve()
+        raw_state = await self.get_raw_state()
+        raw_metrics = await self.get_raw_metrics()
+
+        return {
+            "adapter_type": "mapped",
+            "friendly_name": self.get_friendly_name(),
+            "mapping_name": self._mapping_name,
+            "integration_domain": self._mapping.integration.domain,
+            "vehicle_id": self._vehicle_id,
+            "source_vehicle": self._source_vehicle_token(),
+            "source_device_id": self._source_device_id(),
+            "source_entities": runtime.source_entity_snapshot(),
+            "raw_state": dict(raw_state),
+            "raw_metrics": dict(raw_metrics),
+            "resolved_capability_states": dict(resolved.capability_states),
+            "resolved_metrics": dict(resolved.metrics),
+            "resolved_derived": {
+                name: {
+                    "value": derived.value,
+                    "domain": derived.domain,
+                    "metadata": dict(derived.metadata),
+                }
+                for name, derived in resolved.derived.items()
+            },
+            "capabilities": {
+                capability_name: {
+                    "state_supported": support.state_supported,
+                    "action_supported": support.action_supported,
+                }
+                for capability_name, support in (
+                    (field_name, getattr(resolved.capabilities, field_name))
+                    for field_name in (
+                        "lock",
+                        "windows",
+                        "climate",
+                        "charging",
+                        "location",
+                        "battery",
+                        "fuel",
+                        "odometer",
+                        "refresh",
+                    )
+                )
+            },
+            "actions": {
+                capability_name: {
+                    action_name: {
+                        "service": prepared.service,
+                        "data": dict(prepared.data),
+                        "target": dict(prepared.target),
+                    }
+                    for action_name, prepared in action_map.items()
+                }
+                for capability_name, action_map in resolved.actions.items()
+            },
+        }
+
     @property
     def _vehicle(self) -> dict[str, Any]:
         return self._vehicles[self._vehicle_id]

@@ -124,9 +124,6 @@ async def create_adapter_from_entry(
 
     adapter_class = await load_adapter_class(hass, definition)
 
-    if adapter_key == "mock":
-        return adapter_class()
-
     if definition.mapping_name is not None:
         vehicles = entry_data.get(CONF_VEHICLES)
         if not isinstance(vehicles, list):

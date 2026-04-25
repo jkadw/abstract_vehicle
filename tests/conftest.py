@@ -6,9 +6,6 @@ import sys
 import types
 from pathlib import Path
 
-import pytest
-
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -136,13 +133,3 @@ if "homeassistant" not in sys.modules:
     sys.modules["homeassistant.components"] = components
     sys.modules["homeassistant.components.sensor"] = sensor
     sys.modules["homeassistant.helpers.entity_platform"] = entity_platform
-
-
-from custom_components.vehicle.adapters.mock import MockVehicleAdapter
-
-
-@pytest.fixture
-def mock_vehicle_adapter() -> MockVehicleAdapter:
-    """Return a reusable mock adapter in the default parked scenario."""
-
-    return MockVehicleAdapter()

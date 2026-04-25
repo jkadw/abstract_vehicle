@@ -32,3 +32,10 @@ refresh:
   target:
     device:
       integration: vehicle
+
+diagnostics:
+  name: Vehicle Diagnostics
+  description: Collect read-only diagnostics for the selected vehicle without executing upstream actions.
+  target:
+    device:
+      integration: vehicle

@@ -10,7 +10,6 @@ from homeassistant.core import Event, HomeAssistant
 
 from .adapters import create_adapter_from_discovered_vehicle, discover_adapter_vehicles
 from .const import (
-    ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
     DATA_ADAPTER,
     DATA_DISCOVERY_SNAPSHOTS,
@@ -42,8 +41,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
 
-    adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
-    if not hass.is_running and adapter_type != ADAPTER_TYPE_MOCK:
+    adapter_type = entry.data.get(CONF_ADAPTER)
+    if not isinstance(adapter_type, str) or not adapter_type:
+        raise ValueError("Configured adapter type must be a non-empty string")
+
+    if not hass.is_running:
         async def _async_reload_on_started(event: Event) -> None:
             _ = event
             await hass.config_entries.async_reload(entry.entry_id)
@@ -127,9 +129,9 @@ async def _discover_entry_vehicles(
 ) -> list:
     """Discover all source vehicles for the selected adapter entry."""
 
-    adapter_type = entry.data.get(CONF_ADAPTER, "mock")
-    if not isinstance(adapter_type, str):
-        raise ValueError("Configured adapter type must be a string")
+    adapter_type = entry.data.get(CONF_ADAPTER)
+    if not isinstance(adapter_type, str) or not adapter_type:
+        raise ValueError("Configured adapter type must be a non-empty string")
     return await discover_adapter_vehicles(hass, adapter_type)
 
 

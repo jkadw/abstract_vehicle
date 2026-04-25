@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import fields
+import logging
 
 import voluptuous as vol
 
@@ -19,6 +21,7 @@ from .const import (
     DATA_SERVICES_REGISTERED,
     DATA_VEHICLES,
     DOMAIN,
+    SERVICE_DIAGNOSTICS,
     SERVICE_LOCK,
     SERVICE_REFRESH,
     SERVICE_START_CLIMATE,
@@ -26,6 +29,8 @@ from .const import (
     SERVICE_UNLOCK,
 )
 from .normalization import normalize_vehicle_data
+
+LOGGER = logging.getLogger(__name__)
 
 
 SERVICE_ACTIONS: dict[str, tuple[str, str]] = {
@@ -57,6 +62,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
             _build_service_handler(hass, service_name),
             schema=SERVICE_SCHEMA,
         )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_DIAGNOSTICS,
+        _build_diagnostics_handler(hass),
+        schema=SERVICE_SCHEMA,
+    )
 
     domain_data[DATA_SERVICES_REGISTERED] = True
 
@@ -70,6 +81,7 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
 
     for service_name in SERVICE_ACTIONS:
         hass.services.async_remove(DOMAIN, service_name)
+    hass.services.async_remove(DOMAIN, SERVICE_DIAGNOSTICS)
 
     domain_data.pop(DATA_SERVICES_REGISTERED, None)
 
@@ -127,6 +139,23 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
     return _handle_service
 
 
+def _build_diagnostics_handler(hass: HomeAssistant):
+    async def _handle_diagnostics(call: ServiceCall) -> None:
+        target_device_ids = _coerce_device_ids(call.data["device_id"])
+        target_entries = _find_target_entries(hass, target_device_ids)
+
+        if not target_entries:
+            raise ServiceValidationError(
+                f"No vehicle device found for device_id: {', '.join(target_device_ids)}"
+            )
+
+        for entry_data in target_entries:
+            diagnostics = await _collect_entry_diagnostics(entry_data)
+            LOGGER.info("My Vehicle diagnostics: %s", diagnostics)
+
+    return _handle_diagnostics
+
+
 def _coerce_device_ids(device_id: str | list[str]) -> list[str]:
     if isinstance(device_id, str):
         return [device_id]
@@ -162,3 +191,58 @@ def _find_target_entries(
                 matched_entries.append(vehicle_entry)
 
     return matched_entries
+
+
+async def _collect_entry_diagnostics(
+    entry_data: dict[str, object]
+) -> dict[str, object]:
+    adapter = entry_data[DATA_ADAPTER]
+    normalized = entry_data[DATA_NORMALIZED]
+
+    diagnostics_method = getattr(adapter, "get_diagnostics", None)
+    adapter_diagnostics: dict[str, object]
+    if callable(diagnostics_method):
+        adapter_result = await diagnostics_method()
+        adapter_diagnostics = (
+            adapter_result if isinstance(adapter_result, dict) else {"adapter": adapter_result}
+        )
+    else:
+        raw_state = await adapter.get_raw_state()
+        raw_metrics = await adapter.get_raw_metrics()
+        capabilities = await adapter.get_capabilities()
+        adapter_diagnostics = {
+            "raw_state": dict(raw_state),
+            "raw_metrics": dict(raw_metrics),
+            "capabilities": _serialize_capabilities(capabilities),
+        }
+
+    return {
+        "vehicle_id": normalized.info.vehicle_id,
+        "vehicle_name": normalized.info.name,
+        "state": normalized.state.value,
+        "normalized": {
+            "battery_level": normalized.battery_level,
+            "fuel_level": normalized.fuel_level,
+            "range": normalized.range,
+            "locked": normalized.locked,
+            "windows_open": normalized.windows_open,
+            "climate_active": normalized.climate_active,
+            "charging_active": normalized.charging_active,
+            "charging_plugged": normalized.charging_plugged,
+            "latitude": normalized.latitude,
+            "longitude": normalized.longitude,
+            "odometer": normalized.odometer,
+            "capabilities": _serialize_capabilities(normalized.capabilities),
+        },
+        "adapter": adapter_diagnostics,
+    }
+
+
+def _serialize_capabilities(capabilities) -> dict[str, dict[str, bool]]:
+    return {
+        field.name: {
+            "state_supported": getattr(capabilities, field.name).state_supported,
+            "action_supported": getattr(capabilities, field.name).action_supported,
+        }
+        for field in fields(capabilities)
+    }

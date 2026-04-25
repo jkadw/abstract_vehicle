@@ -19,7 +19,6 @@ The current v1 scope focuses on a minimal, stable foundation:
 - centralized normalization and unit conversion hooks
 - one aggregate `sensor.*` entity per vehicle with the friendly name `My <device>`
 - per-capability entities in standard Home Assistant domains
-- a mock adapter for development and tests
 - YAML-driven mapped adapters that discover vehicles from Home Assistant devices and entities
 
 ## Setup
@@ -34,7 +33,7 @@ Supported paths today:
 
 At runtime the integration:
 
-- creates the configured mapping-backed adapter or mock adapter
+- creates the configured mapping-backed adapter
 - discovers source vehicles for the selected upstream integration
 - reads raw state, raw metrics, and capabilities for each discovered vehicle
 - normalizes the data into the shared model

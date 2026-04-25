@@ -15,7 +15,6 @@ CONF_ADAPTER: Final = "adapter"
 CONF_VEHICLE_ID: Final = "vehicle_id"
 CONF_VEHICLES: Final = "vehicles"
 
-ADAPTER_TYPE_MOCK: Final = "mock"
 ADAPTER_TYPE_KIA_UVO: Final = "kia_uvo"
 
 DEFAULT_ENTRY_TITLE: Final = "Vehicle"
@@ -32,6 +31,7 @@ SERVICE_UNLOCK: Final = "unlock"
 SERVICE_START_CLIMATE: Final = "start_climate"
 SERVICE_STOP_CLIMATE: Final = "stop_climate"
 SERVICE_REFRESH: Final = "refresh"
+SERVICE_DIAGNOSTICS: Final = "diagnostics"
 
 NORMALIZED_STATES: Final[tuple[str, ...]] = (
     "unknown",

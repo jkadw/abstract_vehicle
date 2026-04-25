@@ -9,7 +9,6 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .adapters import get_available_adapter_options
 from .const import (
-    ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
     DOMAIN,
 )
@@ -47,9 +46,10 @@ class VehicleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not self._adapter_options:
             return self.async_abort(reason="no_adapters_available")
 
+        default_adapter = next(iter(self._adapter_options))
         schema = vol.Schema(
             {
-                vol.Required(CONF_ADAPTER, default=ADAPTER_TYPE_MOCK): vol.In(
+                vol.Required(CONF_ADAPTER, default=default_adapter): vol.In(
                     {
                         adapter_key: adapter_label
                         for adapter_key, (adapter_label, _) in self._adapter_options.items()

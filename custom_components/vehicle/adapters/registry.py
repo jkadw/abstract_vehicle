@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..const import ADAPTER_TYPE_KIA_UVO, ADAPTER_TYPE_MOCK
+from ..const import ADAPTER_TYPE_KIA_UVO
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,13 +21,6 @@ class AdapterDefinition:
 
 
 ADAPTER_DEFINITIONS: tuple[AdapterDefinition, ...] = (
-    AdapterDefinition(
-        key=ADAPTER_TYPE_MOCK,
-        module_path="custom_components.vehicle.adapters.mock",
-        class_name="MockVehicleAdapter",
-        fallback_label="Mock Adapter",
-        always_available=True,
-    ),
     AdapterDefinition(
         key=ADAPTER_TYPE_KIA_UVO,
         module_path="custom_components.vehicle.adapters.mapped",

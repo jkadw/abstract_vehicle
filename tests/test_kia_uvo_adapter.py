@@ -275,6 +275,35 @@ async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() 
 
 
 @pytest.mark.asyncio
+async def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
+    """Mapped adapters should expose detailed diagnostics without executing actions."""
+
+    adapter = _kia_uvo_adapter_class()(
+        hass=_fake_hass(),
+        vehicles=_configured_vehicles(),
+        vehicle_id="kia-1",
+    )
+
+    diagnostics = await adapter.get_diagnostics()
+
+    assert diagnostics["adapter_type"] == "mapped"
+    assert diagnostics["mapping_name"] == "hyundai_kia_connect_kia_uvo"
+    assert diagnostics["integration_domain"] == "kia_uvo"
+    assert diagnostics["source_vehicle"] == "santa_fe"
+    assert diagnostics["raw_state"]["vehicle_id"] == "kia-1"
+    assert diagnostics["raw_metrics"]["range"] == 198.0
+    assert diagnostics["capabilities"]["refresh"]["action_supported"] is True
+    assert diagnostics["actions"]["windows"]["open"]["service"] == "kia_uvo.set_windows"
+    assert diagnostics["source_entities"]["button.santa_fe_force_refresh"]["exists"] is True
+    assert (
+        diagnostics["source_entities"]["sensor.santa_fe_total_driving_range"]["attributes"][
+            "unit_of_measurement"
+        ]
+        == "mi"
+    )
+
+
+@pytest.mark.asyncio
 async def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatch) -> None:
     """Generic discovery should not crash on unexpected identifier shapes."""
 

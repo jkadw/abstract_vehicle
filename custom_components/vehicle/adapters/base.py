@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any, TypedDict
 
 from ..model import VehicleCapabilities
@@ -98,3 +98,30 @@ class VehicleAdapter(ABC):
     @abstractmethod
     async def execute_action(self, action: str, **kwargs: Any) -> ActionResult:
         """Execute a supported vehicle action."""
+
+    async def get_diagnostics(self) -> dict[str, Any]:
+        """Return read-only diagnostic data for the adapter."""
+
+        raw_state = await self.get_raw_state()
+        raw_metrics = await self.get_raw_metrics()
+        capabilities = await self.get_capabilities()
+        return {
+            "adapter_type": self.get_friendly_name(),
+            "raw_state": dict(raw_state),
+            "raw_metrics": dict(raw_metrics),
+            "capabilities": _serialize_capabilities(capabilities),
+        }
+
+
+def _serialize_capabilities(capabilities: VehicleCapabilities) -> dict[str, dict[str, bool]]:
+    """Convert typed capability support into a plain dict for diagnostics."""
+
+    return {
+        capability_name: {
+            "state_supported": support.state_supported,
+            "action_supported": support.action_supported,
+        }
+        for capability_name, support in (
+            (field.name, getattr(capabilities, field.name)) for field in fields(capabilities)
+        )
+    }

@@ -152,6 +152,26 @@ class MappingRuntime:
             return None
         return attributes.get(attr_name)
 
+    def source_entity_snapshot(self) -> dict[str, dict[str, Any]]:
+        """Return a read-only snapshot of resolved source entities."""
+
+        snapshot: dict[str, dict[str, Any]] = {}
+        for entity_id in self._referenced_entity_ids():
+            entity = self._get_state_object(entity_id)
+            attributes = getattr(entity, "attributes", {}) if entity is not None else {}
+            if not isinstance(attributes, dict):
+                attributes = {}
+            snapshot[entity_id] = {
+                "exists": entity is not None,
+                "state": None if entity is None else str(getattr(entity, "state", "unknown")),
+                "attributes": {
+                    key: value
+                    for key, value in attributes.items()
+                    if key in {"unit_of_measurement", "device_class", "state_class", "icon"}
+                },
+            }
+        return snapshot
+
     def _resolve_capability_states(self) -> dict[str, Any]:
         resolved: dict[str, Any] = {}
         for capability_name, capability in self._mapping.capabilities.items():
@@ -274,6 +294,49 @@ class MappingRuntime:
         if getter is None:
             return None
         return getter(entity_id)
+
+    def _referenced_entity_ids(self) -> list[str]:
+        entity_ids: list[str] = []
+        for capability in self._mapping.capabilities.values():
+            if capability.state is not None:
+                entity_ids.extend(
+                    self._resolve_source_entities(capability.state.source_entities())
+                )
+            for action in capability.actions.values():
+                self._collect_entity_ids_from_value(action.data, entity_ids)
+                self._collect_entity_ids_from_value(action.target, entity_ids)
+
+        for metric in self._mapping.metrics.values():
+            entity_ids.extend(self._resolve_source_entities(metric.source_entities()))
+
+        for derived in self._mapping.derived.values():
+            entity_ids.extend(self._resolve_source_entities(derived.source_entities()))
+
+        unique_ids: list[str] = []
+        for entity_id in entity_ids:
+            if entity_id not in unique_ids:
+                unique_ids.append(entity_id)
+        return unique_ids
+
+    def _resolve_source_entities(self, entity_ids: tuple[str, ...]) -> list[str]:
+        return [
+            _substitute_string(entity_id, self._vehicle, self._device)
+            for entity_id in entity_ids
+        ]
+
+    def _collect_entity_ids_from_value(self, value: Any, entity_ids: list[str]) -> None:
+        if isinstance(value, str):
+            resolved = _substitute_string(value, self._vehicle, self._device)
+            if "." in resolved and " " not in resolved:
+                entity_ids.append(resolved)
+            return
+        if isinstance(value, dict):
+            for item in value.values():
+                self._collect_entity_ids_from_value(item, entity_ids)
+            return
+        if isinstance(value, list):
+            for item in value:
+                self._collect_entity_ids_from_value(item, entity_ids)
 
 
 def _build_template_environment(runtime: MappingRuntime) -> Environment:
