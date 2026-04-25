@@ -77,6 +77,34 @@ capabilities:
         load_mapping_file(mapping_path)
 
 
+def test_load_mapping_file_allows_simple_state_without_any_or_all(tmp_path: Path) -> None:
+    """Missing optional any/all fields should not fail simple state mappings."""
+
+    mapping_path = tmp_path / "simple_state.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock:
+    state: lock.{vehicle}_door_lock
+    actions:
+      lock:
+        action: lock
+        data:
+          device_id: "{device}"
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+
+    assert mapping.capability("lock") is not None
+    assert mapping.capability("lock").state is not None
+    assert mapping.capability("lock").state.state == "lock.{vehicle}_door_lock"
+
+
 def test_registry_builds_generic_mapped_adapter_class_for_kia() -> None:
     """Mapped adapter definitions should resolve to a configured generic adapter class."""
 

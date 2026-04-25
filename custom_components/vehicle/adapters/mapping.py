@@ -264,8 +264,18 @@ def _parse_state_mapping(
 
     state_value = raw_mapping.get("state")
     template_value = raw_mapping.get("template")
-    any_value = _as_string_tuple(raw_mapping.get("any"), context=f"{context}.any")
-    all_value = _as_string_tuple(raw_mapping.get("all"), context=f"{context}.all")
+    raw_any = raw_mapping.get("any")
+    raw_all = raw_mapping.get("all")
+    any_value = (
+        _as_string_tuple(raw_any, context=f"{context}.any")
+        if raw_any not in (None, ())
+        else ()
+    )
+    all_value = (
+        _as_string_tuple(raw_all, context=f"{context}.all")
+        if raw_all not in (None, ())
+        else ()
+    )
     domain_value = raw_mapping.get("domain")
     if domain_value is not None and not isinstance(domain_value, str):
         raise MappingValidationError(f"{context}.domain must be a string when set")
