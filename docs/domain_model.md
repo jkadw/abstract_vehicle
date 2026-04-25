@@ -4,9 +4,11 @@ This document defines the stable v1 domain model for the `vehicle` integration.
 
 ## State Model
 
-The integration exposes one aggregate entity per vehicle:
+The integration exposes one aggregate state entity per vehicle:
 
-- `vehicle.my_vehicle`
+- `sensor.my_vehicle`
+
+Its friendly name is `My <device>`.
 
 When state capabilities are available, the integration may also expose capability-specific entities in standard Home Assistant domains such as:
 
@@ -32,7 +34,8 @@ Rules:
 - `driving` is only used when a reliable signal exists.
 - `error` is only used for explicit fault conditions.
 - `parked` is the default fallback when the vehicle is available but not otherwise active.
-- the aggregate `vehicle.*` entity is the canonical action target for the integration
+- the aggregate `sensor.*` entity is the canonical overview entity for the integration
+- actions target the vehicle device, not individual entities
 
 ## Capability Model
 
@@ -53,6 +56,7 @@ Core capabilities in v1:
 - `battery`
 - `fuel`
 - `odometer`
+- `refresh`
 
 Example:
 
@@ -157,21 +161,11 @@ Core services:
 - `vehicle.unlock`
 - `vehicle.start_climate`
 - `vehicle.stop_climate`
-
-Optional capability-based services:
-
-- `vehicle.start_charging`
-- `vehicle.stop_charging`
-- `vehicle.set_charge_limit`
-- `vehicle.open_windows`
-- `vehicle.close_windows`
-- `vehicle.honk`
-- `vehicle.flash_lights`
-- `vehicle.remote_start`
+- `vehicle.refresh`
 
 Rules:
 
 - Services must check `action_supported` before execution.
-- Services may target the aggregate `vehicle.*` entity or a capability entity for the same vehicle.
+- Services target the vehicle device exposed by the integration.
 - Services delegate to adapters rather than encoding OEM behavior in entities.
 - Unsupported services should fail clearly and predictably.

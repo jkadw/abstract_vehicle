@@ -16,6 +16,7 @@ from custom_components.vehicle.const import (
 )
 from custom_components.vehicle.model import CapabilitySupport, VehicleCapabilities
 from custom_components.vehicle.normalization import normalize_vehicle_data
+from custom_components.vehicle import services as services_module
 from custom_components.vehicle.services import _build_service_handler
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -44,6 +45,20 @@ class _ExplodingAdapter(MockVehicleAdapter):
         raise RuntimeError("backend boom")
 
 
+class _FakeDevice:
+    def __init__(self, device_id: str) -> None:
+        self.id = device_id
+
+
+class _FakeDeviceRegistry:
+    def __init__(self, device_id: str) -> None:
+        self._device = _FakeDevice(device_id)
+
+    def async_get_device(self, identifiers=None, connections=None):
+        _ = identifiers, connections
+        return self._device
+
+
 @pytest.mark.asyncio
 async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     """A supported service should delegate to the adapter and refresh state."""
@@ -51,6 +66,7 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     hass = HomeAssistant()
     adapter = MockVehicleAdapter()
     entity = _FakeEntity("sensor.family_ev")
+    device_id = "device-123"
     normalized = normalize_vehicle_data(
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
@@ -65,9 +81,10 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
             }
         }
     }
+    services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, SERVICE_UNLOCK)
-    await handler(ServiceCall({"entity_id": "sensor.family_ev"}))
+    await handler(ServiceCall({"device_id": device_id}))
 
     refreshed_state = await adapter.get_raw_state()
     assert refreshed_state["locked"] is False
@@ -83,6 +100,7 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
     hass = HomeAssistant()
     adapter = MockVehicleAdapter()
     entity = _FakeEntity("sensor.family_ev")
+    device_id = "device-123"
     normalized = normalize_vehicle_data(
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
@@ -100,10 +118,11 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
             }
         }
     }
+    services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, SERVICE_START_CLIMATE)
     with pytest.raises(ServiceValidationError):
-        await handler(ServiceCall({"entity_id": "sensor.family_ev"}))
+        await handler(ServiceCall({"device_id": device_id}))
 
 
 @pytest.mark.asyncio
@@ -119,6 +138,7 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
     hass = HomeAssistant()
     adapter = _UnsupportedClimateAdapter()
     entity = _FakeEntity("sensor.family_ev")
+    device_id = "device-123"
     normalized = normalize_vehicle_data(
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
@@ -133,10 +153,11 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
             }
         }
     }
+    services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, SERVICE_START_CLIMATE)
     with pytest.raises(ServiceValidationError):
-        await handler(ServiceCall({"entity_id": "sensor.family_ev"}))
+        await handler(ServiceCall({"device_id": device_id}))
 
 
 @pytest.mark.asyncio
@@ -146,6 +167,7 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     hass = HomeAssistant()
     adapter = _ExplodingAdapter()
     entity = _FakeEntity("sensor.family_ev")
+    device_id = "device-123"
     normalized = normalize_vehicle_data(
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
@@ -160,7 +182,8 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
             }
         }
     }
+    services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, SERVICE_UNLOCK)
     with pytest.raises(HomeAssistantError):
-        await handler(ServiceCall({"entity_id": "sensor.family_ev"}))
+        await handler(ServiceCall({"device_id": device_id}))

@@ -26,6 +26,7 @@ async def test_mock_adapter_default_fixture_is_parked(
     assert capabilities.lock.action_supported is True
     assert capabilities.windows.action_supported is False
     assert capabilities.climate.action_supported is True
+    assert capabilities.refresh.action_supported is True
 
 
 @pytest.mark.asyncio
@@ -57,6 +58,9 @@ async def test_mock_adapter_actions_update_internal_state(
     await mock_vehicle_adapter.execute_action("start_climate")
     climate_state = await mock_vehicle_adapter.get_raw_state()
     assert climate_state["climate_active"] is True
+
+    refresh_result = await mock_vehicle_adapter.execute_action("refresh")
+    assert refresh_result["action"] == "refresh"
 
 
 @pytest.mark.asyncio

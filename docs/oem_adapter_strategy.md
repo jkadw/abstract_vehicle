@@ -12,10 +12,11 @@ This document describes how OEM-specific adapters should fit into the `vehicle` 
 
 Preferred mapping approach:
 
-- adapter reads raw Home Assistant entities or integration state
-- adapter returns raw state and raw metrics in a loose, typed structure
+- adapter-specific files should define explicit source mappings instead of growing Python heuristics
+- adapter code should resolve those mappings against Home Assistant state, registry, and services
+- adapters return raw state and raw metrics in a loose, typed structure
 - normalization converts raw values into canonical state, attributes, units, and inferred support
-- adapter exposes a stable friendly name for the config flow
+- adapters expose a stable friendly name for the config flow
 
 ## Entity Discovery
 
@@ -64,7 +65,7 @@ Action mapping rules:
 
 - only expose `action_supported = true` when the adapter can actually execute the action reliably
 - keep action names canonical inside the adapter interface
-- perform OEM-specific argument building inside the adapter, not in services or entities
+- perform OEM-specific argument building inside the adapter or adapter mapping, not in services or entities
 - raise a clear adapter-level error for unsupported or failed actions
 - refresh raw state after action execution so the normalized snapshot can be rebuilt
 
@@ -93,7 +94,7 @@ Examples:
 ## Implementation Notes
 
 - Keep adapters async-first and non-blocking.
-- Prefer simple mapping tables or helper methods over large conditional branches.
+- Prefer explicit mapping files and small helper methods over large conditional branches.
 - Log enough detail to debug mappings, but do not leak OEM-specific structures into the domain model.
 - Add new OEM adapters by implementing the shared adapter interface, not by changing entity or normalization behavior for one manufacturer.
 - Add new OEM adapters with names that clearly reflect the upstream integration or project they map.

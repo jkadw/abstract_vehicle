@@ -45,7 +45,8 @@ Rules:
 - one capability may use separate sources for state and action
 - one normalized attribute may be derived from multiple raw sources
 - adapters should keep OEM-specific details hidden from the user where possible
-- the aggregate `vehicle.*` entity remains the primary vehicle abstraction even when capability entities are also created
+- the aggregate `sensor.*` entity remains the primary vehicle overview even when capability entities are also created
+- actions should target the vehicle device, not individual capability entities
 
 For aggregated concepts:
 
@@ -83,6 +84,7 @@ Useful debugging signals:
 - which raw entities were selected for each capability
 - which capabilities are state-only, action-only, or unsupported
 - current normalized state and attributes
+- which device-targeted actions are available for the selected vehicle
 - last adapter refresh result
 - last action result or error message
 

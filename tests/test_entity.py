@@ -101,7 +101,7 @@ def test_vehicle_entity_device_info_is_stable() -> None:
 
     assert device_info["manufacturer"] == "Mock Motors"
     assert device_info["model"] == "Atlas"
-    assert device_info["name"] == "Family EV"
+    assert device_info["name"] == "My Family EV"
     assert ("vehicle", "vehicle-123") in device_info["identifiers"]
 
 
@@ -127,4 +127,4 @@ def test_vehicle_entity_updates_metadata_when_snapshot_changes() -> None:
 
     assert entity.state == "charging"
     assert entity._attr_unique_id == "vehicle-456"
-    assert entity._attr_name == "Updated Vehicle"
+    assert entity._attr_name == "My Updated Vehicle"

@@ -1,0 +1,57 @@
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+
+capabilities:
+  lock:
+    state: lock.{vehicle}_door_lock
+    actions:
+      lock:
+        action: lock
+        data:
+          device_id: {device}
+      unlock:
+        action: unlock
+        data:
+          device_id: {device}
+
+  windows:
+    any:
+      - binary_sensor.{vehicle}_front_left_window
+      - binary_sensor.{vehicle}_front_right_window
+      - binary_sensor.{vehicle}_rear_left_window
+      - binary_sensor.{vehicle}_rear_right_window
+    actions:
+      open:
+        action: set_windows
+        data:
+          device_id: {device}
+          flwindow: "0"
+          frwindow: "0"
+          rrwindow: "0"
+          rlwindow: "0"
+
+  location:
+    state: device_tracker.{vehicle}_vehicle
+
+  refresh:
+    actions:
+      refresh:
+        action: press
+        data:
+          entity_id: button.{vehicle}_force_refresh
+
+metrics:
+  battery_level:
+    state: sensor.{vehicle}_ev_battery_level
+
+  range:
+    state: sensor.{vehicle}_total_driving_range
+
+  odometer:
+    state: sensor.{vehicle}_odometer
+
+derived:
+  range_warning:
+    domain: binary_sensor
+    template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
