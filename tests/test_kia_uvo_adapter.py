@@ -6,8 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from custom_components.vehicle.adapters.loader import _load_adapter_class
+from custom_components.vehicle.adapters.registry import get_adapter_definition
 from custom_components.vehicle.adapters.base import UnsupportedVehicleActionError
-from custom_components.vehicle.adapters.kia_uvo import KiaUvoVehicleAdapter
 from custom_components.vehicle.normalization import (
     NormalizationConfig,
     normalize_vehicle_data,
@@ -166,6 +167,12 @@ def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
     )
 
 
+def _kia_uvo_adapter_class():
+    definition = get_adapter_definition("kia_uvo")
+    assert definition is not None
+    return _load_adapter_class(definition)
+
+
 @pytest.mark.asyncio
 async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> None:
     """The adapter should discover vehicles via integration.domain and mapping patterns."""
@@ -173,7 +180,7 @@ async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> Non
     hass = _fake_hass()
     _patch_registries(monkeypatch, hass, {("kia_uvo", "kia-1")})
 
-    discovered = await KiaUvoVehicleAdapter.async_discover_vehicles(hass)
+    discovered = await _kia_uvo_adapter_class().async_discover_vehicles(hass)
 
     assert len(discovered) == 1
     assert discovered[0].vehicle_id == "kia-1"
@@ -186,7 +193,7 @@ async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> Non
 async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
     """The adapter should build raw data from the generic mapped runtime."""
 
-    adapter = KiaUvoVehicleAdapter(
+    adapter = _kia_uvo_adapter_class()(
         hass=_fake_hass(),
         vehicles=_configured_vehicles(),
         vehicle_id="kia-1",
@@ -213,7 +220,7 @@ async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> No
 async def test_kia_uvo_adapter_relies_on_normalization_for_units_and_entities() -> None:
     """Mapped raw values should still be normalized centrally."""
 
-    adapter = KiaUvoVehicleAdapter(
+    adapter = _kia_uvo_adapter_class()(
         hass=_fake_hass(),
         vehicles=_configured_vehicles(),
         vehicle_id="kia-1",
@@ -237,7 +244,7 @@ async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() 
     """Mapped actions should execute via HA services rather than OEM-specific code."""
 
     hass = _fake_hass()
-    adapter = KiaUvoVehicleAdapter(
+    adapter = _kia_uvo_adapter_class()(
         hass=hass,
         vehicles=_configured_vehicles(),
         vehicle_id="kia-1",
@@ -284,6 +291,6 @@ async def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatc
         },
     )
 
-    discovered = await KiaUvoVehicleAdapter.async_discover_vehicles(hass)
+    discovered = await _kia_uvo_adapter_class().async_discover_vehicles(hass)
 
     assert discovered[0].vehicle_id == "vehicle-123"

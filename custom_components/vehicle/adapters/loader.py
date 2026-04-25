@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .base import DiscoveredVehicle, VehicleAdapter
+from .mapped import MappedVehicleAdapter
 from .registry import ADAPTER_DEFINITIONS, AdapterDefinition, get_adapter_definition
 from ..const import CONF_VEHICLE_ID, CONF_VEHICLES
 
@@ -17,7 +18,26 @@ def _load_adapter_class(definition: AdapterDefinition) -> type[VehicleAdapter]:
 
     module = importlib.import_module(definition.module_path)
     adapter_class = getattr(module, definition.class_name)
+    if definition.mapping_name and issubclass(adapter_class, MappedVehicleAdapter):
+        return _build_mapped_adapter_class(definition, adapter_class)
     return adapter_class
+
+
+def _build_mapped_adapter_class(
+    definition: AdapterDefinition,
+    adapter_class: type[MappedVehicleAdapter],
+) -> type[MappedVehicleAdapter]:
+    """Create a concrete mapped-adapter class from registry metadata."""
+
+    class_name = f"{definition.key.title().replace('_', '')}MappedVehicleAdapter"
+    return type(
+        class_name,
+        (adapter_class,),
+        {
+            "mapping_name": definition.mapping_name,
+            "friendly_name": definition.fallback_label,
+        },
+    )
 
 
 async def load_adapter_class(
@@ -107,13 +127,17 @@ async def create_adapter_from_entry(
     if adapter_key == "mock":
         return adapter_class()
 
-    if adapter_key == "kia_uvo":
+    if definition.mapping_name is not None:
         vehicles = entry_data.get(CONF_VEHICLES)
         if not isinstance(vehicles, list):
-            raise ValueError("kia_uvo adapter requires configured vehicles")
+            raise ValueError(
+                f"{adapter_key} adapter requires configured vehicles"
+            )
         vehicle_id = entry_data.get(CONF_VEHICLE_ID)
         if vehicle_id is not None and not isinstance(vehicle_id, str):
-            raise ValueError("kia_uvo vehicle_id must be a string when configured")
+            raise ValueError(
+                f"{adapter_key} vehicle_id must be a string when configured"
+            )
         return adapter_class(hass=hass, vehicles=vehicles, vehicle_id=vehicle_id)
 
     raise ValueError(f"Unsupported adapter type: {adapter_key}")

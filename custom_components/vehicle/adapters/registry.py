@@ -15,6 +15,7 @@ class AdapterDefinition:
     module_path: str
     class_name: str
     fallback_label: str
+    mapping_name: str | None = None
     source_integration: str | None = None
     always_available: bool = False
 
@@ -29,9 +30,10 @@ ADAPTER_DEFINITIONS: tuple[AdapterDefinition, ...] = (
     ),
     AdapterDefinition(
         key=ADAPTER_TYPE_KIA_UVO,
-        module_path="custom_components.vehicle.adapters.hyundai_kia_connect_kia_uvo",
-        class_name="HyundaiKiaConnectKiaUvoVehicleAdapter",
+        module_path="custom_components.vehicle.adapters.mapped",
+        class_name="MappedVehicleAdapter",
         fallback_label="Hyundai / Kia Connect",
+        mapping_name="hyundai_kia_connect_kia_uvo",
         source_integration="kia_uvo",
     ),
 )

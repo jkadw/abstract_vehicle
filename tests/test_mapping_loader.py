@@ -6,11 +6,14 @@ from pathlib import Path
 
 import pytest
 
+from custom_components.vehicle.adapters.loader import _load_adapter_class
 from custom_components.vehicle.adapters.mapping import (
     MappingValidationError,
     load_adapter_mapping,
     load_mapping_file,
 )
+from custom_components.vehicle.adapters.mapped import MappedVehicleAdapter
+from custom_components.vehicle.adapters.registry import get_adapter_definition
 
 
 def test_load_adapter_mapping_for_kia_yaml() -> None:
@@ -72,3 +75,16 @@ capabilities:
 
     with pytest.raises(MappingValidationError, match="only one of state/template/any/all"):
         load_mapping_file(mapping_path)
+
+
+def test_registry_builds_generic_mapped_adapter_class_for_kia() -> None:
+    """Mapped adapter definitions should resolve to a configured generic adapter class."""
+
+    definition = get_adapter_definition("kia_uvo")
+    assert definition is not None
+
+    adapter_class = _load_adapter_class(definition)
+
+    assert issubclass(adapter_class, MappedVehicleAdapter)
+    assert adapter_class.mapping_name == "hyundai_kia_connect_kia_uvo"
+    assert adapter_class.get_friendly_name() == "Hyundai / Kia Connect"
