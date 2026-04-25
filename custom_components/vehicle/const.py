@@ -24,6 +24,7 @@ DATA_ADAPTER: Final = "adapter"
 DATA_NORMALIZED: Final = "normalized_data"
 DATA_ENTITIES: Final = "entities"
 DATA_VEHICLES: Final = "vehicles"
+DATA_DISCOVERY_SNAPSHOTS: Final = "discovery_snapshots"
 DATA_SERVICES_REGISTERED: Final = "services_registered"
 
 SERVICE_LOCK: Final = "lock"

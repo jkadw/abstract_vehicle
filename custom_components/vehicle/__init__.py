@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
@@ -11,6 +13,7 @@ from .const import (
     ADAPTER_TYPE_MOCK,
     CONF_ADAPTER,
     DATA_ADAPTER,
+    DATA_DISCOVERY_SNAPSHOTS,
     DATA_ENTITIES,
     DATA_NORMALIZED,
     DATA_SERVICES_REGISTERED,
@@ -21,11 +24,14 @@ from .const import (
 from .normalization import normalize_vehicle_data
 from .services import async_register_services, async_unregister_services
 
+LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the vehicle integration."""
 
     hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
     await async_register_services(hass)
     return True
 
@@ -34,6 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a vehicle config entry."""
 
     hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
 
     adapter_type = entry.data.get(CONF_ADAPTER, ADAPTER_TYPE_MOCK)
     if not hass.is_running and adapter_type != ADAPTER_TYPE_MOCK:
@@ -48,18 +55,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         )
 
+    snapshots = hass.data[DOMAIN][DATA_DISCOVERY_SNAPSHOTS]
+    previous_snapshot = set(snapshots.get(entry.entry_id, ()))
     discovered_vehicles = await _discover_entry_vehicles(hass, entry)
     vehicle_entries = []
     for discovered_vehicle in discovered_vehicles:
-        vehicle_adapter = await create_adapter_from_discovered_vehicle(
-            hass,
-            adapter_type,
-            discovered_vehicle,
-        )
-        raw_state = await vehicle_adapter.get_raw_state()
-        raw_metrics = await vehicle_adapter.get_raw_metrics()
-        capabilities = await vehicle_adapter.get_capabilities()
-        normalized_data = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+        try:
+            vehicle_adapter = await create_adapter_from_discovered_vehicle(
+                hass,
+                adapter_type,
+                discovered_vehicle,
+            )
+            raw_state = await vehicle_adapter.get_raw_state()
+            raw_metrics = await vehicle_adapter.get_raw_metrics()
+            capabilities = await vehicle_adapter.get_capabilities()
+            normalized_data = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+        except Exception as err:
+            LOGGER.warning(
+                "Skipping discovered vehicle '%s' for adapter '%s': %s",
+                discovered_vehicle.vehicle_id,
+                adapter_type,
+                err,
+            )
+            continue
+
         vehicle_entries.append(
             {
                 DATA_ADAPTER: vehicle_adapter,
@@ -72,6 +91,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_ADAPTER: adapter_type,
         DATA_VEHICLES: vehicle_entries,
     }
+    current_snapshot = _snapshot_vehicle_ids(vehicle_entries)
+    snapshots[entry.entry_id] = sorted(current_snapshot)
+    _log_vehicle_reconciliation(entry, adapter_type, previous_snapshot, current_snapshot)
 
     await async_register_services(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -83,8 +105,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-        if all(not isinstance(value, dict) for value in hass.data[DOMAIN].values()):
+        domain_data = hass.data[DOMAIN]
+        entry_data = domain_data.get(entry.entry_id)
+        snapshots = domain_data.setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
+        if isinstance(entry_data, dict):
+            snapshots[entry.entry_id] = sorted(
+                _snapshot_vehicle_ids(entry_data.get(DATA_VEHICLES, []))
+            )
+
+        domain_data.pop(entry.entry_id, None)
+        if not any(
+            isinstance(value, dict) and DATA_VEHICLES in value
+            for value in domain_data.values()
+        ):
             await async_unregister_services(hass)
     return unload_ok
 
@@ -98,6 +131,56 @@ async def _discover_entry_vehicles(
     if not isinstance(adapter_type, str):
         raise ValueError("Configured adapter type must be a string")
     return await discover_adapter_vehicles(hass, adapter_type)
+
+
+def _snapshot_vehicle_ids(vehicle_entries: object) -> set[str]:
+    """Return the current set of normalized vehicle ids for one entry."""
+
+    if not isinstance(vehicle_entries, list):
+        return set()
+
+    vehicle_ids: set[str] = set()
+    for vehicle_entry in vehicle_entries:
+        if not isinstance(vehicle_entry, dict):
+            continue
+        normalized = vehicle_entry.get(DATA_NORMALIZED)
+        if normalized is None:
+            continue
+        vehicle_id = getattr(getattr(normalized, "info", None), "vehicle_id", None)
+        if isinstance(vehicle_id, str) and vehicle_id:
+            vehicle_ids.add(vehicle_id)
+    return vehicle_ids
+
+
+def _log_vehicle_reconciliation(
+    entry: ConfigEntry,
+    adapter_type: object,
+    previous_snapshot: set[str],
+    current_snapshot: set[str],
+) -> None:
+    """Log add/remove reconciliation results for one entry."""
+
+    added = sorted(current_snapshot - previous_snapshot)
+    removed = sorted(previous_snapshot - current_snapshot)
+    unchanged = sorted(current_snapshot & previous_snapshot)
+
+    if added or removed:
+        LOGGER.info(
+            "Reconciled My Vehicle entry '%s' for adapter '%s': added=%s removed=%s kept=%s",
+            entry.entry_id,
+            adapter_type,
+            added or ["-"],
+            removed or ["-"],
+            unchanged or ["-"],
+        )
+        return
+
+    LOGGER.debug(
+        "My Vehicle entry '%s' for adapter '%s' is unchanged with vehicles=%s",
+        entry.entry_id,
+        adapter_type,
+        unchanged or ["-"],
+    )
 
 
 __all__ = ["DOMAIN"]
