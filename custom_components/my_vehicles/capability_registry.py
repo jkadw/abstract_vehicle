@@ -185,14 +185,14 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             ),
         ),
     ),
-    "warning_lights": CapabilityDefinition(
-        name="warning_lights",
-        action_verbs=("on", "off"),
+    "hazard_lights": CapabilityDefinition(
+        name="hazard_lights",
+        action_verbs=("turn_on", "turn_off"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="warning_lights",
+                    key="hazard_lights",
                     device_class="problem",
                     icon="mdi:car-hazard-lights",
                     create_when_state_supported=True,
@@ -201,15 +201,23 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             control_entities=(
                 EntityGenerationRule(
                     domain="switch",
-                    key="warning_lights",
+                    key="hazard_lights",
                     icon="mdi:car-hazard-lights",
                     create_when_action_supported=True,
                     create_when_source_domain=("switch",),
                 ),
             ),
             buttons=(
-                ButtonGenerationRule(action="on", key="warning_lights_on", icon="mdi:car-hazard-lights"),
-                ButtonGenerationRule(action="off", key="warning_lights_off", icon="mdi:car-hazard-lights"),
+                ButtonGenerationRule(
+                    action="turn_on",
+                    key="turn_on_hazard_lights",
+                    icon="mdi:car-hazard-lights",
+                ),
+                ButtonGenerationRule(
+                    action="turn_off",
+                    key="turn_off_hazard_lights",
+                    icon="mdi:car-hazard-lights",
+                ),
             ),
         ),
     ),
@@ -296,13 +304,13 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             ),
         ),
     ),
-    "critical_warnings": CapabilityDefinition(
-        name="critical_warnings",
+    "warning_messages": CapabilityDefinition(
+        name="warning_messages",
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="critical_warnings",
+                    key="warning_messages",
                     device_class="problem",
                     icon="mdi:alert-circle",
                     create_when_state_supported=True,

@@ -101,14 +101,14 @@ Every mapping file must define exactly this set of canonical capabilities:
 - `charging`
 - `horn`
 - `flash_lights`
-- `warning_lights`
+- `hazard_lights`
 - `location`
 - `ignition`
 - `driving_range`
 - `range_warning`
 - `odometer`
 - `tire_pressure`
-- `critical_warnings`
+- `warning_messages`
 - `info_messages`
 - `windows`
 - `doors`

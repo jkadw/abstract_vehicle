@@ -130,10 +130,10 @@ class MappedVehicleAdapter(VehicleAdapter):
             "range_warning": _coerce_bool_state(
                 resolved.capability_states.get("range_warning")
             ),
-            "critical_warnings": resolved.capability_states.get("critical_warnings"),
+            "warning_messages": resolved.capability_states.get("warning_messages"),
             "info_messages": resolved.capability_states.get("info_messages"),
-            "warning_lights_active": _coerce_bool_state(
-                resolved.capability_states.get("warning_lights")
+            "hazard_lights_active": _coerce_bool_state(
+                resolved.capability_states.get("hazard_lights")
             ),
             "source_problems": dict(resolved.errors),
         }

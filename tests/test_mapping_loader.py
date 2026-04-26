@@ -51,7 +51,7 @@ capabilities:
   flash_lights:
     state:
       unavailable: true
-  warning_lights:
+  hazard_lights:
     state:
       unavailable: true
   location:
@@ -73,7 +73,7 @@ capabilities:
   tire_pressure:
     state:
       unavailable: true
-  critical_warnings:
+  warning_messages:
     state:
       unavailable: true
   info_messages:

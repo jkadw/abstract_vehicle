@@ -56,14 +56,14 @@ Canonical capabilities:
 - `charging`
 - `horn`
 - `flash_lights`
-- `warning_lights`
+- `hazard_lights`
 - `location`
 - `ignition`
 - `driving_range`
 - `range_warning`
 - `odometer`
 - `tire_pressure`
-- `critical_warnings`
+- `warning_messages`
 - `info_messages`
 - `windows`
 - `doors`
@@ -102,7 +102,7 @@ Examples:
   integration exposes one.
 - `flash_lights`
   Semantics: headlight flash action and any corresponding state if exposed.
-- `warning_lights`
+- `hazard_lights`
   Semantics: warning or hazard light state and `on` / `off` actions when
   available.
 - `location`
@@ -117,7 +117,7 @@ Examples:
   Semantics: total distance traveled.
 - `tire_pressure`
   Semantics: tire pressure status or measurement exposure.
-- `critical_warnings`
+- `warning_messages`
   Semantics: critical warning indicators.
 - `info_messages`
   Semantics: informational vehicle messages.
@@ -179,7 +179,7 @@ grow, but the stable shape is:
 - `latitude: float | null`
 - `longitude: float | null`
 - `odometer: float | null`
-- `critical_warnings: object | null`
+- `warning_messages: object | null`
 - `info_messages: object | null`
 
 Capability support flags:
@@ -194,8 +194,8 @@ Capability support flags:
 - `horn_action_supported: bool`
 - `flash_lights_state_supported: bool`
 - `flash_lights_action_supported: bool`
-- `warning_lights_state_supported: bool`
-- `warning_lights_action_supported: bool`
+- `hazard_lights_state_supported: bool`
+- `hazard_lights_action_supported: bool`
 - `location_state_supported: bool`
 - `location_action_supported: bool`
 - `ignition_state_supported: bool`
@@ -208,8 +208,8 @@ Capability support flags:
 - `odometer_action_supported: bool`
 - `tire_pressure_state_supported: bool`
 - `tire_pressure_action_supported: bool`
-- `critical_warnings_state_supported: bool`
-- `critical_warnings_action_supported: bool`
+- `warning_messages_state_supported: bool`
+- `warning_messages_action_supported: bool`
 - `info_messages_state_supported: bool`
 - `info_messages_action_supported: bool`
 - `windows_state_supported: bool`
@@ -280,8 +280,8 @@ Core services:
 - `my_vehicles.stop_charging`
 - `my_vehicles.flash_lights`
 - `my_vehicles.honk`
-- `my_vehicles.warning_lights_on`
-- `my_vehicles.warning_lights_off`
+- `my_vehicles.turn_on_hazard_lights`
+- `my_vehicles.turn_off_hazard_lights`
 - `my_vehicles.refresh`
 
 Rules:

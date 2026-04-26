@@ -18,11 +18,29 @@ capabilities:
 
   climate:
     state:
-      unavailable: true
+      entity: switch.{vehicle}_{vehicle}_climate
+    actions:
+      start:
+        action: switch.turn_on
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_climate
+      stop:
+        action: switch.turn_off
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_climate
 
   charging:
     state:
-      unavailable: true
+      entity: switch.{vehicle}_{vehicle}_ev_charging
+    actions:
+      start:
+        action: switch.turn_on
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_ev_charging
+      stop:
+        action: switch.turn_off
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_ev_charging
 
   horn:
     state:
@@ -32,9 +50,14 @@ capabilities:
     state:
       unavailable: true
 
-  warning_lights:
+  hazard_lights:
     state:
       unavailable: true
+    actions:
+      turn_on:
+        action: kia_uvo.start_hazard_lights
+        data:
+          device_id: {device}
 
   location:
     state:
@@ -42,7 +65,7 @@ capabilities:
 
   ignition:
     state:
-      unavailable: true
+      entity: binary_sensor.{vehicle}_engine
 
   driving_range:
     state:
@@ -62,11 +85,24 @@ capabilities:
 
   tire_pressure:
     state:
-      unavailable: true
+      entity: binary_sensor.{vehicle}_tire_pressure_all
 
-  critical_warnings:
+  warning_messages:
     state:
-      unavailable: true
+      any:
+        - binary_sensor.{vehicle}_fuel_low_level
+        - binary_sensor.{vehicle}_smart_key_battery_warning
+        - binary_sensor.{vehicle}_washer_fluid_warning
+        - binary_sensor.{vehicle}_brake_fluid_warning
+        - binary_sensor.{vehicle}_headlight_fault
+        - binary_sensor.{vehicle}_headlamp_left_low_fault
+        - binary_sensor.{vehicle}_headlamp_right_low_fault
+        - binary_sensor.{vehicle}_stop_lamp_left_fault
+        - binary_sensor.{vehicle}_stop_lamp_right_fault
+        - binary_sensor.{vehicle}_turn_signal_left_front_fault
+        - binary_sensor.{vehicle}_turn_signal_right_front_fault
+        - binary_sensor.{vehicle}_turn_signal_left_rear_fault
+        - binary_sensor.{vehicle}_turn_signal_right_rear_fault
 
   info_messages:
     state:
@@ -84,6 +120,14 @@ capabilities:
         action: kia_uvo.set_windows
         data:
           device_id: {device}
+          flwindow: "1"
+          frwindow: "1"
+          rrwindow: "1"
+          rlwindow: "1"
+      close:
+        action: kia_uvo.set_windows
+        data:
+          device_id: {device}
           flwindow: "0"
           frwindow: "0"
           rrwindow: "0"
@@ -91,11 +135,17 @@ capabilities:
 
   doors:
     state:
-      unavailable: true
+      any:
+        - binary_sensor.{vehicle}_front_left_door
+        - binary_sensor.{vehicle}_front_right_door
+        - binary_sensor.{vehicle}_back_left_door
+        - binary_sensor.{vehicle}_back_right_door
 
   lids:
     state:
-      unavailable: true
+      any:
+        - binary_sensor.{vehicle}_trunk
+        - binary_sensor.{vehicle}_hood
 
   battery_level:
     state:
@@ -108,4 +158,4 @@ capabilities:
       refresh:
         action: button.press
         data:
-          entity_id: button.{vehicle}_force_refresh
+          entity_id: button.{vehicle}_{vehicle}_force_refresh

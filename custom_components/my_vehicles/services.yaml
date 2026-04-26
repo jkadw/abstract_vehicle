@@ -54,16 +54,16 @@ flash_lights:
     device:
       integration: my_vehicles
 
-warning_lights_on:
-  name: Warning Lights On
-  description: Switch warning lights on for the selected vehicle if supported.
+turn_on_hazard_lights:
+  name: Turn On Hazard Lights
+  description: Switch hazard lights on for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
 
-warning_lights_off:
-  name: Warning Lights Off
-  description: Switch warning lights off for the selected vehicle if supported.
+turn_off_hazard_lights:
+  name: Turn Off Hazard Lights
+  description: Switch hazard lights off for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
