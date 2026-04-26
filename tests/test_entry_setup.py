@@ -101,7 +101,7 @@ async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
 ) -> None:
     """One mapping entry should own multiple vehicles and register a startup reload."""
 
-    from custom_components import vehicle as vehicle_module
+    from custom_components import my_vehicles as vehicle_module
 
     hass = _FakeHass(is_running=False)
     hass.data = {
@@ -155,7 +155,7 @@ async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
     assert hass.config_entries.forwarded == [
         (
             "entry-1",
-            ("sensor", "binary_sensor", "lock", "device_tracker", "button"),
+            ("sensor", "binary_sensor", "lock", "switch", "device_tracker", "button"),
         )
     ]
 

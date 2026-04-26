@@ -6,7 +6,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN
+from .const import DATA_ADAPTER, DOMAIN
 from .model import NormalizedVehicleData, VehicleState
 from .normalization import build_vehicle_attributes
 
@@ -66,6 +66,9 @@ class VehicleBaseEntity(Entity):
             f"{self._normalized_data.info.vehicle_id}_{self._entity_key}"
         )
 
+    def _capability_value(self, capability_name: str):
+        return self._normalized_data.capability_values.get(capability_name)
+
 
 class VehicleEntity(VehicleBaseEntity, SensorEntity):
     """Aggregate vehicle state entity exposed in the sensor domain."""
@@ -107,3 +110,22 @@ class VehicleEntity(VehicleBaseEntity, SensorEntity):
 
         self._attr_name = f"My {self._normalized_data.info.name}"
         self._attr_unique_id = self._normalized_data.info.vehicle_id
+
+
+def capability_source_domains(entry_data: dict[str, object], capability_name: str) -> set[str]:
+    """Return source entity domains referenced by one capability mapping."""
+
+    adapter = entry_data.get(DATA_ADAPTER)
+    mapping = getattr(adapter, "_mapping", None)
+    if mapping is None:
+        return set()
+
+    capability = mapping.capability(capability_name)
+    if capability is None:
+        return set()
+
+    domains: set[str] = set()
+    for entity_id in capability.state.source_entities():
+        if "." in entity_id:
+            domains.add(entity_id.split(".", 1)[0])
+    return domains

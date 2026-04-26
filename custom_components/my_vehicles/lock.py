@@ -16,7 +16,7 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
     """Lock entity for the normalized vehicle lock capability."""
 
     def __init__(self, normalized_data, entry_data) -> None:
-        super().__init__(normalized_data, "lock", "Lock")
+        super().__init__(normalized_data, "lock_vehicle", "Lock Vehicle")
         self._entry_data = entry_data
 
     @property
@@ -25,11 +25,11 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
 
     async def async_lock(self, **kwargs) -> None:
         _ = kwargs
-        await async_execute_entry_action(self._entry_data, "lock", "lock")
+        await async_execute_entry_action(self._entry_data, "lock_vehicle", "lock")
 
     async def async_unlock(self, **kwargs) -> None:
         _ = kwargs
-        await async_execute_entry_action(self._entry_data, "lock", "unlock")
+        await async_execute_entry_action(self._entry_data, "lock_vehicle", "unlock")
 
 
 async def async_setup_entry(
@@ -43,8 +43,6 @@ async def async_setup_entry(
     entities = []
     for vehicle_data in entry_data[DATA_VEHICLES]:
         normalized = vehicle_data[DATA_NORMALIZED]
-        if not normalized.capabilities.lock.state_supported:
-            continue
 
         entity = VehicleLockCapabilityEntity(normalized, vehicle_data)
         vehicle_data[DATA_ENTITIES].append(entity)

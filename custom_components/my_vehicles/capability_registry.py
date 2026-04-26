@@ -449,3 +449,64 @@ def get_capability_definition(name: str) -> CapabilityDefinition:
     """Return the canonical definition for one capability."""
 
     return CAPABILITY_REGISTRY[name]
+
+
+def state_entity_rules_for_domain(domain: str) -> tuple[tuple[str, EntityGenerationRule], ...]:
+    """Return state-entity rules for one HA domain."""
+
+    return tuple(
+        (capability_name, rule)
+        for capability_name, definition in CAPABILITY_REGISTRY.items()
+        for rule in definition.ui.state_entities
+        if rule.domain == domain
+    )
+
+
+def control_entity_rules_for_domain(domain: str) -> tuple[tuple[str, EntityGenerationRule], ...]:
+    """Return control-entity rules for one HA domain."""
+
+    return tuple(
+        (capability_name, rule)
+        for capability_name, definition in CAPABILITY_REGISTRY.items()
+        for rule in definition.ui.control_entities
+        if rule.domain == domain
+    )
+
+
+def button_rules() -> tuple[tuple[str, ButtonGenerationRule], ...]:
+    """Return all button rules keyed by canonical capability."""
+
+    return tuple(
+        (capability_name, rule)
+        for capability_name, definition in CAPABILITY_REGISTRY.items()
+        for rule in definition.ui.buttons
+    )
+
+
+def button_rule_map() -> dict[str, tuple[str, ButtonGenerationRule]]:
+    """Return button rules keyed by their exposed key/service name."""
+
+    return {
+        rule.key: (capability_name, rule)
+        for capability_name, rule in button_rules()
+    }
+
+
+def should_create_entity_rule(
+    rule: EntityGenerationRule,
+    *,
+    state_supported: bool,
+    action_supported: bool,
+    source_domains: set[str] | None = None,
+) -> bool:
+    """Return whether one registry entity rule should create an entity."""
+
+    if rule.create_always:
+        return True
+    if rule.create_when_state_supported and state_supported:
+        return True
+    if rule.create_when_action_supported and action_supported:
+        return True
+    if rule.create_when_source_domain and source_domains:
+        return bool(set(rule.create_when_source_domain) & source_domains)
+    return False

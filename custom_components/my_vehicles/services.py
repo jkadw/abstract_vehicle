@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import fields
 import logging
 
 import voluptuous as vol
@@ -14,6 +13,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 
 from .adapters import UnsupportedVehicleActionError
+from .capability_registry import button_rule_map
 from .const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
@@ -22,23 +22,13 @@ from .const import (
     DATA_VEHICLES,
     DOMAIN,
     SERVICE_DIAGNOSTICS,
-    SERVICE_LOCK,
-    SERVICE_REFRESH,
-    SERVICE_START_CLIMATE,
-    SERVICE_STOP_CLIMATE,
-    SERVICE_UNLOCK,
 )
 from .normalization import normalize_vehicle_data
 
 LOGGER = logging.getLogger(__name__)
-
-
 SERVICE_ACTIONS: dict[str, tuple[str, str]] = {
-    SERVICE_LOCK: ("lock", "lock"),
-    SERVICE_UNLOCK: ("lock", "unlock"),
-    SERVICE_START_CLIMATE: ("climate", "start_climate"),
-    SERVICE_STOP_CLIMATE: ("climate", "stop_climate"),
-    SERVICE_REFRESH: ("refresh", "refresh"),
+    service_name: (capability_name, button_rule.action)
+    for service_name, (capability_name, button_rule) in button_rule_map().items()
 }
 
 SERVICE_SCHEMA = vol.Schema(
@@ -240,9 +230,9 @@ async def _collect_entry_diagnostics(
 
 def _serialize_capabilities(capabilities) -> dict[str, dict[str, bool]]:
     return {
-        field.name: {
-            "state_supported": getattr(capabilities, field.name).state_supported,
-            "action_supported": getattr(capabilities, field.name).action_supported,
+        capability_name: {
+            "state_supported": support.state_supported,
+            "action_supported": support.action_supported,
         }
-        for field in fields(capabilities)
+        for capability_name, support in capabilities.items()
     }

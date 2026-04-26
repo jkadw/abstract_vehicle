@@ -12,8 +12,6 @@ from custom_components.my_vehicles.const import (
     DATA_VEHICLES,
     DOMAIN,
     SERVICE_DIAGNOSTICS,
-    SERVICE_START_CLIMATE,
-    SERVICE_UNLOCK,
 )
 from custom_components.my_vehicles.model import CapabilitySupport, VehicleCapabilities
 from custom_components.my_vehicles.normalization import normalize_vehicle_data
@@ -73,7 +71,7 @@ class _ServiceAdapter:
 
     async def get_capabilities(self) -> VehicleCapabilities:
         return VehicleCapabilities(
-            lock=CapabilitySupport(state_supported=True, action_supported=True),
+            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
             climate=CapabilitySupport(state_supported=True, action_supported=True),
             refresh=CapabilitySupport(state_supported=False, action_supported=True),
         )
@@ -147,7 +145,7 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, SERVICE_UNLOCK)
+    handler = _build_service_handler(hass, "unlock_vehicle")
     await handler(ServiceCall({"device_id": device_id}))
 
     refreshed_state = await adapter.get_raw_state()
@@ -169,7 +167,7 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
         await adapter.get_raw_state(),
         await adapter.get_raw_metrics(),
         VehicleCapabilities(
-            lock=CapabilitySupport(state_supported=True, action_supported=True),
+            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
             climate=CapabilitySupport(state_supported=True, action_supported=False),
         ),
     )
@@ -188,7 +186,7 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, SERVICE_START_CLIMATE)
+    handler = _build_service_handler(hass, "start_climate")
     with pytest.raises(ServiceValidationError):
         await handler(ServiceCall({"device_id": device_id}))
 
@@ -227,7 +225,7 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, SERVICE_START_CLIMATE)
+    handler = _build_service_handler(hass, "start_climate")
     with pytest.raises(ServiceValidationError):
         await handler(ServiceCall({"device_id": device_id}))
 
@@ -260,7 +258,7 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, SERVICE_UNLOCK)
+    handler = _build_service_handler(hass, "unlock_vehicle")
     with pytest.raises(HomeAssistantError):
         await handler(ServiceCall({"device_id": device_id}))
 

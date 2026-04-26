@@ -1,13 +1,13 @@
-lock:
+lock_vehicle:
   name: Lock Vehicle
-  description: Lock the selected vehicle if lock actions are supported.
+  description: Lock the selected vehicle if the capability is supported.
   target:
     device:
       integration: my_vehicles
 
-unlock:
+unlock_vehicle:
   name: Unlock Vehicle
-  description: Unlock the selected vehicle if lock actions are supported.
+  description: Unlock the selected vehicle if the capability is supported.
   target:
     device:
       integration: my_vehicles
@@ -22,6 +22,48 @@ start_climate:
 stop_climate:
   name: Stop Climate
   description: Stop climate control for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+start_charging:
+  name: Start Charging
+  description: Start charging for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+stop_charging:
+  name: Stop Charging
+  description: Stop charging for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+horn:
+  name: Horn
+  description: Trigger the horn for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+flash_lights:
+  name: Flash Lights
+  description: Flash the lights for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+warning_lights_on:
+  name: Warning Lights On
+  description: Switch warning lights on for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+warning_lights_off:
+  name: Warning Lights Off
+  description: Switch warning lights off for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles

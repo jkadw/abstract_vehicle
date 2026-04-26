@@ -1,11 +1,10 @@
-"""Sensor platform for vehicle state and numeric capabilities."""
+"""Sensor platform for aggregate and sensor-domain capability entities."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
@@ -14,63 +13,71 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .capability_registry import (
+    state_entity_rules_for_domain,
+    should_create_entity_rule,
+)
 from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
-from .entity import VehicleBaseEntity, VehicleEntity
+from .entity import VehicleBaseEntity, VehicleEntity, capability_source_domains
 from .model import NormalizedVehicleData
 
 
-@dataclass(frozen=True, slots=True)
-class SensorSpec:
-    key: str
-    name: str
-    field: str
-    unit: str | None = None
-    icon: str | None = None
-    device_class: SensorDeviceClass | None = None
+class VehicleCapabilitySensorEntity(VehicleBaseEntity, SensorEntity):
+    """Sensor entity driven by the capability registry."""
 
-
-SENSOR_SPECS: tuple[SensorSpec, ...] = (
-    SensorSpec(
-        "battery_level",
-        "Battery",
-        "battery_level",
-        PERCENTAGE,
-        "mdi:battery",
-        SensorDeviceClass.BATTERY,
-    ),
-    SensorSpec("fuel_level", "Fuel", "fuel_level", PERCENTAGE, "mdi:gas-station"),
-    SensorSpec("range", "Range", "range", None, "mdi:map-marker-distance"),
-    SensorSpec("odometer", "Odometer", "odometer", None, "mdi:counter"),
-)
-
-
-class VehicleValueSensorEntity(VehicleBaseEntity, SensorEntity):
-    """Sensor for a numeric normalized vehicle field."""
-
-    def __init__(self, normalized_data: NormalizedVehicleData, spec: SensorSpec) -> None:
-        super().__init__(normalized_data, spec.key, spec.name)
-        self._spec = spec
+    def __init__(
+        self,
+        normalized_data: NormalizedVehicleData,
+        capability_name: str,
+        entity_key: str,
+        entity_name: str,
+        *,
+        device_class: str | None = None,
+        state_class: str | None = None,
+        icon: str | None = None,
+    ) -> None:
+        super().__init__(normalized_data, entity_key, entity_name)
+        self._capability_name = capability_name
+        self._device_class = device_class
+        self._state_class = state_class
+        self._icon = icon
 
     @property
     def native_value(self) -> Any:
-        return getattr(self._normalized_data, self._spec.field)
+        if self._capability_name == "battery_level":
+            return self._normalized_data.battery_level
+        if self._capability_name == "driving_range":
+            return self._normalized_data.driving_range
+        if self._capability_name == "odometer":
+            return self._normalized_data.odometer
+        if self._capability_name == "info_messages":
+            return self._normalized_data.info_messages
+        if self._capability_name == "tire_pressure":
+            return self._capability_value(self._capability_name)
+        return self._capability_value(self._capability_name)
 
     @property
     def native_unit_of_measurement(self) -> str | None:
-        if self._spec.key in {"range", "odometer"}:
+        if self._capability_name == "battery_level":
+            return PERCENTAGE
+        if self._capability_name in {"driving_range", "odometer"}:
             distance_unit = self._normalized_data.display_units.distance_unit
             if distance_unit == "mi":
                 return UnitOfLength.MILES
             return UnitOfLength.KILOMETERS
-        return self._spec.unit
+        return None
 
     @property
-    def device_class(self) -> SensorDeviceClass | None:
-        return self._spec.device_class
+    def device_class(self) -> str | None:
+        return self._device_class
+
+    @property
+    def state_class(self) -> str | None:
+        return self._state_class
 
     @property
     def icon(self) -> str | None:
-        return self._spec.icon
+        return self._icon
 
 
 async def async_setup_entry(
@@ -86,17 +93,32 @@ async def async_setup_entry(
     for vehicle_data in entry_data[DATA_VEHICLES]:
         normalized = vehicle_data[DATA_NORMALIZED]
         vehicle_entities: list[SensorEntity] = [VehicleEntity(normalized)]
-
-        if normalized.capabilities.battery.state_supported:
-            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[0]))
-        if normalized.capabilities.fuel.state_supported:
-            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[1]))
-        if normalized.range is not None:
-            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[2]))
-        if normalized.capabilities.odometer.state_supported:
-            vehicle_entities.append(VehicleValueSensorEntity(normalized, SENSOR_SPECS[3]))
+        for capability_name, rule in state_entity_rules_for_domain("sensor"):
+            support = normalized.capabilities.get(capability_name)
+            if not should_create_entity_rule(
+                rule,
+                state_supported=support.state_supported,
+                action_supported=support.action_supported,
+                source_domains=capability_source_domains(vehicle_data, capability_name),
+            ):
+                continue
+            vehicle_entities.append(
+                VehicleCapabilitySensorEntity(
+                    normalized,
+                    capability_name,
+                    rule.key,
+                    _title(rule.key),
+                    device_class=rule.device_class,
+                    state_class=rule.state_class,
+                    icon=rule.icon,
+                )
+            )
 
         vehicle_data[DATA_ENTITIES].extend(vehicle_entities)
         entities.extend(vehicle_entities)
 
     async_add_entities(entities)
+
+
+def _title(value: str) -> str:
+    return value.replace("_", " ").title()

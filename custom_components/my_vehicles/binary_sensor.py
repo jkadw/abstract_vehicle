@@ -1,68 +1,63 @@
-"""Binary sensor platform for vehicle boolean state capabilities."""
+"""Binary sensor platform for registry-driven boolean capability entities."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .capability_registry import (
+    state_entity_rules_for_domain,
+    should_create_entity_rule,
+)
 from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
-from .entity import VehicleBaseEntity
+from .entity import VehicleBaseEntity, capability_source_domains
 from .model import NormalizedVehicleData
 
 
-@dataclass(frozen=True, slots=True)
-class BinarySpec:
-    key: str
-    name: str
-    field: str
-    icon: str | None = None
-    device_class: BinarySensorDeviceClass | None = None
-
-
-BINARY_SPECS: tuple[BinarySpec, ...] = (
-    BinarySpec(
-        "windows",
-        "Windows",
-        "windows_open",
-        "mdi:car-door",
-        BinarySensorDeviceClass.WINDOW,
-    ),
-    BinarySpec("climate", "Climate", "climate_active", "mdi:air-conditioner"),
-    BinarySpec(
-        "charging",
-        "Charging",
-        "charging_active",
-        "mdi:ev-plug-type2",
-        BinarySensorDeviceClass.BATTERY_CHARGING,
-    ),
-)
-
-
 class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
-    """Binary sensor for a boolean normalized vehicle field."""
+    """Binary sensor for one canonical capability."""
 
-    def __init__(self, normalized_data: NormalizedVehicleData, spec: BinarySpec) -> None:
-        super().__init__(normalized_data, spec.key, spec.name)
-        self._spec = spec
+    def __init__(
+        self,
+        normalized_data: NormalizedVehicleData,
+        capability_name: str,
+        entity_key: str,
+        entity_name: str,
+        *,
+        icon: str | None = None,
+        device_class: str | None = None,
+    ) -> None:
+        super().__init__(normalized_data, entity_key, entity_name)
+        self._capability_name = capability_name
+        self._icon = icon
+        self._device_class = device_class
 
     @property
     def is_on(self) -> bool | None:
-        return getattr(self._normalized_data, self._spec.field)
+        if self._capability_name == "lock_vehicle":
+            return self._normalized_data.locked
+        if self._capability_name == "windows":
+            return self._normalized_data.windows_open
+        if self._capability_name == "climate":
+            return self._normalized_data.climate_active
+        if self._capability_name == "charging":
+            return self._normalized_data.charging_active
+        if self._capability_name == "ignition":
+            return self._normalized_data.ignition_on
+        if self._capability_name == "range_warning":
+            return self._normalized_data.range_warning
+        value = self._capability_value(self._capability_name)
+        return value if isinstance(value, bool) else None
 
     @property
-    def device_class(self) -> BinarySensorDeviceClass | None:
-        return self._spec.device_class
+    def device_class(self) -> str | None:
+        return self._device_class
 
     @property
     def icon(self) -> str | None:
-        return self._spec.icon
+        return self._icon
 
 
 async def async_setup_entry(
@@ -78,15 +73,31 @@ async def async_setup_entry(
     for vehicle_data in entry_data[DATA_VEHICLES]:
         normalized = vehicle_data[DATA_NORMALIZED]
         vehicle_entities: list[BinarySensorEntity] = []
-
-        if normalized.capabilities.windows.state_supported:
-            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[0]))
-        if normalized.capabilities.climate.state_supported:
-            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[1]))
-        if normalized.capabilities.charging.state_supported:
-            vehicle_entities.append(VehicleBinaryStateEntity(normalized, BINARY_SPECS[2]))
+        for capability_name, rule in state_entity_rules_for_domain("binary_sensor"):
+            support = normalized.capabilities.get(capability_name)
+            if not should_create_entity_rule(
+                rule,
+                state_supported=support.state_supported,
+                action_supported=support.action_supported,
+                source_domains=capability_source_domains(vehicle_data, capability_name),
+            ):
+                continue
+            vehicle_entities.append(
+                VehicleBinaryStateEntity(
+                    normalized,
+                    capability_name,
+                    rule.key,
+                    _title(rule.key),
+                    icon=rule.icon,
+                    device_class=rule.device_class,
+                )
+            )
 
         vehicle_data[DATA_ENTITIES].extend(vehicle_entities)
         entities.extend(vehicle_entities)
 
     async_add_entities(entities)
+
+
+def _title(value: str) -> str:
+    return value.replace("_", " ").title()

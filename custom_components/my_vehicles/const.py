@@ -9,6 +9,7 @@ PLATFORMS: Final[tuple[str, ...]] = (
     "sensor",
     "binary_sensor",
     "lock",
+    "switch",
     "device_tracker",
     "button",
 )
@@ -26,11 +27,6 @@ DATA_VEHICLES: Final = "vehicles"
 DATA_DISCOVERY_SNAPSHOTS: Final = "discovery_snapshots"
 DATA_SERVICES_REGISTERED: Final = "services_registered"
 
-SERVICE_LOCK: Final = "lock"
-SERVICE_UNLOCK: Final = "unlock"
-SERVICE_START_CLIMATE: Final = "start_climate"
-SERVICE_STOP_CLIMATE: Final = "stop_climate"
-SERVICE_REFRESH: Final = "refresh"
 SERVICE_DIAGNOSTICS: Final = "diagnostics"
 
 NORMALIZED_STATES: Final[tuple[str, ...]] = (
