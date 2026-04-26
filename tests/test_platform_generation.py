@@ -83,7 +83,7 @@ def _normalized_vehicle(
         ),
         state=VehicleState.PARKED,
         capabilities=VehicleCapabilities(
-            lock_vehicle=CapabilitySupport(
+            central_locking=CapabilitySupport(
                 state_supported=lock_state_supported,
                 action_supported=lock_action_supported,
             ),

@@ -40,7 +40,7 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        if self._capability_name == "lock_vehicle":
+        if self._capability_name == "central_locking":
             if self._normalized_data.locked is None:
                 return None
             return (
@@ -147,7 +147,7 @@ async def async_setup_entry(
                     _title(rule.key),
                     icon=rule.icon,
                     device_class=rule.device_class,
-                    invert_state=capability_name == "lock_vehicle"
+                    invert_state=capability_name == "central_locking"
                     and "lock" in source_domains,
                 )
             )

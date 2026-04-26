@@ -62,7 +62,7 @@ The normalized aggregate state is one of:
 
 Depending on mapping support, `My Vehicles` can create:
 
-- `lock.*` for `lock_vehicle`
+- `lock.*` for `central_locking`
 - `binary_sensor.*` for boolean-like capabilities such as `windows`, `doors`, `lids`, `charging`, `ignition`, `warning_messages`, and `tire_pressure`
 - `sensor.*` for values such as `battery_level`, `driving_range`, and `odometer`
 - `device_tracker.*` for `location`
@@ -72,7 +72,7 @@ Depending on mapping support, `My Vehicles` can create:
 
 Core device-targeted services live in the `my_vehicles` domain. Common examples are:
 
-- `my_vehicles.lock_vehicle`
+- `my_vehicles.central_locking`
 - `my_vehicles.climate`
 - `my_vehicles.ev_charging`
 - `my_vehicles.vehicle_alert`

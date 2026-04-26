@@ -51,7 +51,7 @@ integration:
   friendly_name: Hyundai / Kia Connect
 
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       entity: lock.{vehicle}_door_lock
     actions:
@@ -96,7 +96,7 @@ Rules:
 
 Every mapping file must define exactly this set of canonical capabilities:
 
-- `lock_vehicle`
+- `central_locking`
 - `climate`
 - `fuel_level`
 - `fuel_driving_range`

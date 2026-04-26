@@ -55,7 +55,7 @@ def _normalized_vehicle_data(state: VehicleState) -> NormalizedVehicleData:
         ),
         state=state,
         capabilities=VehicleCapabilities(
-            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
+            central_locking=CapabilitySupport(state_supported=True, action_supported=True),
             windows=CapabilitySupport(state_supported=True, action_supported=False),
             climate=CapabilitySupport(state_supported=True, action_supported=True),
         ),
@@ -81,7 +81,7 @@ def test_vehicle_entity_uses_normalized_state_and_attributes() -> None:
     assert entity.available is True
     assert entity.extra_state_attributes["ev_battery_level"] == 80.0
     assert entity.extra_state_attributes["windows_open"] is False
-    assert entity.extra_state_attributes["lock_vehicle_action_supported"] is True
+    assert entity.extra_state_attributes["central_locking_action_supported"] is True
 
 
 def test_vehicle_entity_marks_unavailable_state_as_unavailable() -> None:

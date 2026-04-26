@@ -107,7 +107,7 @@ def build_capability_values(
         }
 
     return {
-        "lock_vehicle": _as_bool(raw_state.get("locked")),
+        "central_locking": _as_bool(raw_state.get("locked")),
         "climate": _as_bool(raw_state.get("climate_active")),
         "fuel_level": _as_float(raw_metrics.get("fuel_level")),
         "fuel_driving_range": _as_float(raw_metrics.get("fuel_driving_range")),

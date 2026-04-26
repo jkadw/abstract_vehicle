@@ -16,7 +16,7 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
     """Lock entity for the normalized vehicle lock capability."""
 
     def __init__(self, normalized_data, entry_data) -> None:
-        super().__init__(normalized_data, "lock_vehicle", "Lock Vehicle")
+        super().__init__(normalized_data, "central_locking", "Central Locking")
         self._entry_data = entry_data
 
     @property
@@ -25,11 +25,11 @@ class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):
 
     async def async_lock(self, **kwargs) -> None:
         _ = kwargs
-        await async_execute_entry_action(self._entry_data, "lock_vehicle", "lock")
+        await async_execute_entry_action(self._entry_data, "central_locking", "lock")
 
     async def async_unlock(self, **kwargs) -> None:
         _ = kwargs
-        await async_execute_entry_action(self._entry_data, "lock_vehicle", "unlock")
+        await async_execute_entry_action(self._entry_data, "central_locking", "unlock")
 
 
 async def async_setup_entry(

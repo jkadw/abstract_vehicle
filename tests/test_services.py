@@ -73,7 +73,7 @@ class _ServiceAdapter:
 
     async def get_capabilities(self) -> VehicleCapabilities:
         return VehicleCapabilities(
-            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
+            central_locking=CapabilitySupport(state_supported=True, action_supported=True),
             climate=CapabilitySupport(state_supported=True, action_supported=True),
             refresh=CapabilitySupport(state_supported=False, action_supported=True),
         )
@@ -154,7 +154,7 @@ def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "lock_vehicle")
+    handler = _build_service_handler(hass, "central_locking")
     asyncio.run(handler(ServiceCall({"device_id": device_id, "action": "unlock"})))
 
     refreshed_state = asyncio.run(adapter.get_raw_state())
@@ -175,7 +175,7 @@ def test_service_dispatch_rejects_missing_capability_support() -> None:
         asyncio.run(adapter.get_raw_state()),
         asyncio.run(adapter.get_raw_metrics()),
         VehicleCapabilities(
-            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
+            central_locking=CapabilitySupport(state_supported=True, action_supported=True),
             climate=CapabilitySupport(state_supported=True, action_supported=False),
         ),
     )
@@ -268,7 +268,7 @@ def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "lock_vehicle")
+    handler = _build_service_handler(hass, "central_locking")
     with pytest.raises(HomeAssistantError):
         asyncio.run(handler(ServiceCall({"device_id": device_id, "action": "unlock"})))
 

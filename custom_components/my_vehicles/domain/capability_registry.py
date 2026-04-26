@@ -50,15 +50,15 @@ class CapabilityDefinition:
 
 
 CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
-    "lock_vehicle": CapabilityDefinition(
-        name="lock_vehicle",
+    "central_locking": CapabilityDefinition(
+        name="central_locking",
         action_verbs=("lock", "unlock"),
         applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="lock",
-                    key="lock_vehicle",
+                    key="central_locking",
                     icon="mdi:lock",
                     create_always=True,
                 ),

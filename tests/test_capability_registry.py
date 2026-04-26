@@ -10,10 +10,10 @@ from custom_components.my_vehicles.domain.capability_registry import (
 )
 
 
-def test_lock_vehicle_registry_definition_matches_contract() -> None:
+def test_central_locking_registry_definition_matches_contract() -> None:
     """The lock capability should expose the documented verbs and entity rules."""
 
-    definition = get_capability_definition("lock_vehicle")
+    definition = get_capability_definition("central_locking")
 
     assert definition.action_verbs == ("lock", "unlock")
     assert tuple(rule.domain for rule in definition.ui.state_entities) == (
@@ -32,9 +32,9 @@ def test_button_rule_map_exposes_registry_driven_service_names() -> None:
 
     rules = button_rule_map()
 
-    assert rules["lock_vehicle"][0] == "lock_vehicle"
+    assert rules["lock_vehicle"][0] == "central_locking"
     assert rules["lock_vehicle"][1].action == "lock"
-    assert rules["unlock_vehicle"][0] == "lock_vehicle"
+    assert rules["unlock_vehicle"][0] == "central_locking"
     assert rules["unlock_vehicle"][1].action == "unlock"
     assert rules["open_windows"][0] == "windows"
     assert rules["open_windows"][1].action == "open"
@@ -55,21 +55,21 @@ def test_button_rule_map_exposes_registry_driven_service_names() -> None:
     assert rules["refresh"][0] == "refresh"
 
 
-def test_lock_vehicle_state_rules_are_indexed_by_platform_domain() -> None:
+def test_central_locking_state_rules_are_indexed_by_platform_domain() -> None:
     """Platform code should be able to query registry rules by HA domain."""
 
     lock_rules = dict(state_entity_rules_for_domain("lock"))
     binary_rules = dict(state_entity_rules_for_domain("binary_sensor"))
 
-    assert lock_rules["lock_vehicle"].key == "lock_vehicle"
-    assert binary_rules["lock_vehicle"].key == "vehicle_locked"
+    assert lock_rules["central_locking"].key == "central_locking"
+    assert binary_rules["central_locking"].key == "vehicle_locked"
     assert binary_rules["doors"].key == "doors"
 
 
-def test_entity_rule_predicates_cover_lock_vehicle_generation_cases() -> None:
+def test_entity_rule_predicates_cover_central_locking_generation_cases() -> None:
     """The registry should express the lock exception and binary/switch policies."""
 
-    definition = get_capability_definition("lock_vehicle")
+    definition = get_capability_definition("central_locking")
     lock_rule = definition.ui.state_entities[0]
     binary_rule = definition.ui.state_entities[1]
 

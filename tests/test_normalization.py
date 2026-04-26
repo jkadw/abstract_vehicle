@@ -57,7 +57,7 @@ def test_infer_capabilities_preserves_actions_and_fills_state_support() -> None:
     """Declared mapping support should remain authoritative."""
 
     declared = VehicleCapabilities(
-        lock_vehicle=CapabilitySupport(state_supported=False, action_supported=True),
+        central_locking=CapabilitySupport(state_supported=False, action_supported=True),
         climate=CapabilitySupport(state_supported=False, action_supported=True),
     )
 
@@ -77,8 +77,8 @@ def test_infer_capabilities_preserves_actions_and_fills_state_support() -> None:
         declared_capabilities=declared,
     )
 
-    assert inferred.lock_vehicle.state_supported is False
-    assert inferred.lock_vehicle.action_supported is True
+    assert inferred.central_locking.state_supported is False
+    assert inferred.central_locking.action_supported is True
     assert inferred.windows.state_supported is False
     assert inferred.windows.action_supported is False
     assert inferred.location.state_supported is False
@@ -107,7 +107,7 @@ def test_build_capability_values_maps_canonical_capability_names() -> None:
         },
     )
 
-    assert capability_values["lock_vehicle"] is True
+    assert capability_values["central_locking"] is True
     assert capability_values["climate"] is False
     assert capability_values["ev_charging"] is True
     assert capability_values["windows"] is True
@@ -142,7 +142,7 @@ def test_normalize_vehicle_data_preserves_source_distance_units() -> None:
             "source_units": {"distance_unit": "km"},
         },
         capabilities=VehicleCapabilities(
-            lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
+            central_locking=CapabilitySupport(state_supported=True, action_supported=True),
             windows=CapabilitySupport(state_supported=True, action_supported=False),
             ev_battery_level=CapabilitySupport(state_supported=True, action_supported=False),
             driving_range=CapabilitySupport(state_supported=True, action_supported=False),
@@ -153,7 +153,7 @@ def test_normalize_vehicle_data_preserves_source_distance_units() -> None:
     assert normalized.state is VehicleState.PARKED
     assert normalized.driving_range == 100.0
     assert normalized.odometer == 10.0
-    assert normalized.capabilities.lock_vehicle.action_supported is True
+    assert normalized.capabilities.central_locking.action_supported is True
     assert normalized.capabilities.windows.state_supported is True
     assert normalized.capabilities.ev_battery_level.state_supported is True
     assert normalized.display_units.distance_unit == "km"

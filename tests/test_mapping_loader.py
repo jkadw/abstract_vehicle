@@ -30,7 +30,7 @@ from custom_components.my_vehicles.runtime.registry import (
 
 _MINIMAL_CANONICAL_CAPABILITIES = """
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       entity: lock.{vehicle}_door_lock
     actions:
@@ -128,9 +128,9 @@ def test_load_adapter_mapping_for_kia_yaml() -> None:
 
     assert mapping.integration.domain == "kia_uvo"
     assert mapping.integration.friendly_name == "Hyundai / Kia Connect"
-    assert "lock_vehicle" in mapping.capabilities
-    assert mapping.capability("lock_vehicle") is not None
-    assert mapping.capability("lock_vehicle").actions["lock"].action == "kia_uvo.lock"
+    assert "central_locking" in mapping.capabilities
+    assert mapping.capability("central_locking") is not None
+    assert mapping.capability("central_locking").actions["lock"].action == "kia_uvo.lock"
     assert mapping.capability("windows").actions["open"].action == "kia_uvo.set_windows"
     assert mapping.capability("windows").state.any == (
         "binary_sensor.{vehicle}_front_left_window",
@@ -222,7 +222,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       entity: lock.{vehicle}_door_lock
 """.strip(),
@@ -356,7 +356,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -455,7 +455,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -551,7 +551,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -650,7 +650,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -750,9 +750,9 @@ integration:
 
     mapping = load_mapping_file(mapping_path)
 
-    assert mapping.capability("lock_vehicle") is not None
+    assert mapping.capability("central_locking") is not None
     assert (
-        mapping.capability("lock_vehicle").state.entity
+        mapping.capability("central_locking").state.entity
         == "lock.{vehicle}_door_lock"
     )
 

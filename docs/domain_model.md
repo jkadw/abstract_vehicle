@@ -75,7 +75,7 @@ while vehicle-type discovery happens per discovered vehicle.
 
 Canonical capabilities:
 
-- `lock_vehicle`
+- `central_locking`
   Meaning: vehicle locking state and lock control at whole-vehicle level.
   Canonical verbs: `lock`, `unlock`.
   Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
@@ -194,7 +194,7 @@ Example mapping shape:
 
 ```yaml
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       entity: lock.{vehicle}_door_lock
     actions:
@@ -248,8 +248,8 @@ treated as a fixed property of a whole source integration.
 
 Capability support flags:
 
-- `lock_vehicle_state_supported: bool`
-- `lock_vehicle_action_supported: bool`
+- `central_locking_state_supported: bool`
+- `central_locking_action_supported: bool`
 - `climate_state_supported: bool`
 - `climate_action_supported: bool`
 - `charging_state_supported: bool`
@@ -414,7 +414,7 @@ If neither an explicit mapped type nor reliable inference is available:
 Rules:
 
 - `unknown` must not block setup
-- `unknown` must not prevent generic capabilities such as `lock_vehicle`,
+- `unknown` must not prevent generic capabilities such as `central_locking`,
   `location`, `odometer`, `windows`, or `doors`
 - `unknown` should only suppress vehicle-type-specific convenience assumptions
 - users should still be able to build automations around universal capabilities
@@ -460,7 +460,7 @@ Rules:
 
 Core services:
 
-- `my_vehicles.lock_vehicle`
+- `my_vehicles.central_locking`
 - `my_vehicles.climate`
 - `my_vehicles.ev_charging`
 - `my_vehicles.vehicle_alert`

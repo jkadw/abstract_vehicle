@@ -39,7 +39,7 @@ class VehicleCapabilitySwitchEntity(VehicleBaseEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        if self._capability_name == "lock_vehicle":
+        if self._capability_name == "central_locking":
             if self._normalized_data.locked is None:
                 return None
             return (
@@ -126,7 +126,7 @@ async def async_setup_entry(
                     key=rule.key,
                     name=_title(rule.key),
                     icon=rule.icon,
-                    invert_state=capability_name == "lock_vehicle"
+                    invert_state=capability_name == "central_locking"
                     and "lock" in source_domains,
                 )
             )

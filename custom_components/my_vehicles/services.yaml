@@ -1,6 +1,6 @@
-lock_vehicle:
-  name: Lock Vehicle
-  description: Execute a lock action for the selected vehicle if supported.
+central_locking:
+  name: Central Locking
+  description: Execute a central-locking action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles

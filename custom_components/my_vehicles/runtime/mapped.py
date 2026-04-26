@@ -94,7 +94,7 @@ class MappedVehicleAdapter(VehicleAdapter):
 
         vehicle = self._vehicle
         resolved = self._resolve_runtime()
-        locked = _coerce_lock_state(resolved.capability_states.get("lock_vehicle"))
+        locked = _coerce_lock_state(resolved.capability_states.get("central_locking"))
         climate_active = _coerce_bool_state(resolved.capability_states.get("climate"))
         ev_charging = _coerce_bool_state(
             resolved.capability_states.get("ev_charging")

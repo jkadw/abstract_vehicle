@@ -216,7 +216,7 @@ def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
     assert raw_metrics["driving_range"] == 198.0
     assert raw_metrics["latitude"] == 33.749
     assert raw_metrics["openings"]["santa_fe_front_right_window"] == "open"
-    assert capabilities.lock_vehicle.action_supported is True
+    assert capabilities.central_locking.action_supported is True
     assert capabilities.windows.state_supported is True
     assert capabilities.refresh.action_supported is True
 

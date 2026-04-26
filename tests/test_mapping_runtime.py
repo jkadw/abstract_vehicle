@@ -104,7 +104,7 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
     )
     resolved = runtime.resolve()
 
-    assert resolved.capability_states["lock_vehicle"] == "locked"
+    assert resolved.capability_states["central_locking"] == "locked"
     assert resolved.capability_states["windows"] is True
     assert resolved.capability_states["location"] == "home"
     assert resolved.capability_states["ev_battery_level"] == "76.5"
@@ -115,12 +115,12 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
     assert resolved.capability_states["driving_range"] == "42"
     assert resolved.capability_states["odometer"] == "12001"
     assert resolved.capability_states["range_warning"] is True
-    assert resolved.capabilities.lock_vehicle.state_supported is True
+    assert resolved.capabilities.central_locking.state_supported is True
     assert resolved.capabilities.windows.state_supported is True
     assert resolved.capabilities.refresh.action_supported is True
-    assert resolved.actions["lock_vehicle"]["lock"].service == "kia_uvo.lock"
+    assert resolved.actions["central_locking"]["lock"].service == "kia_uvo.lock"
     assert (
-        resolved.actions["lock_vehicle"]["lock"].data["device_id"] == "device-123"
+        resolved.actions["central_locking"]["lock"].data["device_id"] == "device-123"
     )
     assert resolved.actions["windows"]["open"].service == "kia_uvo.set_windows"
     assert resolved.actions["windows"]["open"].data["device_id"] == "device-123"
@@ -199,7 +199,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -311,7 +311,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -430,7 +430,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -544,7 +544,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:
@@ -660,7 +660,7 @@ integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       unavailable: true
   climate:

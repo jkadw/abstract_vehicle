@@ -3,7 +3,7 @@ integration:
   friendly_name: Hyundai / Kia Connect
 
 capabilities:
-  lock_vehicle:
+  central_locking:
     state:
       entity: lock.{vehicle}_door_lock
     actions:
