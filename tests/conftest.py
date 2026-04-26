@@ -48,6 +48,14 @@ if "homeassistant" not in sys.modules:
     data_entry_flow = types.ModuleType("homeassistant.data_entry_flow")
     components = types.ModuleType("homeassistant.components")
     sensor = types.ModuleType("homeassistant.components.sensor")
+    binary_sensor = types.ModuleType("homeassistant.components.binary_sensor")
+    switch = types.ModuleType("homeassistant.components.switch")
+    lock = types.ModuleType("homeassistant.components.lock")
+    button = types.ModuleType("homeassistant.components.button")
+    device_tracker = types.ModuleType("homeassistant.components.device_tracker")
+    device_tracker_config_entry = types.ModuleType(
+        "homeassistant.components.device_tracker.config_entry"
+    )
     entity_platform = types.ModuleType("homeassistant.helpers.entity_platform")
 
     class ConfigFlow:
@@ -89,7 +97,43 @@ if "homeassistant" not in sys.modules:
     class SensorEntity(Entity):
         pass
 
+    class BinarySensorEntity(Entity):
+        pass
+
+    class SwitchEntity(Entity):
+        pass
+
+    class LockEntity(Entity):
+        pass
+
+    class ButtonEntity(Entity):
+        pass
+
+    class TrackerEntity(Entity):
+        pass
+
+    class _EnumValue(str):
+        pass
+
+    class SensorDeviceClass:
+        BATTERY = _EnumValue("battery")
+        DISTANCE = _EnumValue("distance")
+
+    class BinarySensorDeviceClass:
+        WINDOW = _EnumValue("window")
+        BATTERY_CHARGING = _EnumValue("battery_charging")
+        PROBLEM = _EnumValue("problem")
+        DOOR = _EnumValue("door")
+        RUNNING = _EnumValue("running")
+        POWER = _EnumValue("power")
+
+    class UnitOfLength:
+        MILES = "mi"
+        KILOMETERS = "km"
+
     const.EVENT_HOMEASSISTANT_STARTED = "homeassistant_started"
+    const.PERCENTAGE = "%"
+    const.UnitOfLength = UnitOfLength
     config_entries.ConfigFlow = ConfigFlow
     config_entries.ConfigEntry = ConfigEntry
     core.HomeAssistant = HomeAssistant
@@ -104,6 +148,13 @@ if "homeassistant" not in sys.modules:
     config_validation_module.string = lambda value: value
     data_entry_flow.FlowResult = dict
     sensor.SensorEntity = SensorEntity
+    sensor.SensorDeviceClass = SensorDeviceClass
+    binary_sensor.BinarySensorEntity = BinarySensorEntity
+    binary_sensor.BinarySensorDeviceClass = BinarySensorDeviceClass
+    switch.SwitchEntity = SwitchEntity
+    lock.LockEntity = LockEntity
+    button.ButtonEntity = ButtonEntity
+    device_tracker_config_entry.TrackerEntity = TrackerEntity
     entity_platform.AddEntitiesCallback = object
 
     helpers.entity = entity_module
@@ -118,6 +169,11 @@ if "homeassistant" not in sys.modules:
     homeassistant.data_entry_flow = data_entry_flow
     homeassistant.components = components
     components.sensor = sensor
+    components.binary_sensor = binary_sensor
+    components.switch = switch
+    components.lock = lock
+    components.button = button
+    components.device_tracker = device_tracker
 
     sys.modules["homeassistant"] = homeassistant
     sys.modules["homeassistant.const"] = const
@@ -132,4 +188,12 @@ if "homeassistant" not in sys.modules:
     sys.modules["homeassistant.data_entry_flow"] = data_entry_flow
     sys.modules["homeassistant.components"] = components
     sys.modules["homeassistant.components.sensor"] = sensor
+    sys.modules["homeassistant.components.binary_sensor"] = binary_sensor
+    sys.modules["homeassistant.components.switch"] = switch
+    sys.modules["homeassistant.components.lock"] = lock
+    sys.modules["homeassistant.components.button"] = button
+    sys.modules["homeassistant.components.device_tracker"] = device_tracker
+    sys.modules[
+        "homeassistant.components.device_tracker.config_entry"
+    ] = device_tracker_config_entry
     sys.modules["homeassistant.helpers.entity_platform"] = entity_platform
