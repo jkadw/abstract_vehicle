@@ -101,12 +101,12 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             buttons=(
                 ButtonGenerationRule(
                     action="start_heating",
-                    key="start_heating_climate",
+                    key="start_heating",
                     icon="mdi:radiator",
                 ),
                 ButtonGenerationRule(
                     action="start_cooling",
-                    key="start_cooling_climate",
+                    key="start_cooling",
                     icon="mdi:snowflake",
                 ),
                 ButtonGenerationRule(action="stop", key="stop_climate", icon="mdi:fan-off"),
