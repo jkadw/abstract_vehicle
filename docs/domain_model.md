@@ -7,7 +7,7 @@ integration.
 
 The integration exposes one aggregate state entity per vehicle:
 
-- `sensor.my_vehicle`
+- `sensor.my_<vehicle>`
 
 Its friendly name is `My <device>`.
 
@@ -103,7 +103,7 @@ Examples:
 - `flash_lights`
   Semantics: headlight flash action and any corresponding state if exposed.
 - `hazard_lights`
-  Semantics: warning or hazard light state and `on` / `off` actions when
+  Semantics: warning or hazard light state and `turn_on` / `turn_off` actions when
   available.
 - `location`
   Semantics: current vehicle position.
@@ -142,11 +142,11 @@ capabilities:
       entity: lock.{vehicle}_door_lock
     actions:
       lock:
-        action: lock
+        action: kia_uvo.lock
         data:
           device_id: {device}
       unlock:
-        action: unlock
+        action: kia_uvo.unlock
         data:
           device_id: {device}
   windows:
@@ -170,6 +170,7 @@ grow, but the stable shape is:
 - `vehicle_type: ev|phev|ice|hybrid|unknown`
 - `battery_level: float | null`
 - `driving_range: float | null`
+- `range: float | null`
 - `locked: true|false|unknown`
 - `windows_open: true|false|unknown`
 - `climate_active: true|false|unknown`
@@ -181,6 +182,7 @@ grow, but the stable shape is:
 - `odometer: float | null`
 - `warning_messages: object | null`
 - `info_messages: object | null`
+- `source_problems: object | null`
 
 Capability support flags:
 

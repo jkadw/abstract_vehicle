@@ -19,6 +19,7 @@ Use this checklist before publishing a HACS release for `my_vehicles`.
 ## Quality
 
 - Python files compile cleanly.
+- the full test suite passes.
 - tests are updated for any behavior change.
 - adapter, normalization, and service changes remain separated by responsibility.
 - no blocking calls were introduced.

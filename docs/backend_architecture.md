@@ -24,7 +24,7 @@ Not the other way around.
 - Keep the domain model stable even if source integrations differ.
 - Keep mapping-specific semantics out of entities and services.
 - Separate `state_supported` from `action_supported`.
-- Keep unit conversion centralized in normalization.
+- Keep normalization rules centralized.
 - Prefer YAML-backed integrations over custom Python registration.
 - Treat custom Python hooks as exceptions, not the default.
 
@@ -64,6 +64,7 @@ The generic runtime is responsible for:
 - deriving capability support
 - preparing and executing mapped actions
 - collecting read-only diagnostics
+- recording source-resolution problems for debugging
 
 The runtime should not:
 
@@ -76,10 +77,10 @@ The runtime should not:
 Normalization owns:
 
 - canonical vehicle state derivation
-- unit conversion
 - windows aggregation into `windows_open`
 - normalized attribute construction
 - normalized capability exposure
+- stable problem reporting through `source_problems`
 
 If a value can be represented as generic raw input plus a stable normalization rule, it belongs here rather than in adapter code.
 
@@ -100,6 +101,7 @@ Services should:
 - validate `action_supported`
 - delegate execution to adapters
 - delegate execution to generic runtime-backed vehicle instances
+- expose only the canonical verbs actually mapped for a vehicle
 
 ## Package Layout
 
@@ -117,7 +119,12 @@ The codebase is organized by responsibility:
   Config-entry setup and reconciliation orchestration
 
 Home Assistant platform entry modules still exist at the integration root as thin entrypoints, but the implementation lives under `entities/`.
-- refresh normalized state after successful actions
+
+## Current Notes
+
+- Adding support for another source integration normally means adding another mapping YAML file.
+- Root platform modules such as `sensor.py` and `binary_sensor.py` are intentionally thin Home Assistant entrypoints.
+- The runtime package exports are part of the public internal boundary used by config flow and setup code, so import-level regressions there should be treated as high priority.
 
 ## Extension Points
 

@@ -1,19 +1,17 @@
 # My Vehicles
 
-`my_vehicles` is a Home Assistant custom integration that provides a stable vehicle abstraction on top of existing vehicle-related integrations.
+`my_vehicles` is a Home Assistant custom integration that builds a stable vehicle layer on top of your existing vehicle-related integrations.
 
-The goal is to keep dashboards, automations, and scripts stable even when the underlying source integration changes. Instead of exposing integration-specific semantics directly, `my_vehicles` normalizes raw data behind a small shared domain model.
+Instead of tying dashboards and automations directly to one source integration, `My Vehicles` normalizes vehicle state, capability entities, and actions behind a smaller shared model.
 
-## Why This Exists
+## Why Use It
 
-`my_vehicles` sits on top of one of your existing vehicle-related Home Assistant integrations and presents a more stable, integration-independent view of the vehicle.
-
-In practice that means:
+`My Vehicles` is useful when you want:
 
 - one consistent aggregate entity per vehicle
-- capability-specific entities where supported
-- a small, stable action surface
-- less coupling between your automations and the quirks of one source integration
+- stable capability entities such as lock, charging, windows, lids, and location
+- a predictable action surface in the `my_vehicles` domain
+- less automation churn when a source integration names things differently
 
 ## Installation
 
@@ -27,29 +25,30 @@ HACS-style installation:
 
 ## Setup
 
-Current setup is intentionally minimal:
+Setup is mapping-driven:
 
-1. Choose the source mapping that matches an existing vehicle-related integration you already use.
+1. Choose the source mapping that matches one of your installed vehicle-related integrations.
 2. `my_vehicles` discovers all matching source vehicles for that mapping.
-3. One `my_vehicles` config entry manages all discovered vehicles for that selected source mapping.
+3. One `my_vehicles` config entry then manages all discovered vehicles for that selected source integration.
 
 At runtime the integration:
 
-- loads the selected mapping and generic runtime
-- discovers source vehicles for the selected upstream integration
-- reads raw state, raw metrics, and capabilities for each discovered vehicle
-- normalizes the data into the shared model
-- exposes one aggregate sensor entity for each discovered vehicle state
-- creates per-capability entities where state support exists:
-  - `sensor.*` for numeric values such as battery level, driving range, and odometer
-  - `binary_sensor.*` for boolean capabilities such as windows, charging, doors, lids, and warning messages
-  - `lock.*` for `lock_vehicle`
-  - `device_tracker.*` for vehicle location
-  - `button.*` for mapped actions when the specific canonical verb is available
+- loads the selected mapping from `custom_components/my_vehicles/mappings/`
+- discovers matching Home Assistant devices for the mapped source integration
+- resolves canonical capabilities and actions through the generic runtime
+- normalizes the data into one shared vehicle model
+- creates one aggregate `sensor` entity per discovered vehicle
+- creates capability-specific entities where the mapping supports them
 
 ## What You Get
 
-Example normalized state values:
+### Aggregate State
+
+Each discovered vehicle gets one main aggregate entity:
+
+- `sensor.my_<vehicle>`
+
+The normalized aggregate state is one of:
 
 - `unknown`
 - `unavailable`
@@ -59,33 +58,37 @@ Example normalized state values:
 - `driving`
 - `error`
 
-Example capability structure:
+### Capability Entities
 
-```yaml
-capabilities:
-  lock_vehicle:
-    state_supported: true
-    action_supported: true
-  windows:
-    state_supported: true
-    action_supported: true
-  climate:
-    state_supported: true
-    action_supported: true
-```
+Depending on mapping support, `My Vehicles` can create:
 
-Example services:
+- `lock.*` for `lock_vehicle`
+- `binary_sensor.*` for boolean-like capabilities such as `windows`, `doors`, `lids`, `charging`, `ignition`, `warning_messages`, and `tire_pressure`
+- `sensor.*` for values such as `battery_level`, `driving_range`, and `odometer`
+- `device_tracker.*` for `location`
+- `button.*` for mapped actions when the specific canonical verb is available
+
+### Services
+
+Core device-targeted services live in the `my_vehicles` domain. Common examples are:
 
 - `my_vehicles.lock_vehicle`
 - `my_vehicles.unlock_vehicle`
 - `my_vehicles.start_climate`
 - `my_vehicles.stop_climate`
+- `my_vehicles.start_charging`
+- `my_vehicles.stop_charging`
 - `my_vehicles.refresh`
+- `my_vehicles.diagnostics`
 
-Example normalized attributes:
+The exact available actions depend on the selected mapping and the verbs it exposes for each capability.
+
+### Aggregate Attributes
+
+The main aggregate entity exposes normalized attributes such as:
 
 - `battery_level`
-- `range`
+- `driving_range`
 - `locked`
 - `windows_open`
 - `climate_active`
@@ -94,20 +97,17 @@ Example normalized attributes:
 - `latitude`
 - `longitude`
 - `odometer`
+- `source_problems`
 
-## Limitations
+## Current Scope
 
-Current limitations:
+Current scope and limitations:
 
-- generic discovery is still intentionally simple
-- startup reconciliation and add/remove sync are not complete yet
-- no direct vehicle-cloud API clients in this repository
-- no UI card
-- no per-window control
-- only a minimal service surface is implemented
-- Home Assistant runtime tests are not executed in this workspace
-
-The current mapped-adapter path discovers vehicles from the Home Assistant registry and state model rather than talking to external vehicle services directly.
+- the integration works through Home Assistant entities and services from an existing source integration; it is not a direct vehicle-cloud client
+- generic discovery is intentionally simple and mapping-driven
+- there is no custom Lovelace card in this repository
+- there is no per-window position control yet
+- advanced capability domains such as `cover` or native `climate` entities are future work
 
 ## Documentation By Audience
 

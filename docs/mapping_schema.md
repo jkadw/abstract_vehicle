@@ -56,11 +56,11 @@ capabilities:
       entity: lock.{vehicle}_door_lock
     actions:
       lock:
-        action: lock
+        action: kia_uvo.lock
         data:
           device_id: {device}
       unlock:
-        action: unlock
+        action: kia_uvo.unlock
         data:
           device_id: {device}
 
@@ -153,13 +153,13 @@ capabilities:
         - binary_sensor.{vehicle}_rear_right_window
     actions:
       open:
-        action: set_windows
+        action: kia_uvo.set_windows
         data:
           device_id: {device}
-          flwindow: "0"
-          frwindow: "0"
-          rrwindow: "0"
-          rlwindow: "0"
+          flwindow: "1"
+          frwindow: "1"
+          rrwindow: "1"
+          rlwindow: "1"
 ```
 
 ## State Mapping
@@ -278,7 +278,7 @@ actions:
   refresh:
     action: button.press
     data:
-      entity_id: button.{vehicle}_force_refresh
+      entity_id: button.{vehicle}_{vehicle}_force_refresh
 ```
 
 Each action definition must contain:
@@ -325,55 +325,11 @@ The loader should reject mappings when any of the following are true:
 - `unavailable` is present but not `true`
 - `actions` contains verbs that are not canonical for that capability
 - an action definition is missing `action`
+- an action value is not a fully qualified `domain.service`
 
-There is no backward compatibility with the older split model. Files using
+There is no backward compatibility with older split models. Files using
 top-level `metrics` or `derived`, or older capability names, should fail
 validation.
-
-- `range`
-- `odometer`
-- `battery_level`
-- `fuel_level`
-- `latitude`
-- `longitude`
-
-Rules:
-
-- metric names must map to known raw metric slots used by the adapter runtime
-- direct `state` mappings are the preferred style for metrics
-- `template` may be used when a metric must be derived
-- default source metadata should always be included automatically for direct `state` mappings
-- explicit metadata fields override inherited values only when needed
-
-Recommended split:
-
-- use `capabilities` for semantic feature areas such as `lock`, `charging`, `location`, and `refresh`
-- use `metrics` for measurable values such as `battery_level`, `fuel_level`, `range`, and `odometer`
-
-## Derived Section
-
-`derived` is optional and defines computed entities that are useful to expose but are not canonical capabilities or raw metrics.
-
-Example:
-
-```yaml
-derived:
-  range_warning:
-    domain: binary_sensor
-    template: "{{ states('sensor.{vehicle}_total_driving_range') | float < 50 }}"
-```
-
-Supported v1 derived domains:
-
-- `sensor`
-- `binary_sensor`
-
-Rules:
-
-- `derived` entities must define either `state` or `template`
-- `domain` is required when the derived entity type cannot be inferred
-- derived entities may override metadata explicitly
-- derived entities should stay read-only
 
 ## Template Rules
 
@@ -401,14 +357,13 @@ Example:
 ```yaml
 actions:
   lock:
-    action: lock
+    action: kia_uvo.lock
     data:
       device_id: {device}
 ```
 
 Rules:
 
-- `{device}`
 - `{device}` resolves to the selected Home Assistant device id used for actions
 - `{vehicle}` resolves to the discovered source vehicle token derived from that device's entity ids
 - placeholders that cannot be resolved must fail clearly
@@ -426,6 +381,7 @@ A mapping file is valid only if:
 - `integration.domain` exists
 - `integration.friendly_name` exists
 - `capabilities` is a mapping
+- every canonical capability is present exactly once
 - every mapping block uses a supported shape
 - every mapped action name is valid and non-empty
 - every placeholder is syntactically valid
