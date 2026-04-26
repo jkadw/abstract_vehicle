@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .base import DiscoveredVehicle, VehicleAdapter
-from .mapping import async_load_adapter_mapping
+from ..mappings.schema import async_load_adapter_mapping
 from .mapped import MappedVehicleAdapter
 from .registry import (
     AdapterDefinition,

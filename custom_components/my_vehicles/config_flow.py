@@ -7,7 +7,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
-from .adapters import get_available_adapter_options
+from .runtime import get_available_adapter_options
 from .const import (
     CONF_ADAPTER,
     DOMAIN,

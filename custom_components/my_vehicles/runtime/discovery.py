@@ -9,7 +9,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .base import DiscoveredVehicle
-from .mapping import VehicleAdapterMapping, async_load_adapter_mapping
+from ..mappings.schema import VehicleAdapterMapping, async_load_adapter_mapping
 
 
 async def discover_vehicles_for_mapping(

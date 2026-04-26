@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 import types
 
-from custom_components.my_vehicles.model import (
+from custom_components.my_vehicles.domain.model import (
     CapabilitySupport,
     NormalizedVehicleData,
     VehicleCapabilities,
@@ -41,7 +41,7 @@ if "homeassistant" not in sys.modules:
     sys.modules["homeassistant.helpers.device_registry"] = device_registry_module
 
 
-from custom_components.my_vehicles.entity import VehicleEntity
+from custom_components.my_vehicles.entities.base import VehicleEntity
 
 
 def _normalized_vehicle_data(state: VehicleState) -> NormalizedVehicleData:

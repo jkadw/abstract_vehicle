@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.my_vehicles.adapters.mapping import load_adapter_mapping
-from custom_components.my_vehicles.binary_sensor import (
+from custom_components.my_vehicles.mappings.schema import load_adapter_mapping
+from custom_components.my_vehicles.entities.binary_sensor import (
     VehicleBinaryStateEntity,
     async_setup_entry as async_setup_binary_sensors,
 )
@@ -16,18 +16,18 @@ from custom_components.my_vehicles.const import (
     DATA_VEHICLES,
     DOMAIN,
 )
-from custom_components.my_vehicles.lock import (
+from custom_components.my_vehicles.entities.lock import (
     VehicleLockCapabilityEntity,
     async_setup_entry as async_setup_locks,
 )
-from custom_components.my_vehicles.model import (
+from custom_components.my_vehicles.domain.model import (
     CapabilitySupport,
     NormalizedVehicleData,
     VehicleCapabilities,
     VehicleInfo,
     VehicleState,
 )
-from custom_components.my_vehicles.switch import (
+from custom_components.my_vehicles.entities.switch import (
     VehicleCapabilitySwitchEntity,
     async_setup_entry as async_setup_switches,
 )

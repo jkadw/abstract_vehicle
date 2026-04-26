@@ -7,8 +7,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
 from .const import DATA_ADAPTER, DOMAIN
-from .model import NormalizedVehicleData, VehicleState
-from .normalization import build_vehicle_attributes
+from ..domain.model import NormalizedVehicleData, VehicleState
+from ..domain.normalization import build_vehicle_attributes
 
 
 class VehicleBaseEntity(Entity):

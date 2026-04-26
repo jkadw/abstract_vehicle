@@ -14,7 +14,7 @@ from .base import (
     VehicleAdapter,
 )
 from .discovery import build_vehicle_payload_from_hass, discover_vehicles_for_mapping
-from .mapping import VehicleAdapterMapping, load_adapter_mapping
+from ..mappings.schema import VehicleAdapterMapping, load_adapter_mapping
 from .runtime import MappingRuntime
 
 

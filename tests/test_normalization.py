@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from custom_components.my_vehicles.model import (
+from custom_components.my_vehicles.domain.model import (
     CapabilitySupport,
     VehicleCapabilities,
     VehicleState,
 )
-from custom_components.my_vehicles.normalization import (
+from custom_components.my_vehicles.domain.normalization import (
     build_capability_values,
     infer_capabilities,
     normalize_openings,

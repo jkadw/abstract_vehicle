@@ -6,19 +6,19 @@ import logging
 
 import pytest
 
-from custom_components.my_vehicles import (
+from custom_components.my_vehicles.setup.entry import (
     _log_vehicle_reconciliation,
     _snapshot_vehicle_ids,
     async_setup_entry,
 )
-from custom_components.my_vehicles.adapters.base import DiscoveredVehicle
+from custom_components.my_vehicles.runtime.base import DiscoveredVehicle
 from custom_components.my_vehicles.const import (
     CONF_ADAPTER,
     DATA_DISCOVERY_SNAPSHOTS,
     DATA_VEHICLES,
     DOMAIN,
 )
-from custom_components.my_vehicles.model import VehicleCapabilities
+from custom_components.my_vehicles.domain.model import VehicleCapabilities
 
 
 class _FakeEntry:
@@ -101,7 +101,7 @@ async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
 ) -> None:
     """One mapping entry should own multiple vehicles and register a startup reload."""
 
-    from custom_components import my_vehicles as vehicle_module
+    from custom_components.my_vehicles.setup import entry as vehicle_module
 
     hass = _FakeHass(is_running=False)
     hass.data = {

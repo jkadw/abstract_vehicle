@@ -9,7 +9,7 @@ from jinja2 import Environment, StrictUndefined
 
 from .base import ActionResult, UnsupportedVehicleActionError, VehicleAdapterError
 from ..model import CapabilitySupport, VehicleCapabilities
-from .mapping import ActionMapping, StateMapping, VehicleAdapterMapping
+from ..mappings.schema import ActionMapping, StateMapping, VehicleAdapterMapping
 
 
 @dataclass(frozen=True, slots=True)

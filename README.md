@@ -35,17 +35,17 @@ Current setup is intentionally minimal:
 
 At runtime the integration:
 
-- creates the configured mapping-backed adapter
+- loads the selected mapping and generic runtime
 - discovers source vehicles for the selected upstream integration
 - reads raw state, raw metrics, and capabilities for each discovered vehicle
 - normalizes the data into the shared model
 - exposes one aggregate sensor entity for each discovered vehicle state
 - creates per-capability entities where state support exists:
-  - `sensor.*` for numeric values such as battery, fuel, range, and odometer
-  - `binary_sensor.*` for windows, climate, and charging
-  - `lock.*` for lock state and lock actions
+  - `sensor.*` for numeric values such as battery level, driving range, and odometer
+  - `binary_sensor.*` for boolean capabilities such as windows, charging, doors, lids, and warning messages
+  - `lock.*` for `lock_vehicle`
   - `device_tracker.*` for vehicle location
-  - `button.*` for refresh when the adapter supports it
+  - `button.*` for mapped actions when the specific canonical verb is available
 
 ## What You Get
 
@@ -63,12 +63,12 @@ Example capability structure:
 
 ```yaml
 capabilities:
-  lock:
+  lock_vehicle:
     state_supported: true
     action_supported: true
   windows:
     state_supported: true
-    action_supported: false
+    action_supported: true
   climate:
     state_supported: true
     action_supported: true
@@ -76,8 +76,8 @@ capabilities:
 
 Example services:
 
-- `my_vehicles.lock`
-- `my_vehicles.unlock`
+- `my_vehicles.lock_vehicle`
+- `my_vehicles.unlock_vehicle`
 - `my_vehicles.start_climate`
 - `my_vehicles.stop_climate`
 - `my_vehicles.refresh`

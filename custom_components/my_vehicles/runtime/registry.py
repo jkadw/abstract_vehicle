@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .mapping import MappingValidationError, load_mapping_file
+from ..mappings.schema import MappingValidationError, load_mapping_file
 
 
 @dataclass(frozen=True, slots=True)

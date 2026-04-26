@@ -9,13 +9,13 @@ It explains how the integration is structured, where responsibilities belong, an
 The integration is built in four layers:
 
 - mapping files define how an existing vehicle-related integration is interpreted
-- adapter runtime resolves those mappings against Home Assistant devices, entities, and services
+- runtime resolves those mappings against Home Assistant devices, entities, and services
 - normalization converts raw adapter output into the canonical domain model
 - entity and service layers expose the Home Assistant-facing behavior
 
 The intended dependency direction is:
 
-`mapping -> adapter runtime -> normalization -> entities/services`
+`mapping -> runtime -> normalization -> entities/services`
 
 Not the other way around.
 
@@ -34,7 +34,7 @@ The default adapter model is mapping-driven.
 
 Normal path:
 
-- add one YAML mapping file under `custom_components/my_vehicles/adapters/`
+- add one YAML mapping file under `custom_components/my_vehicles/mappings/`
 - the filename becomes the adapter key
 - `integration.domain` controls availability
 - `integration.friendly_name` is shown in the config flow
@@ -99,6 +99,24 @@ Services should:
 - target `my_vehicles` devices
 - validate `action_supported`
 - delegate execution to adapters
+- delegate execution to generic runtime-backed vehicle instances
+
+## Package Layout
+
+The codebase is organized by responsibility:
+
+- `custom_components/my_vehicles/mappings/`
+  Mapping YAML files plus schema/loading
+- `custom_components/my_vehicles/runtime/`
+  Generic discovery, availability, action execution, and mapped runtime logic
+- `custom_components/my_vehicles/domain/`
+  Canonical capability registry, normalized model, and normalization rules
+- `custom_components/my_vehicles/entities/`
+  Home Assistant entity implementations
+- `custom_components/my_vehicles/setup/`
+  Config-entry setup and reconciliation orchestration
+
+Home Assistant platform entry modules still exist at the integration root as thin entrypoints, but the implementation lives under `entities/`.
 - refresh normalized state after successful actions
 
 ## Extension Points

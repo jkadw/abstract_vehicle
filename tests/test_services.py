@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
+from custom_components.my_vehicles.runtime.base import UnsupportedVehicleActionError
 from custom_components.my_vehicles.const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
@@ -13,8 +13,8 @@ from custom_components.my_vehicles.const import (
     DOMAIN,
     SERVICE_DIAGNOSTICS,
 )
-from custom_components.my_vehicles.model import CapabilitySupport, VehicleCapabilities
-from custom_components.my_vehicles.normalization import normalize_vehicle_data
+from custom_components.my_vehicles.domain.model import CapabilitySupport, VehicleCapabilities
+from custom_components.my_vehicles.domain.normalization import normalize_vehicle_data
 from custom_components.my_vehicles import services as services_module
 from custom_components.my_vehicles.services import _build_service_handler
 from homeassistant.core import HomeAssistant, ServiceCall

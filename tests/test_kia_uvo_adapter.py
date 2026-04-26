@@ -6,10 +6,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from custom_components.my_vehicles.adapters.loader import _load_adapter_class
-from custom_components.my_vehicles.adapters.registry import get_adapter_definition
-from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
-from custom_components.my_vehicles.normalization import (
+from custom_components.my_vehicles.runtime.loader import _load_adapter_class
+from custom_components.my_vehicles.runtime.registry import get_adapter_definition
+from custom_components.my_vehicles.runtime.base import UnsupportedVehicleActionError
+from custom_components.my_vehicles.domain.normalization import (
     normalize_vehicle_data,
 )
 
@@ -141,7 +141,7 @@ def _fake_hass() -> _FakeHass:
 
 
 def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
-    from custom_components.my_vehicles.adapters import discovery as discovery_module
+    from custom_components.my_vehicles.runtime import discovery as discovery_module
 
     device = _Device(
         "device-123",

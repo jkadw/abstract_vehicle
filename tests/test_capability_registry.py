@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from custom_components.my_vehicles.capability_registry import (
+from custom_components.my_vehicles.domain.capability_registry import (
     button_rule_map,
     get_capability_definition,
     should_create_entity_rule,

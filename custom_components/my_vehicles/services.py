@@ -12,8 +12,8 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 
-from .adapters import UnsupportedVehicleActionError
-from .capability_registry import button_rule_map
+from .runtime import UnsupportedVehicleActionError
+from ..domain.capability_registry import button_rule_map
 from .const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
@@ -23,7 +23,7 @@ from .const import (
     DOMAIN,
     SERVICE_DIAGNOSTICS,
 )
-from .normalization import normalize_vehicle_data
+from ..domain.normalization import normalize_vehicle_data
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_ACTIONS: dict[str, tuple[str, str]] = {

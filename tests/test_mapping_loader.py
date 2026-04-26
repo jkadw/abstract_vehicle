@@ -6,19 +6,19 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.my_vehicles.adapters.loader import (
+from custom_components.my_vehicles.runtime.loader import (
     _load_adapter_class,
     get_available_adapter_definitions,
     get_available_adapter_options,
 )
-from custom_components.my_vehicles.adapters.mapping import (
+from custom_components.my_vehicles.mappings.schema import (
     MappingValidationError,
     load_adapter_mapping,
     load_mapping_file,
 )
-from custom_components.my_vehicles.adapters.mapped import MappedVehicleAdapter
-from custom_components.my_vehicles.adapters import registry as registry_module
-from custom_components.my_vehicles.adapters.registry import (
+from custom_components.my_vehicles.runtime.mapped import MappedVehicleAdapter
+from custom_components.my_vehicles.runtime import registry as registry_module
+from custom_components.my_vehicles.runtime.registry import (
     CUSTOM_ADAPTER_DEFINITIONS,
     get_adapter_definition,
     get_adapter_definitions,

@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 from types import SimpleNamespace
 
-from custom_components.my_vehicles.adapters.mapping import load_adapter_mapping
-from custom_components.my_vehicles.adapters.base import UnsupportedVehicleActionError
-from custom_components.my_vehicles.adapters.runtime import MappingRuntime
+from custom_components.my_vehicles.mappings.schema import load_adapter_mapping
+from custom_components.my_vehicles.runtime.base import UnsupportedVehicleActionError
+from custom_components.my_vehicles.runtime.runtime import MappingRuntime
 
 
 class _StateStore(dict):
