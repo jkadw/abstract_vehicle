@@ -14,7 +14,7 @@ from .base import (
     VehicleAdapter,
 )
 from .discovery import build_vehicle_payload_from_hass, discover_vehicles_for_mapping
-from .mapping import load_adapter_mapping
+from .mapping import VehicleAdapterMapping, load_adapter_mapping
 from .runtime import MappingRuntime
 
 
@@ -47,7 +47,7 @@ class MappedVehicleAdapter(VehicleAdapter):
             return await helper.async_discover_vehicles(hass)
         if not cls.mapping_name:
             return []
-        return discover_vehicles_for_mapping(hass, cls.mapping_name)
+        return await discover_vehicles_for_mapping(hass, cls.mapping_name)
 
     def __init__(
         self,
@@ -56,6 +56,7 @@ class MappedVehicleAdapter(VehicleAdapter):
         hass: Any | None = None,
         mapping_name: str | None = None,
         discovery_helper: Any | None = None,
+        mapping: VehicleAdapterMapping | None = None,
     ) -> None:
         self._hass = hass
         self._mapping_name = mapping_name or self.mapping_name
@@ -63,7 +64,7 @@ class MappedVehicleAdapter(VehicleAdapter):
         if not self._mapping_name:
             raise ValueError("Mapped vehicle adapter requires a mapping_name")
 
-        self._mapping = load_adapter_mapping(self._mapping_name)
+        self._mapping = mapping or load_adapter_mapping(self._mapping_name)
         if not vehicles:
             raise ValueError("Mapped vehicle adapter requires at least one configured vehicle")
 
@@ -310,7 +311,7 @@ class MappedVehicleAdapter(VehicleAdapter):
             return refresh(self._hass, self._vehicle_id)
         return build_vehicle_payload_from_hass(
             self._hass,
-            self._mapping_name,
+            self._mapping,
             self._vehicle_id,
         )
 

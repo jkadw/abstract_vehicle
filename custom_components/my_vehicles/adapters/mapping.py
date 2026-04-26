@@ -137,6 +137,14 @@ def load_adapter_mapping(adapter_name: str) -> VehicleAdapterMapping:
     return load_mapping_file(mapping_path)
 
 
+async def async_load_adapter_mapping(
+    hass: Any, adapter_name: str
+) -> VehicleAdapterMapping:
+    """Load one co-located mapping file without blocking the event loop."""
+
+    return await hass.async_add_executor_job(load_adapter_mapping, adapter_name)
+
+
 def _parse_mapping(raw_data: dict[str, Any]) -> VehicleAdapterMapping:
     integration = _parse_integration(raw_data.get("integration"))
     if "metrics" in raw_data:

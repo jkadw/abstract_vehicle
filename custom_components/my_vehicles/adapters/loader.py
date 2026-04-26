@@ -8,8 +8,13 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from .base import DiscoveredVehicle, VehicleAdapter
+from .mapping import async_load_adapter_mapping
 from .mapped import MappedVehicleAdapter
-from .registry import AdapterDefinition, get_adapter_definition, get_adapter_definitions
+from .registry import (
+    AdapterDefinition,
+    async_get_adapter_definition,
+    async_get_adapter_definitions,
+)
 from ..const import CONF_VEHICLE_ID, CONF_VEHICLES
 
 
@@ -72,7 +77,7 @@ async def get_available_adapter_definitions(
     """Return registry entries that are usable in the current HA instance."""
 
     available: list[AdapterDefinition] = []
-    for definition in get_adapter_definitions():
+    for definition in await async_get_adapter_definitions(hass):
         if await is_adapter_available(hass, definition):
             available.append(definition)
     return available
@@ -94,7 +99,7 @@ async def discover_adapter_vehicles(
 ) -> list[DiscoveredVehicle]:
     """Return vehicles discoverable by the selected adapter."""
 
-    definition = get_adapter_definition(adapter_key)
+    definition = await async_get_adapter_definition(hass, adapter_key)
     if definition is None:
         raise ValueError(f"Unsupported adapter type: {adapter_key}")
 
@@ -112,13 +117,14 @@ async def create_adapter_from_entry(
 ) -> VehicleAdapter:
     """Instantiate the selected adapter from config-entry data."""
 
-    definition = get_adapter_definition(adapter_key)
+    definition = await async_get_adapter_definition(hass, adapter_key)
     if definition is None:
         raise ValueError(f"Unsupported adapter type: {adapter_key}")
 
     adapter_class = await load_adapter_class(hass, definition)
 
     if definition.kind == "mapping":
+        mapping = await async_load_adapter_mapping(hass, definition.mapping_name or adapter_key)
         vehicles = entry_data.get(CONF_VEHICLES)
         if not isinstance(vehicles, list):
             raise ValueError(
@@ -129,7 +135,12 @@ async def create_adapter_from_entry(
             raise ValueError(
                 f"{adapter_key} vehicle_id must be a string when configured"
             )
-        return adapter_class(hass=hass, vehicles=vehicles, vehicle_id=vehicle_id)
+        return adapter_class(
+            hass=hass,
+            vehicles=vehicles,
+            vehicle_id=vehicle_id,
+            mapping=mapping,
+        )
 
     raise ValueError(f"Unsupported adapter type: {adapter_key}")
 

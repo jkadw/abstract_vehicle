@@ -9,15 +9,15 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .base import DiscoveredVehicle
-from .mapping import VehicleAdapterMapping, load_adapter_mapping
+from .mapping import VehicleAdapterMapping, async_load_adapter_mapping
 
 
-def discover_vehicles_for_mapping(
+async def discover_vehicles_for_mapping(
     hass: Any, mapping_name: str
 ) -> list[DiscoveredVehicle]:
     """Discover source vehicles/devices for one mapping definition."""
 
-    mapping = load_adapter_mapping(mapping_name)
+    mapping = await async_load_adapter_mapping(hass, mapping_name)
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
@@ -50,11 +50,9 @@ def discover_vehicles_for_mapping(
 
 
 def build_vehicle_payload_from_hass(
-    hass: Any, mapping_name: str, vehicle_id: str
+    hass: Any, mapping: VehicleAdapterMapping, vehicle_id: str
 ) -> dict[str, Any] | None:
     """Rebuild one discovered vehicle payload from current HA registry state."""
-
-    mapping = load_adapter_mapping(mapping_name)
 
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
@@ -184,7 +182,25 @@ def _collect_patterns_from_value(value: Any, patterns: set[str]) -> None:
 
 
 def _pattern_to_regex(pattern: str) -> re.Pattern[str]:
-    escaped = re.escape(pattern)
-    escaped = escaped.replace(r"\{vehicle\}", r"(?P<vehicle>.+?)")
-    escaped = escaped.replace(r"\{device\}", r".+?")
-    return re.compile(escaped)
+    parts: list[str] = ["^"]
+    index = 0
+    seen_vehicle = False
+
+    while index < len(pattern):
+        if pattern.startswith("{vehicle}", index):
+            if seen_vehicle:
+                parts.append(r"(?P=vehicle)")
+            else:
+                parts.append(r"(?P<vehicle>.+?)")
+                seen_vehicle = True
+            index += len("{vehicle}")
+            continue
+        if pattern.startswith("{device}", index):
+            parts.append(r".+?")
+            index += len("{device}")
+            continue
+        parts.append(re.escape(pattern[index]))
+        index += 1
+
+    parts.append("$")
+    return re.compile("".join(parts))

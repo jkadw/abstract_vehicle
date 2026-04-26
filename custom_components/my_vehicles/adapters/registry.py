@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .mapping import MappingValidationError, load_mapping_file
 
@@ -53,6 +54,24 @@ def get_adapter_definition(adapter_key: str) -> AdapterDefinition | None:
     """Return adapter metadata for the given primary key."""
 
     for definition in get_adapter_definitions():
+        if definition.key == adapter_key:
+            return definition
+    return None
+
+
+async def async_get_adapter_definitions(hass: Any) -> tuple[AdapterDefinition, ...]:
+    """Return adapter definitions without blocking the event loop."""
+
+    return await hass.async_add_executor_job(get_adapter_definitions)
+
+
+async def async_get_adapter_definition(
+    hass: Any, adapter_key: str
+) -> AdapterDefinition | None:
+    """Return one adapter definition without blocking the event loop."""
+
+    definitions = await async_get_adapter_definitions(hass)
+    for definition in definitions:
         if definition.key == adapter_key:
             return definition
     return None
