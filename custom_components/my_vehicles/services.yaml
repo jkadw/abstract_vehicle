@@ -12,9 +12,16 @@ unlock_vehicle:
     device:
       integration: my_vehicles
 
-start_climate:
-  name: Start Climate
-  description: Start climate control for the selected vehicle if supported.
+start_heating_climate:
+  name: Start Heating Climate
+  description: Start the heating climate profile for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+start_cooling_climate:
+  name: Start Cooling Climate
+  description: Start the cooling climate profile for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles

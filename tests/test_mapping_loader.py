@@ -158,6 +158,14 @@ def test_load_adapter_mapping_for_kia_yaml() -> None:
         mapping.capability("ev_plugged_in").state.entity
         == "binary_sensor.{vehicle}_ev_battery_plug"
     )
+    assert (
+        mapping.capability("climate").actions["start_heating"].action
+        == "kia_uvo.start_climate"
+    )
+    assert mapping.capability("climate").actions["stop"].action == "kia_uvo.stop_climate"
+    assert mapping.capability("ev_charging").actions["start"].action == "kia_uvo.start_charge"
+    assert mapping.capability("ev_charging").actions["stop"].action == "kia_uvo.stop_charge"
+    assert mapping.capability("refresh").actions["refresh"].action == "kia_uvo.force_update"
     assert mapping.capability("range_warning").state.domain == "binary_sensor"
 
 

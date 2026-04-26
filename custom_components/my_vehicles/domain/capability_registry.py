@@ -86,7 +86,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "climate": CapabilityDefinition(
         name="climate",
-        action_verbs=("start", "stop"),
+        action_verbs=("start_heating", "start_cooling", "stop"),
         applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
@@ -98,17 +98,17 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     create_when_state_supported=True,
                 ),
             ),
-            control_entities=(
-                EntityGenerationRule(
-                    domain="switch",
-                    key="climate",
-                    icon="mdi:fan",
-                    create_when_action_supported=True,
-                    create_when_source_domain=("switch", "climate"),
-                ),
-            ),
             buttons=(
-                ButtonGenerationRule(action="start", key="start_climate", icon="mdi:fan-plus"),
+                ButtonGenerationRule(
+                    action="start_heating",
+                    key="start_heating_climate",
+                    icon="mdi:radiator",
+                ),
+                ButtonGenerationRule(
+                    action="start_cooling",
+                    key="start_cooling_climate",
+                    icon="mdi:snowflake",
+                ),
                 ButtonGenerationRule(action="stop", key="stop_climate", icon="mdi:fan-off"),
             ),
         ),
@@ -266,7 +266,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="binary_sensor",
                     key="hazard_lights",
                     device_class="problem",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                     create_when_state_supported=True,
                 ),
             ),
@@ -274,7 +274,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 EntityGenerationRule(
                     domain="switch",
                     key="hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                     create_when_action_supported=True,
                     create_when_source_domain=("switch",),
                 ),
@@ -283,12 +283,12 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 ButtonGenerationRule(
                     action="turn_on",
                     key="turn_on_hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                 ),
                 ButtonGenerationRule(
                     action="turn_off",
                     key="turn_off_hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                 ),
             ),
         ),

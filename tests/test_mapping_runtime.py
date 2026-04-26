@@ -125,10 +125,15 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
     assert resolved.actions["windows"]["open"].service == "kia_uvo.set_windows"
     assert resolved.actions["windows"]["open"].data["device_id"] == "device-123"
     assert resolved.actions["windows"]["open"].data["flwindow"] == "1"
-    assert resolved.actions["refresh"]["refresh"].service == "button.press"
+    assert resolved.actions["climate"]["start_heating"].service == "kia_uvo.start_climate"
+    assert resolved.actions["climate"]["start_heating"].data["heating"] == "4"
+    assert resolved.actions["climate"]["start_heating"].data["flseat"] == "7"
+    assert resolved.actions["climate"]["stop"].service == "kia_uvo.stop_climate"
+    assert resolved.actions["ev_charging"]["start"].service == "kia_uvo.start_charge"
+    assert resolved.actions["ev_charging"]["stop"].service == "kia_uvo.stop_charge"
+    assert resolved.actions["refresh"]["refresh"].service == "kia_uvo.force_update"
     assert (
-        resolved.actions["refresh"]["refresh"].data["entity_id"]
-        == "button.santa_fe_santa_fe_force_refresh"
+        resolved.actions["refresh"]["refresh"].data["device_id"] == "device-123"
     )
 
 

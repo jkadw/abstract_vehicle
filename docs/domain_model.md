@@ -469,7 +469,8 @@ Core services:
 
 - `my_vehicles.lock_vehicle`
 - `my_vehicles.unlock_vehicle`
-- `my_vehicles.start_climate`
+- `my_vehicles.start_heating_climate`
+- `my_vehicles.start_cooling_climate`
 - `my_vehicles.stop_climate`
 - `my_vehicles.start_charging`
 - `my_vehicles.stop_charging`

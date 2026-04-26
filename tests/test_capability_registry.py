@@ -40,8 +40,10 @@ def test_button_rule_map_exposes_registry_driven_service_names() -> None:
     assert rules["open_windows"][1].action == "open"
     assert rules["close_windows"][0] == "windows"
     assert rules["close_windows"][1].action == "close"
-    assert rules["start_climate"][0] == "climate"
-    assert rules["turn_on_hazard_lights"][1].icon == "mdi:car-hazard-lights"
+    assert rules["start_heating_climate"][0] == "climate"
+    assert rules["start_heating_climate"][1].action == "start_heating"
+    assert rules["start_cooling_climate"][1].action == "start_cooling"
+    assert rules["turn_on_hazard_lights"][1].icon == "mdi:hazard-lights"
     assert rules["refresh"][0] == "refresh"
 
 

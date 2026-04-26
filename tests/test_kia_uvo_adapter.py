@@ -253,6 +253,7 @@ def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> Non
     )
 
     asyncio.run(adapter.execute_action("unlock"))
+    asyncio.run(adapter.execute_action("start_heating"))
     asyncio.run(adapter.execute_action("refresh"))
 
     assert hass.services.calls == [
@@ -264,9 +265,24 @@ def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> Non
             "blocking": True,
         },
         {
-            "domain": "button",
-            "service": "press",
-            "service_data": {"entity_id": "button.santa_fe_santa_fe_force_refresh"},
+            "domain": "kia_uvo",
+            "service": "start_climate",
+            "service_data": {
+                "device_id": "device-123",
+                "temperature": 23,
+                "duration": 10,
+                "climate": True,
+                "heating": "4",
+                "flseat": "7",
+                "frseat": "7",
+            },
+            "target": None,
+            "blocking": True,
+        },
+        {
+            "domain": "kia_uvo",
+            "service": "force_update",
+            "service_data": {"device_id": "device-123"},
             "target": None,
             "blocking": True,
         },
@@ -296,7 +312,7 @@ def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     assert diagnostics["capabilities"]["refresh"]["action_supported"] is True
     assert diagnostics["actions"]["windows"]["open"]["service"] == "kia_uvo.set_windows"
     assert (
-        diagnostics["source_entities"]["button.santa_fe_santa_fe_force_refresh"]["exists"]
+        diagnostics["source_entities"]["lock.santa_fe_door_lock"]["exists"]
         is True
     )
     assert (
