@@ -6,12 +6,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterator
 
-from ..domain.capability_registry import (
+from .capability_registry import (
     CANONICAL_ACTIONS,
     CORE_CAPABILITIES,
     DOCUMENTED_ATTRIBUTE_SCHEMA,
 )
-from .const import NORMALIZED_STATES
+from ..const import NORMALIZED_STATES
 
 
 class VehicleState(str, Enum):

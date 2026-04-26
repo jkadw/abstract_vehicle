@@ -78,4 +78,4 @@ async def async_get_adapter_definition(
 
 
 def _mapping_directory() -> Path:
-    return Path(__file__).resolve().parent
+    return Path(__file__).resolve().parent.parent / "mappings"

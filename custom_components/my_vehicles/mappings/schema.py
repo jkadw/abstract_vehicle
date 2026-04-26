@@ -6,9 +6,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
+try:
+    import yaml  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - environment fallback
+    from . import simple_yaml as yaml
 
-from ..capability_registry import CANONICAL_ACTIONS, CORE_CAPABILITIES
+from ..domain.capability_registry import CANONICAL_ACTIONS, CORE_CAPABILITIES
 
 
 class MappingValidationError(ValueError):

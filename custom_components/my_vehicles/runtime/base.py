@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
-from ..model import VehicleCapabilities
+from ..domain.model import VehicleCapabilities
 
 
 @dataclass(frozen=True, slots=True)

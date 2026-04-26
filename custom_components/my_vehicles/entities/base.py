@@ -6,7 +6,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
-from .const import DATA_ADAPTER, DOMAIN
+from ..const import DATA_ADAPTER, DOMAIN
 from ..domain.model import NormalizedVehicleData, VehicleState
 from ..domain.normalization import build_vehicle_attributes
 

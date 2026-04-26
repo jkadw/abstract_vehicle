@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from ..domain.capability_registry import CORE_CAPABILITIES
-from ..domain.model import (
+from .capability_registry import CORE_CAPABILITIES
+from .model import (
     CapabilitySupport,
     NormalizedVehicleData,
     SourceUnits,

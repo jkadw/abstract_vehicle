@@ -7,9 +7,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from ..const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .base import VehicleBaseEntity
-from .services import async_execute_entry_action
+from ..services import async_execute_entry_action
 
 
 class VehicleLockCapabilityEntity(VehicleBaseEntity, LockEntity):

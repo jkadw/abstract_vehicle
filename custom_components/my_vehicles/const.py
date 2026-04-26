@@ -2,7 +2,7 @@
 
 from typing import Final
 
-from ..domain.capability_registry import DOCUMENTED_ATTRIBUTE_SCHEMA as REGISTRY_ATTRIBUTE_SCHEMA
+from .domain.capability_registry import DOCUMENTED_ATTRIBUTE_SCHEMA as REGISTRY_ATTRIBUTE_SCHEMA
 
 DOMAIN: Final = "my_vehicles"
 PLATFORMS: Final[tuple[str, ...]] = (

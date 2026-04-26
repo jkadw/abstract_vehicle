@@ -12,9 +12,9 @@ from ..domain.capability_registry import (
     control_entity_rules_for_domain,
     should_create_entity_rule,
 )
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from ..const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .base import VehicleBaseEntity, capability_source_domains
-from .services import async_execute_entry_action
+from ..services import async_execute_entry_action
 
 
 class VehicleCapabilitySwitchEntity(VehicleBaseEntity, SwitchEntity):

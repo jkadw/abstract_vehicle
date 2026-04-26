@@ -5,10 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from jinja2 import Environment, StrictUndefined
+try:
+    from jinja2 import Environment, StrictUndefined
+except ModuleNotFoundError:  # pragma: no cover - environment fallback
+    Environment = None
+    StrictUndefined = object
 
 from .base import ActionResult, UnsupportedVehicleActionError, VehicleAdapterError
-from ..model import CapabilitySupport, VehicleCapabilities
+from ..domain.model import CapabilitySupport, VehicleCapabilities
 from ..mappings.schema import ActionMapping, StateMapping, VehicleAdapterMapping
 
 
@@ -300,6 +304,8 @@ class MappingRuntime:
 
 
 def _build_template_environment(runtime: MappingRuntime) -> Environment:
+    if Environment is None:
+        return _FallbackEnvironment(runtime)
     env = Environment(undefined=StrictUndefined, autoescape=False)
     env.globals["states"] = runtime.state_value
     env.globals["state_attr"] = runtime.state_attr
@@ -360,3 +366,71 @@ def _coerce_template_value(value: Any) -> Any:
     if normalized == "false":
         return False
     return value
+
+
+class _FallbackEnvironment:
+    def __init__(self, runtime: MappingRuntime) -> None:
+        self._runtime = runtime
+
+    def from_string(self, template: str):
+        return _FallbackTemplate(self._runtime, template)
+
+
+class _FallbackTemplate:
+    def __init__(self, runtime: MappingRuntime, template: str) -> None:
+        self._runtime = runtime
+        self._template = template
+
+    def render(self) -> str:
+        template = self._template.strip()
+        if template.startswith("{{") and template.endswith("}}"):
+            expression = template[2:-2].strip()
+            return str(_evaluate_fallback_expression(self._runtime, expression))
+        return template
+
+
+def _evaluate_fallback_expression(runtime: MappingRuntime, expression: str) -> Any:
+    normalized = expression
+    normalized = normalized.replace("| float", "__float_filter")
+    normalized = normalized.replace("| int", "__int_filter")
+    normalized = normalized.replace("states(", "__states(")
+    normalized = normalized.replace("state_attr(", "__state_attr(")
+    normalized = _rewrite_filter_calls(normalized)
+
+    return eval(  # noqa: S307 - controlled fallback for local template subset
+        normalized,
+        {"__builtins__": {}},
+        {
+            "__states": runtime.state_value,
+            "__state_attr": runtime.state_attr,
+            "__float_filter": _jinja_float,
+            "__int_filter": _jinja_int,
+        },
+    )
+
+
+def _rewrite_filter_calls(expression: str) -> str:
+    for marker in ("__float_filter", "__int_filter"):
+        while marker in expression:
+            index = expression.index(marker)
+            left = expression[:index].rstrip()
+            start = _find_filter_operand_start(left)
+            operand = left[start:].strip()
+            expression = (
+                f"{left[:start]}{marker}({operand})"
+                f"{expression[index + len(marker):]}"
+            )
+    return expression
+
+
+def _find_filter_operand_start(text: str) -> int:
+    depth = 0
+    for index in range(len(text) - 1, -1, -1):
+        char = text[index]
+        if char == ")":
+            depth += 1
+        elif char == "(":
+            depth -= 1
+        elif depth == 0 and char in "<>=!+-*/% ":
+            return index + 1
+    return 0

@@ -17,7 +17,7 @@ from ..domain.capability_registry import (
     state_entity_rules_for_domain,
     should_create_entity_rule,
 )
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from ..const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .base import VehicleBaseEntity, VehicleEntity, capability_source_domains
 from ..domain.model import NormalizedVehicleData
 

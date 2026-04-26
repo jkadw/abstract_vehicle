@@ -20,7 +20,7 @@ def test_lock_vehicle_registry_definition_matches_contract() -> None:
         "lock",
         "binary_sensor",
     )
-    assert tuple(rule.domain for rule in definition.ui.control_entities) == ("switch",)
+    assert tuple(rule.domain for rule in definition.ui.control_entities) == ()
     assert tuple(rule.key for rule in definition.ui.buttons) == (
         "lock_vehicle",
         "unlock_vehicle",
@@ -56,7 +56,6 @@ def test_entity_rule_predicates_cover_lock_vehicle_generation_cases() -> None:
     definition = get_capability_definition("lock_vehicle")
     lock_rule = definition.ui.state_entities[0]
     binary_rule = definition.ui.state_entities[1]
-    switch_rule = definition.ui.control_entities[0]
 
     assert should_create_entity_rule(
         lock_rule,
@@ -67,21 +66,4 @@ def test_entity_rule_predicates_cover_lock_vehicle_generation_cases() -> None:
         binary_rule,
         state_supported=True,
         action_supported=False,
-    )
-    assert should_create_entity_rule(
-        switch_rule,
-        state_supported=False,
-        action_supported=True,
-    )
-    assert should_create_entity_rule(
-        switch_rule,
-        state_supported=False,
-        action_supported=False,
-        source_domains={"switch"},
-    )
-    assert not should_create_entity_rule(
-        switch_rule,
-        state_supported=False,
-        action_supported=False,
-        source_domains={"lock"},
     )

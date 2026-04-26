@@ -151,15 +151,24 @@ def test_load_mapping_file_rejects_multiple_state_modes(tmp_path: Path) -> None:
 
     mapping_path = tmp_path / "invalid_modes.yaml"
     mapping_path.write_text(
-        f"""
+        """
 integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
-{_MINIMAL_CANONICAL_CAPABILITIES.replace(
-    "  windows:\\n    state:\\n      any:\\n        - binary_sensor.{vehicle}_front_left_window\\n        - binary_sensor.{vehicle}_front_right_window",
-    "  windows:\\n    state:\\n      entity: binary_sensor.{vehicle}_front_left_window\\n      any:\\n        - binary_sensor.{vehicle}_front_left_window\\n        - binary_sensor.{vehicle}_front_right_window",
-)}
-""".strip(),
+"""
+        + _MINIMAL_CANONICAL_CAPABILITIES.replace(
+            """  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window""",
+            """  windows:
+    state:
+      entity: binary_sensor.{vehicle}_front_left_window
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+        - binary_sensor.{vehicle}_front_right_window""",
+        ),
         encoding="utf-8",
     )
 
@@ -265,12 +274,20 @@ def test_load_mapping_file_rejects_invalid_action_verb(tmp_path: Path) -> None:
 
     mapping_path = tmp_path / "bad_action_verb.yaml"
     mapping_path.write_text(
-        f"""
+        """
 integration:
   domain: kia_uvo
   friendly_name: Hyundai / Kia Connect
-{_MINIMAL_CANONICAL_CAPABILITIES.replace("      open:\\n        action: kia_uvo.set_windows", "      lock:\\n        action: kia_uvo.set_windows")}
-""".strip(),
+"""
+        + _MINIMAL_CANONICAL_CAPABILITIES.replace(
+            """    actions:
+      open:
+        action: kia_uvo.set_windows""",
+            """    actions:
+      lock:
+        action: kia_uvo.set_windows""",
+            1,
+        ),
         encoding="utf-8",
     )
 

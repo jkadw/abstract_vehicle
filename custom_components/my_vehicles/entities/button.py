@@ -8,9 +8,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from ..domain.capability_registry import button_rules
-from .const import DATA_ADAPTER, DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from ..const import DATA_ADAPTER, DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .base import VehicleBaseEntity
-from .services import async_execute_entry_action
+from ..services import async_execute_entry_action
 
 
 class VehicleActionButtonEntity(VehicleBaseEntity, ButtonEntity):
