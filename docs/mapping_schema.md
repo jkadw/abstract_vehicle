@@ -98,9 +98,13 @@ Every mapping file must define exactly this set of canonical capabilities:
 
 - `lock_vehicle`
 - `climate`
-- `charging`
-- `horn`
-- `flash_lights`
+- `fuel_level`
+- `fuel_driving_range`
+- `ev_battery_level`
+- `ev_driving_range`
+- `ev_plugged_in`
+- `ev_charging`
+- `vehicle_alert`
 - `hazard_lights`
 - `location`
 - `ignition`

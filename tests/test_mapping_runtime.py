@@ -223,10 +223,7 @@ capabilities:
   ev_charging:
     state:
       unavailable: true
-  horn:
-    state:
-      unavailable: true
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
   hazard_lights:
@@ -349,10 +346,7 @@ capabilities:
         action: switch.turn_off
         target:
           entity_id: switch.{vehicle}_{vehicle}_ev_charging
-  horn:
-    state:
-      unavailable: true
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
   hazard_lights:
@@ -460,10 +454,7 @@ capabilities:
   ev_charging:
     state:
       unavailable: true
-  horn:
-    state:
-      unavailable: true
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
   hazard_lights:
@@ -577,10 +568,7 @@ capabilities:
   ev_charging:
     state:
       unavailable: true
-  horn:
-    state:
-      unavailable: true
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
   hazard_lights:
@@ -696,10 +684,7 @@ capabilities:
   ev_charging:
     state:
       unavailable: true
-  horn:
-    state:
-      unavailable: true
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
   hazard_lights:

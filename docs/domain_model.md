@@ -90,14 +90,9 @@ Canonical capabilities:
   Canonical verbs: `turn_on`, `turn_off`.
   Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
 
-- `horn`
-  Meaning: horn trigger action and any corresponding exposed state.
-  Canonical verbs: `trigger`.
-  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
-
-- `flash_lights`
-  Meaning: headlight flash action and any corresponding exposed state.
-  Canonical verbs: `trigger`.
+- `vehicle_alert`
+  Meaning: momentary remote vehicle-alert modes such as flash, honk, alarm, and stop.
+  Canonical verbs: `flash`, `honk`, `alarm`, `stop`.
   Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
 
 - `location`
@@ -216,7 +211,7 @@ capabilities:
       any:
         - binary_sensor.{vehicle}_front_left_window
         - binary_sensor.{vehicle}_front_right_window
-  horn:
+  vehicle_alert:
     state:
       unavailable: true
 ```
@@ -259,10 +254,8 @@ Capability support flags:
 - `climate_action_supported: bool`
 - `charging_state_supported: bool`
 - `charging_action_supported: bool`
-- `horn_state_supported: bool`
-- `horn_action_supported: bool`
-- `flash_lights_state_supported: bool`
-- `flash_lights_action_supported: bool`
+- `vehicle_alert_state_supported: bool`
+- `vehicle_alert_action_supported: bool`
 - `hazard_lights_state_supported: bool`
 - `hazard_lights_action_supported: bool`
 - `location_state_supported: bool`
@@ -468,17 +461,14 @@ Rules:
 Core services:
 
 - `my_vehicles.lock_vehicle`
-- `my_vehicles.unlock_vehicle`
-- `my_vehicles.start_heating_climate`
-- `my_vehicles.start_cooling_climate`
-- `my_vehicles.stop_climate`
-- `my_vehicles.start_charging`
-- `my_vehicles.stop_charging`
-- `my_vehicles.flash_lights`
-- `my_vehicles.honk`
-- `my_vehicles.turn_on_hazard_lights`
-- `my_vehicles.turn_off_hazard_lights`
+- `my_vehicles.climate`
+- `my_vehicles.ev_charging`
+- `my_vehicles.vehicle_alert`
+- `my_vehicles.hazard_lights`
+- `my_vehicles.windows`
 - `my_vehicles.refresh`
+
+Most capability services require an `action` parameter that selects one of the canonical verbs for that capability. `my_vehicles.refresh` is the single-verb exception and does not require an action parameter.
 
 Rules:
 

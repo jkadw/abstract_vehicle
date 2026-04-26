@@ -90,11 +90,7 @@ capabilities:
         data:
           device_id: {device}
 
-  horn:
-    state:
-      unavailable: true
-
-  flash_lights:
+  vehicle_alert:
     state:
       unavailable: true
 

@@ -1,93 +1,107 @@
 lock_vehicle:
   name: Lock Vehicle
-  description: Lock the selected vehicle if the capability is supported.
+  description: Execute a lock action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: Lock action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - lock
+            - unlock
 
-unlock_vehicle:
-  name: Unlock Vehicle
-  description: Unlock the selected vehicle if the capability is supported.
+climate:
+  name: Climate
+  description: Execute a climate action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: Climate action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - start_heating
+            - start_cooling
+            - stop
 
-start_heating_climate:
-  name: Start Heating Climate
-  description: Start the heating climate profile for the selected vehicle if supported.
+ev_charging:
+  name: EV Charging
+  description: Execute an EV charging action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: EV charging action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - start
+            - stop
 
-start_cooling_climate:
-  name: Start Cooling Climate
-  description: Start the cooling climate profile for the selected vehicle if supported.
+vehicle_alert:
+  name: Vehicle Alert
+  description: Execute a vehicle alert action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: Vehicle alert action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - flash
+            - honk
+            - alarm
+            - stop
 
-stop_climate:
-  name: Stop Climate
-  description: Stop climate control for the selected vehicle if supported.
+hazard_lights:
+  name: Hazard Lights
+  description: Execute a hazard-lights action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: Hazard-lights action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - turn_on
+            - turn_off
 
-start_charging:
-  name: Start Charging
-  description: Start charging for the selected vehicle if supported.
+windows:
+  name: Windows
+  description: Execute a window action for the selected vehicle if supported.
   target:
     device:
       integration: my_vehicles
-
-stop_charging:
-  name: Stop Charging
-  description: Stop charging for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-horn:
-  name: Horn
-  description: Trigger the horn for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-flash_lights:
-  name: Flash Lights
-  description: Flash the lights for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-turn_on_hazard_lights:
-  name: Turn On Hazard Lights
-  description: Switch hazard lights on for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-turn_off_hazard_lights:
-  name: Turn Off Hazard Lights
-  description: Switch hazard lights off for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-open_windows:
-  name: Open Windows
-  description: Open the windows for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
-
-close_windows:
-  name: Close Windows
-  description: Close the windows for the selected vehicle if supported.
-  target:
-    device:
-      integration: my_vehicles
+  fields:
+    action:
+      name: Action
+      description: Window action to execute.
+      required: true
+      selector:
+        select:
+          options:
+            - open
+            - close
 
 refresh:
   name: Refresh Vehicle

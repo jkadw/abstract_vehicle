@@ -211,47 +211,48 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 ),
             ),
             buttons=(
-                ButtonGenerationRule(action="start", key="start_charging", icon="mdi:play"),
-                ButtonGenerationRule(action="stop", key="stop_charging", icon="mdi:stop"),
+                ButtonGenerationRule(
+                    action="start", key="start_ev_charging", icon="mdi:play"
+                ),
+                ButtonGenerationRule(
+                    action="stop", key="stop_ev_charging", icon="mdi:stop"
+                ),
             ),
         ),
     ),
-    "horn": CapabilityDefinition(
-        name="horn",
-        action_verbs=("trigger",),
+    "vehicle_alert": CapabilityDefinition(
+        name="vehicle_alert",
+        action_verbs=("flash", "honk", "alarm", "stop"),
         applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="horn_active",
+                    key="vehicle_alert",
                     icon="mdi:bullhorn",
                     create_when_state_supported=True,
                 ),
             ),
             buttons=(
-                ButtonGenerationRule(action="trigger", key="horn", icon="mdi:bullhorn"),
-            ),
-        ),
-    ),
-    "flash_lights": CapabilityDefinition(
-        name="flash_lights",
-        action_verbs=("trigger",),
-        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
-        ui=CapabilityUiPolicy(
-            state_entities=(
-                EntityGenerationRule(
-                    domain="binary_sensor",
-                    key="lights_flashing",
-                    icon="mdi:car-light-high",
-                    create_when_state_supported=True,
-                ),
-            ),
-            buttons=(
                 ButtonGenerationRule(
-                    action="trigger",
-                    key="flash_lights",
+                    action="flash",
+                    key="vehicle_alert_flash",
                     icon="mdi:car-light-high",
+                ),
+                ButtonGenerationRule(
+                    action="honk",
+                    key="vehicle_alert_honk",
+                    icon="mdi:bullhorn",
+                ),
+                ButtonGenerationRule(
+                    action="alarm",
+                    key="vehicle_alert_alarm",
+                    icon="mdi:alarm-light",
+                ),
+                ButtonGenerationRule(
+                    action="stop",
+                    key="vehicle_alert_stop",
+                    icon="mdi:stop",
                 ),
             ),
         ),

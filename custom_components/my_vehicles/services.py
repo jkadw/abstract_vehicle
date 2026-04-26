@@ -26,12 +26,26 @@ from .const import (
 from .domain.normalization import normalize_vehicle_data
 
 LOGGER = logging.getLogger(__name__)
-SERVICE_ACTIONS: dict[str, tuple[str, str]] = {
-    service_name: (capability_name, button_rule.action)
-    for service_name, (capability_name, button_rule) in button_rule_map().items()
-}
 
-SERVICE_SCHEMA = vol.Schema(
+SERVICE_CAPABILITY_ACTIONS: dict[str, tuple[str, ...]] = {}
+for _service_name, (_capability_name, _button_rule) in button_rule_map().items():
+    SERVICE_CAPABILITY_ACTIONS.setdefault(_capability_name, ())
+    SERVICE_CAPABILITY_ACTIONS[_capability_name] = (
+        *SERVICE_CAPABILITY_ACTIONS[_capability_name],
+        _button_rule.action,
+    )
+
+SERVICE_SCHEMAS: dict[str, vol.Schema] = {
+    capability_name: vol.Schema(
+        {
+            vol.Required("device_id"): vol.Any(cv.string, [cv.string]),
+            vol.Required("action"): vol.In(action_names),
+        }
+    )
+    for capability_name, action_names in SERVICE_CAPABILITY_ACTIONS.items()
+    if capability_name != "refresh"
+}
+SERVICE_SCHEMAS["refresh"] = vol.Schema(
     {
         vol.Required("device_id"): vol.Any(cv.string, [cv.string]),
     }
@@ -45,18 +59,18 @@ async def async_register_services(hass: HomeAssistant) -> None:
     if domain_data.get(DATA_SERVICES_REGISTERED):
         return
 
-    for service_name in SERVICE_ACTIONS:
+    for service_name, schema in SERVICE_SCHEMAS.items():
         hass.services.async_register(
             DOMAIN,
             service_name,
             _build_service_handler(hass, service_name),
-            schema=SERVICE_SCHEMA,
+            schema=schema,
         )
     hass.services.async_register(
         DOMAIN,
         SERVICE_DIAGNOSTICS,
         _build_diagnostics_handler(hass),
-        schema=SERVICE_SCHEMA,
+        schema=SERVICE_SCHEMAS["refresh"],
     )
 
     domain_data[DATA_SERVICES_REGISTERED] = True
@@ -69,7 +83,7 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
     if not domain_data or not domain_data.get(DATA_SERVICES_REGISTERED):
         return
 
-    for service_name in SERVICE_ACTIONS:
+    for service_name in SERVICE_SCHEMAS:
         hass.services.async_remove(DOMAIN, service_name)
     hass.services.async_remove(DOMAIN, SERVICE_DIAGNOSTICS)
 
@@ -128,7 +142,10 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
                 f"No vehicle device found for device_id: {', '.join(target_device_ids)}"
             )
 
-        capability_name, action_name = SERVICE_ACTIONS[service_name]
+        capability_name = service_name
+        action_name = (
+            "refresh" if capability_name == "refresh" else call.data["action"]
+        )
 
         for entry_data in target_entries:
             await async_execute_entry_action(entry_data, capability_name, action_name)

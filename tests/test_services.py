@@ -154,8 +154,8 @@ def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "unlock_vehicle")
-    asyncio.run(handler(ServiceCall({"device_id": device_id})))
+    handler = _build_service_handler(hass, "lock_vehicle")
+    asyncio.run(handler(ServiceCall({"device_id": device_id, "action": "unlock"})))
 
     refreshed_state = asyncio.run(adapter.get_raw_state())
     assert refreshed_state["locked"] is False
@@ -194,9 +194,11 @@ def test_service_dispatch_rejects_missing_capability_support() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "start_heating_climate")
+    handler = _build_service_handler(hass, "climate")
     with pytest.raises(ServiceValidationError):
-        asyncio.run(handler(ServiceCall({"device_id": device_id})))
+        asyncio.run(
+            handler(ServiceCall({"device_id": device_id, "action": "start_heating"}))
+        )
 
 
 def test_service_dispatch_maps_unsupported_adapter_action_to_validation_error() -> None:
@@ -232,9 +234,11 @@ def test_service_dispatch_maps_unsupported_adapter_action_to_validation_error() 
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "start_heating_climate")
+    handler = _build_service_handler(hass, "climate")
     with pytest.raises(ServiceValidationError):
-        asyncio.run(handler(ServiceCall({"device_id": device_id})))
+        asyncio.run(
+            handler(ServiceCall({"device_id": device_id, "action": "start_heating"}))
+        )
 
 
 def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
@@ -264,9 +268,9 @@ def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "unlock_vehicle")
+    handler = _build_service_handler(hass, "lock_vehicle")
     with pytest.raises(HomeAssistantError):
-        asyncio.run(handler(ServiceCall({"device_id": device_id})))
+        asyncio.run(handler(ServiceCall({"device_id": device_id, "action": "unlock"})))
 
 
 def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None:
@@ -335,6 +339,8 @@ def test_service_dispatch_rejects_currently_unavailable_action() -> None:
     }
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
-    handler = _build_service_handler(hass, "start_heating_climate")
+    handler = _build_service_handler(hass, "climate")
     with pytest.raises(ServiceValidationError, match="currently unavailable"):
-        asyncio.run(handler(ServiceCall({"device_id": device_id})))
+        asyncio.run(
+            handler(ServiceCall({"device_id": device_id, "action": "start_heating"}))
+        )

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from custom_components.my_vehicles.const import DOMAIN
-from custom_components.my_vehicles.services import SERVICE_ACTIONS
+from custom_components.my_vehicles.services import SERVICE_SCHEMAS
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +49,7 @@ def test_services_yaml_contains_current_public_service_names() -> None:
 
     services_yaml = SERVICES_PATH.read_text(encoding="utf-8")
 
-    for service_name in sorted(set(SERVICE_ACTIONS) | {"diagnostics"}):
+    for service_name in sorted(set(SERVICE_SCHEMAS) | {"diagnostics"}):
         assert f"{service_name}:" in services_yaml
 
 

@@ -135,6 +135,9 @@ class MappedVehicleAdapter(VehicleAdapter):
             ),
             "warning_messages": resolved.capability_states.get("warning_messages"),
             "info_messages": resolved.capability_states.get("info_messages"),
+            "vehicle_alert_active": _coerce_bool_state(
+                resolved.capability_states.get("vehicle_alert")
+            ),
             "hazard_lights_active": _coerce_bool_state(
                 resolved.capability_states.get("hazard_lights")
             ),

@@ -73,16 +73,16 @@ Depending on mapping support, `My Vehicles` can create:
 Core device-targeted services live in the `my_vehicles` domain. Common examples are:
 
 - `my_vehicles.lock_vehicle`
-- `my_vehicles.unlock_vehicle`
-- `my_vehicles.start_heating_climate`
-- `my_vehicles.start_cooling_climate`
-- `my_vehicles.stop_climate`
-- `my_vehicles.start_charging`
-- `my_vehicles.stop_charging`
+- `my_vehicles.climate`
+- `my_vehicles.ev_charging`
+- `my_vehicles.vehicle_alert`
+- `my_vehicles.hazard_lights`
+- `my_vehicles.windows`
 - `my_vehicles.refresh`
 - `my_vehicles.diagnostics`
 
 The exact available actions depend on the selected mapping and the verbs it exposes for each capability.
+Most capability services take an `action` parameter such as `lock`, `start_heating`, or `turn_on`. `my_vehicles.refresh` stays parameterless.
 
 ### Aggregate Attributes
 
