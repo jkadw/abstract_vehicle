@@ -11,7 +11,7 @@ from .capability_registry import (
     state_entity_rules_for_domain,
     should_create_entity_rule,
 )
-from .const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from .const import DATA_ADAPTER, DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .entity import VehicleBaseEntity, capability_source_domains
 from .model import NormalizedVehicleData
 
@@ -22,6 +22,7 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
     def __init__(
         self,
         normalized_data: NormalizedVehicleData,
+        entry_data: dict[str, object],
         capability_name: str,
         entity_key: str,
         entity_name: str,
@@ -31,6 +32,7 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
         invert_state: bool = False,
     ) -> None:
         super().__init__(normalized_data, entity_key, entity_name)
+        self._entry_data = entry_data
         self._capability_name = capability_name
         self._icon = icon
         self._device_class = device_class
@@ -67,6 +69,49 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
     def icon(self) -> str | None:
         return self._icon
 
+    @property
+    def extra_state_attributes(self) -> dict[str, object] | None:
+        adapter = self._entry_data.get(DATA_ADAPTER)
+        mapping = getattr(adapter, "_mapping", None)
+        if mapping is None:
+            return None
+
+        capability = mapping.capability(self._capability_name)
+        if capability is None:
+            return None
+
+        source_patterns = capability.state.any or capability.state.all
+        if not source_patterns:
+            return None
+
+        vehicle_token = _callable_value(adapter, "_source_vehicle_token")
+        device_id = _callable_value(adapter, "_source_device_id")
+        if not vehicle_token or not device_id or self.hass is None:
+            return None
+
+        on_entities: list[dict[str, str]] = []
+        off_entities: list[dict[str, str]] = []
+        for pattern in source_patterns:
+            entity_id = (
+                pattern.replace("{vehicle}", vehicle_token).replace("{device}", device_id)
+            )
+            state_obj = self.hass.states.get(entity_id)
+            if state_obj is None:
+                continue
+
+            state_value = str(getattr(state_obj, "state", "unknown"))
+            payload = {"entity_id": entity_id, "state": state_value}
+            classified = _classify_state(state_value)
+            if classified is True:
+                on_entities.append(payload)
+            elif classified is False:
+                off_entities.append(payload)
+
+        return {
+            "on": on_entities,
+            "off": off_entities,
+        }
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -94,6 +139,7 @@ async def async_setup_entry(
             vehicle_entities.append(
                 VehicleBinaryStateEntity(
                     normalized,
+                    vehicle_data,
                     capability_name,
                     rule.key,
                     _title(rule.key),
@@ -112,3 +158,25 @@ async def async_setup_entry(
 
 def _title(value: str) -> str:
     return value.replace("_", " ").title()
+
+
+def _callable_value(adapter: object, attr_name: str) -> str | None:
+    value = getattr(adapter, attr_name, None)
+    if value is None:
+        return None
+    if callable(value):
+        try:
+            result = value()
+        except Exception:
+            return None
+        return result if isinstance(result, str) and result else None
+    return value if isinstance(value, str) and value else None
+
+
+def _classify_state(value: str) -> bool | None:
+    normalized = value.strip().lower()
+    if normalized in {"on", "open", "true", "1", "locked", "charging", "home"}:
+        return True
+    if normalized in {"off", "closed", "false", "0", "unlocked", "not_home"}:
+        return False
+    return None

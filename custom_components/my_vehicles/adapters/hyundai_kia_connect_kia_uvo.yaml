@@ -80,7 +80,11 @@ capabilities:
 
   tire_pressure:
     state:
-      entity: binary_sensor.{vehicle}_tire_pressure_all
+      any:
+        - binary_sensor.{vehicle}_tire_pressure_front_left
+        - binary_sensor.{vehicle}_tire_pressure_front_right
+        - binary_sensor.{vehicle}_tire_pressure_rear_left
+        - binary_sensor.{vehicle}_tire_pressure_rear_right
 
   warning_messages:
     state:
