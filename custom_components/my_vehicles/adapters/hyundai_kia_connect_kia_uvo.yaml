@@ -53,6 +53,11 @@ capabilities:
   hazard_lights:
     state:
       unavailable: true
+    actions:
+      turn_on:
+        action: kia_uvo.start_hazard_lights
+        data:
+          device_id: {device}
 
   location:
     state:

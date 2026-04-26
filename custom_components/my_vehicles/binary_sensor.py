@@ -100,7 +100,7 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
                 continue
 
             state_value = str(getattr(state_obj, "state", "unknown"))
-            payload = {"entity_id": entity_id, "state": state_value}
+            payload = _short_source_name(entity_id, vehicle_token)
             classified = _classify_state(state_value)
             if classified is True:
                 on_entities.append(payload)
@@ -180,3 +180,11 @@ def _classify_state(value: str) -> bool | None:
     if normalized in {"off", "closed", "false", "0", "unlocked", "not_home"}:
         return False
     return None
+
+
+def _short_source_name(entity_id: str, vehicle_token: str) -> str:
+    object_id = entity_id.split(".", 1)[-1]
+    prefix = f"{vehicle_token}_"
+    if object_id.startswith(prefix):
+        object_id = object_id[len(prefix) :]
+    return object_id
