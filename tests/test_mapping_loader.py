@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import importlib
 from pathlib import Path
 
 import pytest
 
+import custom_components.my_vehicles.runtime as runtime_package
 from custom_components.my_vehicles.runtime.loader import (
     _load_adapter_class,
     get_available_adapter_definitions,
@@ -336,6 +339,22 @@ integration:
     )
 
 
+def test_runtime_package_exports_config_flow_dependencies() -> None:
+    """The runtime package must re-export helpers used by config_flow."""
+
+    assert runtime_package.get_available_adapter_options is get_available_adapter_options
+    assert runtime_package.get_available_adapter_definitions is get_available_adapter_definitions
+
+
+def test_config_flow_module_imports_cleanly() -> None:
+    """Importing the config flow should not fail due to broken package exports."""
+
+    module = importlib.import_module("custom_components.my_vehicles.config_flow")
+
+    assert module is not None
+    assert getattr(module, "VehicleConfigFlow", None) is not None
+
+
 def test_registry_discovers_adapter_definition_from_mapping_yaml() -> None:
     """Adapter definitions should be discovered directly from mapping files."""
 
@@ -429,9 +448,11 @@ class _FakeHass:
         self.config = _FakeConfig(components)
         self.config_entries = _FakeConfigEntries(entries_by_domain)
 
+    async def async_add_executor_job(self, func, *args):
+        return func(*args)
 
-@pytest.mark.asyncio
-async def test_available_adapter_definitions_are_filtered_by_installed_integrations(
+
+def test_available_adapter_definitions_are_filtered_by_installed_integrations(
     tmp_path: Path, monkeypatch
 ) -> None:
     """Only mappings whose upstream integration is installed should be offered."""
@@ -458,13 +479,12 @@ integration:
     monkeypatch.setattr(registry_module, "_mapping_directory", lambda: tmp_path)
     hass = _FakeHass(components={"example_oem"})
 
-    definitions = await get_available_adapter_definitions(hass)
+    definitions = asyncio.run(get_available_adapter_definitions(hass))
 
     assert [definition.key for definition in definitions] == ["example_oem"]
 
 
-@pytest.mark.asyncio
-async def test_available_adapter_options_use_mapping_metadata_labels(
+def test_available_adapter_options_use_mapping_metadata_labels(
     tmp_path: Path, monkeypatch
 ) -> None:
     """Config-flow options should come from YAML keys and friendly names."""
@@ -482,6 +502,6 @@ integration:
     monkeypatch.setattr(registry_module, "_mapping_directory", lambda: tmp_path)
     hass = _FakeHass(entries_by_domain={"example_oem": [object()]})
 
-    options = await get_available_adapter_options(hass)
+    options = asyncio.run(get_available_adapter_options(hass))
 
     assert options == {"example_oem": "Example OEM"}

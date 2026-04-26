@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from custom_components.my_vehicles.runtime.base import UnsupportedVehicleActionError
@@ -117,8 +119,7 @@ class _FakeDeviceRegistry:
         return self._device
 
 
-@pytest.mark.asyncio
-async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
+def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     """A supported service should delegate to the adapter and refresh state."""
 
     hass = HomeAssistant()
@@ -126,9 +127,9 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     entity = _FakeEntity("sensor.family_ev")
     device_id = "device-123"
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
-        await adapter.get_capabilities(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
     )
     hass.data = {
         DOMAIN: {
@@ -146,17 +147,16 @@ async def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, "unlock_vehicle")
-    await handler(ServiceCall({"device_id": device_id}))
+    asyncio.run(handler(ServiceCall({"device_id": device_id})))
 
-    refreshed_state = await adapter.get_raw_state()
+    refreshed_state = asyncio.run(adapter.get_raw_state())
     assert refreshed_state["locked"] is False
     assert entity.updated_data is not None
     assert entity.updated_data.locked is False
     assert entity.write_calls == 1
 
 
-@pytest.mark.asyncio
-async def test_service_dispatch_rejects_missing_capability_support() -> None:
+def test_service_dispatch_rejects_missing_capability_support() -> None:
     """Capability-based validation should block unsupported actions."""
 
     hass = HomeAssistant()
@@ -164,8 +164,8 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
     entity = _FakeEntity("sensor.family_ev")
     device_id = "device-123"
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
         VehicleCapabilities(
             lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
             climate=CapabilitySupport(state_supported=True, action_supported=False),
@@ -188,11 +188,10 @@ async def test_service_dispatch_rejects_missing_capability_support() -> None:
 
     handler = _build_service_handler(hass, "start_climate")
     with pytest.raises(ServiceValidationError):
-        await handler(ServiceCall({"device_id": device_id}))
+        asyncio.run(handler(ServiceCall({"device_id": device_id})))
 
 
-@pytest.mark.asyncio
-async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_error() -> None:
+def test_service_dispatch_maps_unsupported_adapter_action_to_validation_error() -> None:
     """Unsupported adapter actions should become validation errors."""
 
     class _UnsupportedClimateAdapter(_ServiceAdapter):
@@ -206,9 +205,9 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
     entity = _FakeEntity("sensor.family_ev")
     device_id = "device-123"
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
-        await adapter.get_capabilities(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
     )
     hass.data = {
         DOMAIN: {
@@ -227,11 +226,10 @@ async def test_service_dispatch_maps_unsupported_adapter_action_to_validation_er
 
     handler = _build_service_handler(hass, "start_climate")
     with pytest.raises(ServiceValidationError):
-        await handler(ServiceCall({"device_id": device_id}))
+        asyncio.run(handler(ServiceCall({"device_id": device_id})))
 
 
-@pytest.mark.asyncio
-async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
+def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     """Unexpected adapter failures should raise a generic HA error."""
 
     hass = HomeAssistant()
@@ -239,9 +237,9 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
     entity = _FakeEntity("sensor.family_ev")
     device_id = "device-123"
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
-        await adapter.get_capabilities(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
     )
     hass.data = {
         DOMAIN: {
@@ -260,11 +258,10 @@ async def test_service_dispatch_maps_unexpected_adapter_errors() -> None:
 
     handler = _build_service_handler(hass, "unlock_vehicle")
     with pytest.raises(HomeAssistantError):
-        await handler(ServiceCall({"device_id": device_id}))
+        asyncio.run(handler(ServiceCall({"device_id": device_id})))
 
 
-@pytest.mark.asyncio
-async def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None:
+def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None:
     """Diagnostics should inspect the vehicle without mutating state or entities."""
 
     hass = HomeAssistant()
@@ -272,9 +269,9 @@ async def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None
     entity = _FakeEntity("sensor.family_ev")
     device_id = "device-123"
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
-        await adapter.get_capabilities(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
     )
     hass.data = {
         DOMAIN: {
@@ -293,9 +290,9 @@ async def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None
 
     handler = services_module._build_diagnostics_handler(hass)
     with caplog.at_level("INFO"):
-        await handler(ServiceCall({"device_id": device_id}))
+        asyncio.run(handler(ServiceCall({"device_id": device_id})))
 
-    refreshed_state = await adapter.get_raw_state()
+    refreshed_state = asyncio.run(adapter.get_raw_state())
     assert refreshed_state["locked"] is True
     assert entity.updated_data is None
     assert entity.write_calls == 0

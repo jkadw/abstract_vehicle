@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
+import asyncio
 
 from custom_components.my_vehicles.mappings.schema import load_adapter_mapping
 from custom_components.my_vehicles.entities.binary_sensor import (
@@ -28,7 +28,6 @@ from custom_components.my_vehicles.domain.model import (
     VehicleState,
 )
 from custom_components.my_vehicles.entities.switch import (
-    VehicleCapabilitySwitchEntity,
     async_setup_entry as async_setup_switches,
 )
 from homeassistant.core import HomeAssistant
@@ -86,8 +85,7 @@ def _vehicle_entry(
     }
 
 
-@pytest.mark.asyncio
-async def test_lock_platform_creates_lock_entity_without_state_support() -> None:
+def test_lock_platform_creates_lock_entity_without_state_support() -> None:
     """The lock exception should always create a lock-domain entity."""
 
     hass = HomeAssistant()
@@ -106,7 +104,7 @@ async def test_lock_platform_creates_lock_entity_without_state_support() -> None
     }
     added = []
 
-    await async_setup_locks(hass, entry, added.extend)
+    asyncio.run(async_setup_locks(hass, entry, added.extend))
 
     assert len(added) == 1
     assert isinstance(added[0], VehicleLockCapabilityEntity)
@@ -114,8 +112,7 @@ async def test_lock_platform_creates_lock_entity_without_state_support() -> None
     assert vehicle_data[DATA_ENTITIES] == added
 
 
-@pytest.mark.asyncio
-async def test_binary_sensor_platform_creates_vehicle_locked_when_state_supported() -> None:
+def test_binary_sensor_platform_creates_vehicle_locked_when_state_supported() -> None:
     """Binary-sensor-like lock state should create the canonical boolean entity."""
 
     hass = HomeAssistant()
@@ -134,7 +131,7 @@ async def test_binary_sensor_platform_creates_vehicle_locked_when_state_supporte
     }
     added = []
 
-    await async_setup_binary_sensors(hass, entry, added.extend)
+    asyncio.run(async_setup_binary_sensors(hass, entry, added.extend))
 
     assert len(added) == 1
     assert isinstance(added[0], VehicleBinaryStateEntity)
@@ -142,9 +139,8 @@ async def test_binary_sensor_platform_creates_vehicle_locked_when_state_supporte
     assert added[0].is_on is False
 
 
-@pytest.mark.asyncio
-async def test_switch_platform_creates_lock_switch_when_actions_are_available() -> None:
-    """Actionable lock capability should also expose a switch entity."""
+def test_switch_platform_does_not_create_lock_switch_when_actions_are_available() -> None:
+    """The lock-domain exception should not also expose a switch entity."""
 
     hass = HomeAssistant()
     entry = _FakeEntry()
@@ -162,9 +158,6 @@ async def test_switch_platform_creates_lock_switch_when_actions_are_available() 
     }
     added = []
 
-    await async_setup_switches(hass, entry, added.extend)
+    asyncio.run(async_setup_switches(hass, entry, added.extend))
 
-    assert len(added) == 1
-    assert isinstance(added[0], VehicleCapabilitySwitchEntity)
-    assert added[0]._entity_key == "lock_vehicle"
-    assert added[0].is_on is True
+    assert added == []

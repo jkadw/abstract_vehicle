@@ -6,26 +6,28 @@ from .base import (
     VehicleAdapterError,
 )
 from .loader import (
-    create_adapter,
     create_adapter_from_entry,
+    create_adapter_from_discovered_vehicle,
     discover_adapter_vehicles,
-    get_adapter_definition,
-    get_adapter_definitions,
     get_available_adapter_definitions,
     get_available_adapter_options,
 )
 from .mapped import MappedVehicleAdapter
+from .registry import (
+    async_get_adapter_definition,
+    async_get_adapter_definitions,
+)
 
 __all__ = [
     "MappedVehicleAdapter",
     "UnsupportedVehicleActionError",
     "VehicleAdapter",
     "VehicleAdapterError",
-    "create_adapter",
     "create_adapter_from_entry",
+    "create_adapter_from_discovered_vehicle",
     "discover_adapter_vehicles",
-    "get_adapter_definition",
-    "get_adapter_definitions",
+    "async_get_adapter_definition",
+    "async_get_adapter_definitions",
     "get_available_adapter_definitions",
     "get_available_adapter_options",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import pytest
@@ -95,8 +96,7 @@ class _FakeAdapter:
         return VehicleCapabilities()
 
 
-@pytest.mark.asyncio
-async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
+def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
     monkeypatch,
 ) -> None:
     """One mapping entry should own multiple vehicles and register a startup reload."""
@@ -143,7 +143,7 @@ async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
         _fake_create,
     )
 
-    result = await async_setup_entry(hass, entry)
+    result = asyncio.run(async_setup_entry(hass, entry))
 
     assert result is True
     assert len(hass.data[DOMAIN][entry.entry_id][DATA_VEHICLES]) == 2
@@ -160,7 +160,7 @@ async def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
     ]
 
     _, callback = hass.bus.listeners[0]
-    await callback(object())
+    asyncio.run(callback(object()))
 
     assert hass.config_entries.reloads == ["entry-1"]
 

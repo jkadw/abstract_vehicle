@@ -331,8 +331,8 @@ def _parse_actions(
             raise MappingValidationError(
                 f"{context}.{action_name}.action must be a fully qualified domain.service"
             )
-        data = raw_action.get("data", {})
-        target = raw_action.get("target", {})
+        data = _normalize_placeholder_values(raw_action.get("data", {}))
+        target = _normalize_placeholder_values(raw_action.get("target", {}))
         if not isinstance(data, dict):
             raise MappingValidationError(f"{context}.{action_name}.data must be a dictionary")
         if not isinstance(target, dict):
@@ -342,6 +342,21 @@ def _parse_actions(
         parsed[action_name] = ActionMapping(action=action, data=data, target=target)
 
     return parsed
+
+
+def _normalize_placeholder_values(value: Any) -> Any:
+    if isinstance(value, dict):
+        if len(value) == 1:
+            key, nested = next(iter(value.items()))
+            if isinstance(key, str) and nested is None and key in {"device", "vehicle"}:
+                return "{" + key + "}"
+        return {
+            key: _normalize_placeholder_values(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_normalize_placeholder_values(item) for item in value]
+    return value
 
 
 def _parse_metadata(raw_mapping: dict[str, Any], *, context: str) -> MappingMetadata:

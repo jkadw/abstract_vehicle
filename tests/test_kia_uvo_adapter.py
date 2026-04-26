@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -48,6 +49,9 @@ class _FakeHass:
         self.states = _StateStore(states)
         self.services = _ServiceRegistry()
         self.is_running = False
+
+    async def async_add_executor_job(self, func, *args):
+        return func(*args)
 
 
 class _Device:
@@ -119,7 +123,7 @@ def _fake_hass() -> _FakeHass:
             "binary_sensor.santa_fe_rear_right_window": SimpleNamespace(
                 state="off", attributes={}
             ),
-            "device_tracker.santa_fe_vehicle": SimpleNamespace(
+            "device_tracker.santa_fe_location": SimpleNamespace(
                 state="home",
                 attributes={"latitude": 33.7490, "longitude": -84.3880},
             ),
@@ -132,7 +136,7 @@ def _fake_hass() -> _FakeHass:
             "sensor.santa_fe_odometer": SimpleNamespace(
                 state="12450", attributes={"unit_of_measurement": "mi"}
             ),
-            "button.santa_fe_force_refresh": SimpleNamespace(
+            "button.santa_fe_santa_fe_force_refresh": SimpleNamespace(
                 state="unknown",
                 attributes={},
             ),
@@ -174,14 +178,13 @@ def _kia_uvo_adapter_class():
     return _load_adapter_class(definition)
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> None:
+def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> None:
     """The adapter should discover vehicles via integration.domain and mapping patterns."""
 
     hass = _fake_hass()
     _patch_registries(monkeypatch, hass, {("kia_uvo", "kia-1")})
 
-    discovered = await _kia_uvo_adapter_class().async_discover_vehicles(hass)
+    discovered = asyncio.run(_kia_uvo_adapter_class().async_discover_vehicles(hass))
 
     assert len(discovered) == 1
     assert discovered[0].vehicle_id == "kia-1"
@@ -191,8 +194,7 @@ async def test_kia_uvo_adapter_discovers_vehicle_generically(monkeypatch) -> Non
     assert discovered[0].payload["source_device_id"] == "device-123"
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
+def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
     """The adapter should build raw data from the generic mapped runtime."""
 
     adapter = _kia_uvo_adapter_class()(
@@ -201,9 +203,9 @@ async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> No
         vehicle_id="kia-1",
     )
 
-    raw_state = await adapter.get_raw_state()
-    raw_metrics = await adapter.get_raw_metrics()
-    capabilities = await adapter.get_capabilities()
+    raw_state = asyncio.run(adapter.get_raw_state())
+    raw_metrics = asyncio.run(adapter.get_raw_metrics())
+    capabilities = asyncio.run(adapter.get_capabilities())
 
     assert raw_state["vehicle_id"] == "kia-1"
     assert raw_state["manufacturer"] == "Kia"
@@ -219,8 +221,7 @@ async def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> No
     assert capabilities.refresh.action_supported is True
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -> None:
+def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -> None:
     """Mapped raw values should normalize into the unified capability model."""
 
     adapter = _kia_uvo_adapter_class()(
@@ -229,9 +230,9 @@ async def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -
         vehicle_id="kia-1",
     )
     normalized = normalize_vehicle_data(
-        await adapter.get_raw_state(),
-        await adapter.get_raw_metrics(),
-        await adapter.get_capabilities(),
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
     )
 
     assert normalized.state.value == "parked"
@@ -242,8 +243,7 @@ async def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -
     assert normalized.capabilities.battery_level.state_supported is True
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> None:
+def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> None:
     """Mapped actions should execute via HA services rather than OEM-specific code."""
 
     hass = _fake_hass()
@@ -253,8 +253,8 @@ async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() 
         vehicle_id="kia-1",
     )
 
-    await adapter.execute_action("unlock")
-    await adapter.execute_action("refresh")
+    asyncio.run(adapter.execute_action("unlock"))
+    asyncio.run(adapter.execute_action("refresh"))
 
     assert hass.services.calls == [
         {
@@ -265,20 +265,19 @@ async def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() 
             "blocking": True,
         },
         {
-            "domain": "kia_uvo",
+            "domain": "button",
             "service": "press",
-            "service_data": {"entity_id": "button.santa_fe_force_refresh"},
+            "service_data": {"entity_id": "button.santa_fe_santa_fe_force_refresh"},
             "target": None,
             "blocking": True,
         },
     ]
 
     with pytest.raises(UnsupportedVehicleActionError):
-        await adapter.execute_action("start_climate")
+        asyncio.run(adapter.execute_action("start_climate"))
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
+def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     """Mapped adapters should expose detailed diagnostics without executing actions."""
 
     adapter = _kia_uvo_adapter_class()(
@@ -287,7 +286,7 @@ async def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
         vehicle_id="kia-1",
     )
 
-    diagnostics = await adapter.get_diagnostics()
+    diagnostics = asyncio.run(adapter.get_diagnostics())
 
     assert diagnostics["adapter_type"] == "mapped"
     assert diagnostics["mapping_name"] == "hyundai_kia_connect_kia_uvo"
@@ -297,7 +296,10 @@ async def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     assert diagnostics["raw_metrics"]["range"] == 198.0
     assert diagnostics["capabilities"]["refresh"]["action_supported"] is True
     assert diagnostics["actions"]["windows"]["open"]["service"] == "kia_uvo.set_windows"
-    assert diagnostics["source_entities"]["button.santa_fe_force_refresh"]["exists"] is True
+    assert (
+        diagnostics["source_entities"]["button.santa_fe_santa_fe_force_refresh"]["exists"]
+        is True
+    )
     assert (
         diagnostics["source_entities"]["sensor.santa_fe_total_driving_range"]["attributes"][
             "unit_of_measurement"
@@ -306,8 +308,7 @@ async def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     )
 
 
-@pytest.mark.asyncio
-async def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatch) -> None:
+def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatch) -> None:
     """Generic discovery should not crash on unexpected identifier shapes."""
 
     hass = _fake_hass()
@@ -323,6 +324,6 @@ async def test_kia_uvo_discovery_ignores_malformed_identifier_entries(monkeypatc
         },
     )
 
-    discovered = await _kia_uvo_adapter_class().async_discover_vehicles(hass)
+    discovered = asyncio.run(_kia_uvo_adapter_class().async_discover_vehicles(hass))
 
     assert discovered[0].vehicle_id == "vehicle-123"

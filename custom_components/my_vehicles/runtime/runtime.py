@@ -411,8 +411,10 @@ def _evaluate_fallback_expression(runtime: MappingRuntime, expression: str) -> A
 
 def _rewrite_filter_calls(expression: str) -> str:
     for marker in ("__float_filter", "__int_filter"):
-        while marker in expression:
-            index = expression.index(marker)
+        while True:
+            index = _find_uncalled_filter_index(expression, marker)
+            if index == -1:
+                break
             left = expression[:index].rstrip()
             start = _find_filter_operand_start(left)
             operand = left[start:].strip()
@@ -421,6 +423,18 @@ def _rewrite_filter_calls(expression: str) -> str:
                 f"{expression[index + len(marker):]}"
             )
     return expression
+
+
+def _find_uncalled_filter_index(expression: str, marker: str) -> int:
+    start = 0
+    while True:
+        index = expression.find(marker, start)
+        if index == -1:
+            return -1
+        suffix = expression[index + len(marker) :].lstrip()
+        if not suffix.startswith("("):
+            return index
+        start = index + len(marker)
 
 
 def _find_filter_operand_start(text: str) -> int:
