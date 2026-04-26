@@ -58,6 +58,8 @@ capabilities:
       entity: binary_sensor.{vehicle}_ev_battery_plug
 
   ev_charging:
+    availability:
+      entity: binary_sensor.{vehicle}_ev_battery_plug
     state:
       entity: switch.{vehicle}_{vehicle}_ev_charging
     actions:

@@ -43,13 +43,23 @@ class _FakeEntry:
 
 
 class _FakeAdapter:
-    def __init__(self, *, unavailable_actions: set[tuple[str, str]] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        unavailable_actions: set[tuple[str, str]] | None = None,
+        unavailable_capabilities: set[str] | None = None,
+    ) -> None:
         self._mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
         self._unavailable_actions = unavailable_actions or set()
+        self._unavailable_capabilities = unavailable_capabilities or set()
 
     def is_action_available(self, capability_name: str, action: str, **kwargs) -> bool:
         _ = kwargs
         return (capability_name, action) not in self._unavailable_actions
+
+    def is_capability_available(self, capability_name: str, **kwargs) -> bool:
+        _ = kwargs
+        return capability_name not in self._unavailable_capabilities
 
 
 def _normalized_vehicle(
@@ -60,6 +70,8 @@ def _normalized_vehicle(
     windows_state_supported: bool = False,
     windows_action_supported: bool = False,
     hazard_action_supported: bool = False,
+    ev_charging_state_supported: bool = False,
+    ev_charging_action_supported: bool = False,
 ) -> NormalizedVehicleData:
     return NormalizedVehicleData(
         info=VehicleInfo(
@@ -83,6 +95,10 @@ def _normalized_vehicle(
                 state_supported=False,
                 action_supported=hazard_action_supported,
             ),
+            ev_charging=CapabilitySupport(
+                state_supported=ev_charging_state_supported,
+                action_supported=ev_charging_action_supported,
+            ),
         ),
         locked=locked,
     )
@@ -96,10 +112,16 @@ def _vehicle_entry(
     windows_state_supported: bool = False,
     windows_action_supported: bool = False,
     hazard_action_supported: bool = False,
+    ev_charging_state_supported: bool = False,
+    ev_charging_action_supported: bool = False,
     unavailable_actions: set[tuple[str, str]] | None = None,
+    unavailable_capabilities: set[str] | None = None,
 ) -> dict[str, object]:
     return {
-        DATA_ADAPTER: _FakeAdapter(unavailable_actions=unavailable_actions),
+        DATA_ADAPTER: _FakeAdapter(
+            unavailable_actions=unavailable_actions,
+            unavailable_capabilities=unavailable_capabilities,
+        ),
         DATA_NORMALIZED: _normalized_vehicle(
             lock_state_supported=lock_state_supported,
             lock_action_supported=lock_action_supported,
@@ -107,6 +129,8 @@ def _vehicle_entry(
             windows_state_supported=windows_state_supported,
             windows_action_supported=windows_action_supported,
             hazard_action_supported=hazard_action_supported,
+            ev_charging_state_supported=ev_charging_state_supported,
+            ev_charging_action_supported=ev_charging_action_supported,
         ),
         DATA_ENTITIES: [],
     }
@@ -221,7 +245,7 @@ def test_button_platform_creates_window_and_hazard_buttons_from_registry() -> No
     assert "close_windows" in keys
     assert "turn_on_hazard_lights" in keys
     assert "turn_off_hazard_lights" not in keys
-    assert icons["turn_on_hazard_lights"] == "mdi:hazard-lights"
+    assert icons["turn_on_hazard_lights"] == "mdi:car-hazard-lights"
     open_button = next(entity for entity in added if entity._entity_key == "open_windows")
     assert open_button.available is False
 
@@ -257,3 +281,63 @@ def test_button_availability_updates_when_adapter_availability_changes() -> None
     adapter._unavailable_actions.clear()
 
     assert open_button.available is True
+
+
+def test_switch_availability_reflects_action_availability() -> None:
+    """Switch entities should become unavailable only from capability availability."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        ev_charging_state_supported=True,
+        ev_charging_action_supported=True,
+        unavailable_capabilities={"ev_charging"},
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_switches(hass, entry, added.extend))
+
+    charging_switch = next(entity for entity in added if entity._entity_key == "ev_charging")
+    assert charging_switch.available is False
+
+    adapter = vehicle_data[DATA_ADAPTER]
+    adapter._unavailable_capabilities.clear()
+
+    assert charging_switch.available is True
+
+
+def test_switch_stays_available_when_only_one_direction_is_currently_available() -> None:
+    """State-dependent verb availability must not disable the whole switch."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        ev_charging_state_supported=True,
+        ev_charging_action_supported=True,
+        unavailable_actions={("ev_charging", "stop")},
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_switches(hass, entry, added.extend))
+
+    charging_switch = next(entity for entity in added if entity._entity_key == "ev_charging")
+
+    assert charging_switch.available is True

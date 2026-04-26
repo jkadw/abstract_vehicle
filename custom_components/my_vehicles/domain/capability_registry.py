@@ -266,7 +266,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="binary_sensor",
                     key="hazard_lights",
                     device_class="problem",
-                    icon="mdi:hazard-lights",
+                    icon="mdi:car-hazard-lights",
                     create_when_state_supported=True,
                 ),
             ),
@@ -274,7 +274,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 EntityGenerationRule(
                     domain="switch",
                     key="hazard_lights",
-                    icon="mdi:hazard-lights",
+                    icon="mdi:car-hazard-lights",
                     create_when_action_supported=True,
                     create_when_source_domain=("switch",),
                 ),
@@ -283,12 +283,12 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 ButtonGenerationRule(
                     action="turn_on",
                     key="turn_on_hazard_lights",
-                    icon="mdi:hazard-lights",
+                    icon="mdi:car-hazard-lights",
                 ),
                 ButtonGenerationRule(
                     action="turn_off",
                     key="turn_off_hazard_lights",
-                    icon="mdi:hazard-lights",
+                    icon="mdi:car-hazard-lights",
                 ),
             ),
         ),

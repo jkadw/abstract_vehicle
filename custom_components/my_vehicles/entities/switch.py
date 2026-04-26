@@ -12,7 +12,7 @@ from ..domain.capability_registry import (
     control_entity_rules_for_domain,
     should_create_entity_rule,
 )
-from ..const import DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
+from ..const import DATA_ADAPTER, DATA_ENTITIES, DATA_NORMALIZED, DATA_VEHICLES, DOMAIN
 from .base import VehicleBaseEntity, capability_source_domains
 from ..services import async_execute_entry_action
 
@@ -65,6 +65,16 @@ class VehicleCapabilitySwitchEntity(VehicleBaseEntity, SwitchEntity):
     @property
     def icon(self) -> str | None:
         return self._icon
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        adapter = self._entry_data.get(DATA_ADAPTER)
+        checker = getattr(adapter, "is_capability_available", None)
+        if not callable(checker):
+            return True
+        return bool(checker(self._capability_name))
 
     async def async_turn_on(self, **kwargs) -> None:
         _ = kwargs

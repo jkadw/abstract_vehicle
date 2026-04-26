@@ -198,6 +198,15 @@ class MappedVehicleAdapter(VehicleAdapter):
         except Exception:
             return False
 
+    def is_capability_available(self, capability_name: str, **kwargs: Any) -> bool:
+        """Return whether one mapped capability should be available for controls."""
+
+        _ = kwargs
+        try:
+            return self._runtime().is_capability_available(capability_name)
+        except Exception:
+            return False
+
     def source_entity_ids(self) -> tuple[str, ...]:
         """Return resolved source entity ids for this mapped vehicle."""
 
@@ -230,6 +239,7 @@ class MappedVehicleAdapter(VehicleAdapter):
                 capability_name: {
                     "state_supported": support.state_supported,
                     "action_supported": support.action_supported,
+                    "available": resolved.capability_availability.get(capability_name, True),
                 }
                 for capability_name, support in resolved.capabilities.items()
             },

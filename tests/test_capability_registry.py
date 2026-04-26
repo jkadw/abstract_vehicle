@@ -41,7 +41,7 @@ def test_button_rule_map_exposes_registry_driven_service_names() -> None:
     assert rules["close_windows"][0] == "windows"
     assert rules["close_windows"][1].action == "close"
     assert rules["start_climate"][0] == "climate"
-    assert rules["turn_on_hazard_lights"][1].icon == "mdi:hazard-lights"
+    assert rules["turn_on_hazard_lights"][1].icon == "mdi:car-hazard-lights"
     assert rules["refresh"][0] == "refresh"
 
 

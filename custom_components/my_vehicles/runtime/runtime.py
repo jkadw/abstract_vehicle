@@ -32,6 +32,7 @@ class ResolvedMappingRuntime:
     """Resolved read-only view of one mapping against one source vehicle."""
 
     capability_states: dict[str, Any]
+    capability_availability: dict[str, bool]
     capabilities: VehicleCapabilities
     actions: dict[str, dict[str, PreparedAction]]
     errors: dict[str, str]
@@ -58,10 +59,12 @@ class MappingRuntime:
         """Resolve one mapping against the current HA state model."""
 
         capability_states, errors = self._resolve_capability_states()
+        capability_availability = self._resolve_capability_availability()
         capabilities = self._build_capabilities()
         actions = self._prepare_actions()
         return ResolvedMappingRuntime(
             capability_states=capability_states,
+            capability_availability=capability_availability,
             capabilities=capabilities,
             actions=actions,
             errors=errors,
@@ -90,6 +93,14 @@ class MappingRuntime:
         """Return whether one mapped action is currently available."""
 
         return self.get_prepared_action(capability_name, canonical_action).available
+
+    def is_capability_available(self, capability_name: str) -> bool:
+        """Return whether one mapped capability is currently available for controls."""
+
+        capability = self._mapping.capability(capability_name)
+        if capability is None:
+            return False
+        return self._resolve_capability_availability_for_mapping(capability)
 
     async def async_execute_action(
         self, capability_name: str, canonical_action: str
@@ -203,6 +214,12 @@ class MappingRuntime:
             }
         )
 
+    def _resolve_capability_availability(self) -> dict[str, bool]:
+        return {
+            capability_name: self._resolve_capability_availability_for_mapping(capability)
+            for capability_name, capability in self._mapping.capabilities.items()
+        }
+
     def _prepare_actions(self) -> dict[str, dict[str, PreparedAction]]:
         prepared: dict[str, dict[str, PreparedAction]] = {}
         for capability_name, capability in self._mapping.capabilities.items():
@@ -213,18 +230,30 @@ class MappingRuntime:
                 prepared[capability_name][canonical_action] = self._prepare_action(
                     canonical_action,
                     action,
+                    capability_name=capability_name,
                 )
         return prepared
 
     def _prepare_action(
-        self, canonical_action: str, action: ActionMapping
+        self,
+        canonical_action: str,
+        action: ActionMapping,
+        *,
+        capability_name: str | None = None,
     ) -> PreparedAction:
+        capability_available = True
+        if capability_name is not None:
+            capability = self._mapping.capability(capability_name)
+            if capability is not None:
+                capability_available = self._resolve_capability_availability_for_mapping(
+                    capability
+                )
         return PreparedAction(
             canonical_action=canonical_action,
             service=action.action,
             data=_substitute_placeholders(action.data, self._vehicle, self._device),
             target=_substitute_placeholders(action.target, self._vehicle, self._device),
-            available=self._resolve_action_availability(action),
+            available=capability_available and self._resolve_action_availability(action),
         )
 
     def _resolve_action_availability(self, action: ActionMapping) -> bool:
@@ -238,6 +267,23 @@ class MappingRuntime:
                 return not value
             return not _state_to_bool(value)
         value = self._resolve_state_mapping(action.availability)
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        return _state_to_bool(value)
+
+    def _resolve_capability_availability_for_mapping(self, capability: Any) -> bool:
+        if capability.availability is None:
+            if capability.availability_not is None:
+                return True
+            value = self._resolve_state_mapping(capability.availability_not)
+            if value is None:
+                return True
+            if isinstance(value, bool):
+                return not value
+            return not _state_to_bool(value)
+        value = self._resolve_state_mapping(capability.availability)
         if value is None:
             return False
         if isinstance(value, bool):
@@ -289,6 +335,18 @@ class MappingRuntime:
             entity_ids.extend(
                 self._resolve_source_entities(capability.state.source_entities())
             )
+            if capability.availability is not None:
+                entity_ids.extend(
+                    self._resolve_source_entities(
+                        capability.availability.source_entities()
+                    )
+                )
+            if capability.availability_not is not None:
+                entity_ids.extend(
+                    self._resolve_source_entities(
+                        capability.availability_not.source_entities()
+                    )
+                )
             for action in capability.actions.values():
                 if action.availability is not None:
                     entity_ids.extend(

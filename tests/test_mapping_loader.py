@@ -443,6 +443,105 @@ capabilities:
     )
 
 
+def test_load_mapping_file_parses_capability_availability_block(tmp_path: Path) -> None:
+    """Capabilities may define availability separately from action verbs."""
+
+    mapping_path = tmp_path / "capability_availability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
+    availability:
+      entity: binary_sensor.{vehicle}_ev_battery_plug
+    state:
+      entity: switch.{vehicle}_{vehicle}_ev_charging
+    actions:
+      start:
+        action: switch.turn_on
+      stop:
+        action: switch.turn_off
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      unavailable: true
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+
+    assert mapping.capability("ev_charging").availability is not None
+    assert (
+        mapping.capability("ev_charging").availability.entity
+        == "binary_sensor.{vehicle}_ev_battery_plug"
+    )
+
+
 def test_load_mapping_file_parses_action_availability_not_block(tmp_path: Path) -> None:
     """Action mappings may optionally define negated availability."""
 

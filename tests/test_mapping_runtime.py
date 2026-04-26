@@ -299,6 +299,126 @@ capabilities:
     assert runtime.is_action_available("windows", "open") is False
 
 
+def test_mapping_runtime_resolves_capability_level_availability(tmp_path: Path) -> None:
+    """Capability availability should gate controls without living on each verb."""
+
+    mapping_path = tmp_path / "capability_availability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      entity: binary_sensor.{vehicle}_ev_battery_plug
+  ev_charging:
+    availability:
+      entity: binary_sensor.{vehicle}_ev_battery_plug
+    state:
+      entity: switch.{vehicle}_{vehicle}_ev_charging
+    actions:
+      start:
+        action: switch.turn_on
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_ev_charging
+      stop:
+        action: switch.turn_off
+        target:
+          entity_id: switch.{vehicle}_{vehicle}_ev_charging
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      unavailable: true
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_ev_battery_plug": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "switch.santa_fe_santa_fe_ev_charging": SimpleNamespace(
+                state="off", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    resolved = runtime.resolve()
+
+    assert resolved.capability_availability["ev_charging"] is False
+    assert runtime.is_capability_available("ev_charging") is False
+    assert resolved.actions["ev_charging"]["start"].available is False
+    assert resolved.actions["ev_charging"]["stop"].available is False
+
+
 def test_mapping_runtime_resolves_optional_action_availability_not(
     tmp_path: Path,
 ) -> None:

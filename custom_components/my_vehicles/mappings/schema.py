@@ -101,6 +101,8 @@ class CapabilityMapping:
 
     name: str
     state: StateMapping
+    availability: StateMapping | None = None
+    availability_not: StateMapping | None = None
     actions: dict[str, ActionMapping] = field(default_factory=dict)
 
 
@@ -207,6 +209,14 @@ def _parse_capabilities(raw_capabilities: Any) -> dict[str, CapabilityMapping]:
                 f"capabilities.{capability_name} must be a dictionary"
             )
 
+        if (
+            raw_mapping.get("availability") is not None
+            and raw_mapping.get("availability_not") is not None
+        ):
+            raise MappingValidationError(
+                f"capabilities.{capability_name} may not define both availability and availability_not"
+            )
+
         raw_state = raw_mapping.get("state")
         if not isinstance(raw_state, dict):
             raise MappingValidationError(
@@ -222,9 +232,19 @@ def _parse_capabilities(raw_capabilities: Any) -> dict[str, CapabilityMapping]:
             raw_state,
             context=f"capabilities.{capability_name}.state",
         )
+        availability = _parse_optional_state_mapping(
+            raw_mapping.get("availability"),
+            context=f"capabilities.{capability_name}.availability",
+        )
+        availability_not = _parse_optional_state_mapping(
+            raw_mapping.get("availability_not"),
+            context=f"capabilities.{capability_name}.availability_not",
+        )
         capabilities[capability_name] = CapabilityMapping(
             name=capability_name,
             state=state_mapping,
+            availability=availability,
+            availability_not=availability_not,
             actions=actions,
         )
 
@@ -376,6 +396,14 @@ def _parse_actions(
         )
 
     return parsed
+
+
+def _parse_optional_state_mapping(raw_mapping: Any, *, context: str) -> StateMapping | None:
+    if raw_mapping is None:
+        return None
+    if not isinstance(raw_mapping, dict):
+        raise MappingValidationError(f"{context} must be a dictionary")
+    return _parse_state_mapping(raw_mapping, context=context)
 
 
 def _normalize_placeholder_values(value: Any) -> Any:

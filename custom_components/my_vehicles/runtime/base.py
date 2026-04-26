@@ -109,6 +109,12 @@ class VehicleAdapter(ABC):
         _ = capability_name, action, kwargs
         return True
 
+    def is_capability_available(self, capability_name: str, **kwargs: Any) -> bool:
+        """Return whether one capability-level control should be available."""
+
+        _ = capability_name, kwargs
+        return True
+
     def source_entity_ids(self) -> tuple[str, ...]:
         """Return source entity ids whose state changes should refresh the vehicle."""
 
