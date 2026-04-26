@@ -97,6 +97,8 @@ async def async_setup_entry(
         for capability_name, rule in control_entity_rules_for_domain("switch"):
             support = normalized.capabilities.get(capability_name)
             source_domains = capability_source_domains(vehicle_data, capability_name)
+            if not support.state_supported:
+                continue
             if not should_create_entity_rule(
                 rule,
                 state_supported=support.state_supported,

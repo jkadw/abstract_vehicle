@@ -68,15 +68,6 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     create_when_state_supported=True,
                 ),
             ),
-            control_entities=(
-                EntityGenerationRule(
-                    domain="switch",
-                    key="lock_vehicle",
-                    icon="mdi:lock",
-                    create_when_action_supported=True,
-                    create_when_source_domain=("switch",),
-                ),
-            ),
             buttons=(
                 ButtonGenerationRule(
                     action="lock",
@@ -296,8 +287,9 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
-                    domain="sensor",
+                    domain="binary_sensor",
                     key="tire_pressure",
+                    device_class="problem",
                     icon="mdi:car-tire-alert",
                     create_when_state_supported=True,
                 ),
@@ -376,7 +368,8 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="lids_open",
+                    key="lids",
+                    device_class="opening",
                     icon="mdi:car-back",
                     create_when_state_supported=True,
                 ),
