@@ -143,6 +143,9 @@ def normalize_vehicle_data(
     normalized_capabilities = infer_capabilities(raw_state, raw_metrics, capabilities)
     driving_range = _as_float(capability_values.get("driving_range"))
     odometer = _as_float(capability_values.get("odometer"))
+    source_problems = _as_str_mapping(
+        raw_state.get("source_problems", raw_metrics.get("source_problems"))
+    )
 
     info = VehicleInfo(
         vehicle_id=_as_str(raw_state.get("vehicle_id")) or "unknown-vehicle",
@@ -173,6 +176,7 @@ def normalize_vehicle_data(
         odometer=odometer,
         critical_warnings=capability_values.get("critical_warnings"),
         info_messages=capability_values.get("info_messages"),
+        source_problems=source_problems,
         source_units=source_units,
         display_units=source_units,
     )
@@ -201,6 +205,8 @@ def build_vehicle_attributes(data: NormalizedVehicleData) -> dict[str, Any]:
         "critical_warnings": data.critical_warnings,
         "info_messages": data.info_messages,
     }
+    if data.source_problems:
+        attributes["source_problems"] = dict(data.source_problems)
 
     for capability_name in CORE_CAPABILITIES:
         support = data.capabilities.get(capability_name)
@@ -232,6 +238,16 @@ def _as_boolish(value: Any) -> bool | None:
         if normalized in {"false", "off", "closed", "0", "unlocked"}:
             return False
     return None
+
+
+def _as_str_mapping(value: Any) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        return {}
+    normalized: dict[str, str] = {}
+    for key, item in value.items():
+        if isinstance(key, str) and isinstance(item, str):
+            normalized[key] = item
+    return normalized
 
 
 def _as_float(value: Any) -> float | None:

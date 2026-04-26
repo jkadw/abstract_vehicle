@@ -28,16 +28,24 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
         *,
         icon: str | None = None,
         device_class: str | None = None,
+        invert_state: bool = False,
     ) -> None:
         super().__init__(normalized_data, entity_key, entity_name)
         self._capability_name = capability_name
         self._icon = icon
         self._device_class = device_class
+        self._invert_state = invert_state
 
     @property
     def is_on(self) -> bool | None:
         if self._capability_name == "lock_vehicle":
-            return self._normalized_data.locked
+            if self._normalized_data.locked is None:
+                return None
+            return (
+                not self._normalized_data.locked
+                if self._invert_state
+                else self._normalized_data.locked
+            )
         if self._capability_name == "windows":
             return self._normalized_data.windows_open
         if self._capability_name == "climate":
@@ -75,11 +83,12 @@ async def async_setup_entry(
         vehicle_entities: list[BinarySensorEntity] = []
         for capability_name, rule in state_entity_rules_for_domain("binary_sensor"):
             support = normalized.capabilities.get(capability_name)
+            source_domains = capability_source_domains(vehicle_data, capability_name)
             if not should_create_entity_rule(
                 rule,
                 state_supported=support.state_supported,
                 action_supported=support.action_supported,
-                source_domains=capability_source_domains(vehicle_data, capability_name),
+                source_domains=source_domains,
             ):
                 continue
             vehicle_entities.append(
@@ -90,6 +99,8 @@ async def async_setup_entry(
                     _title(rule.key),
                     icon=rule.icon,
                     device_class=rule.device_class,
+                    invert_state=capability_name == "lock_vehicle"
+                    and "lock" in source_domains,
                 )
             )
 

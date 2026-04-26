@@ -38,7 +38,7 @@ capabilities:
 
   location:
     state:
-      entity: device_tracker.{vehicle}_vehicle
+      entity: device_tracker.{vehicle}_location
 
   ignition:
     state:

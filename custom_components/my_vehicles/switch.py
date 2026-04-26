@@ -29,16 +29,24 @@ class VehicleCapabilitySwitchEntity(VehicleBaseEntity, SwitchEntity):
         key: str,
         name: str,
         icon: str | None = None,
+        invert_state: bool = False,
     ) -> None:
         super().__init__(normalized_data, key, name)
         self._entry_data = entry_data
         self._capability_name = capability_name
         self._icon = icon
+        self._invert_state = invert_state
 
     @property
     def is_on(self) -> bool | None:
         if self._capability_name == "lock_vehicle":
-            return self._normalized_data.locked
+            if self._normalized_data.locked is None:
+                return None
+            return (
+                not self._normalized_data.locked
+                if self._invert_state
+                else self._normalized_data.locked
+            )
         if self._capability_name == "climate":
             return self._normalized_data.climate_active
         if self._capability_name == "charging":
@@ -88,11 +96,12 @@ async def async_setup_entry(
         vehicle_entities: list[SwitchEntity] = []
         for capability_name, rule in control_entity_rules_for_domain("switch"):
             support = normalized.capabilities.get(capability_name)
+            source_domains = capability_source_domains(vehicle_data, capability_name)
             if not should_create_entity_rule(
                 rule,
                 state_supported=support.state_supported,
                 action_supported=support.action_supported,
-                source_domains=capability_source_domains(vehicle_data, capability_name),
+                source_domains=source_domains,
             ):
                 continue
             if len(CANONICAL_ACTIONS.get(capability_name, ())) < 2:
@@ -105,6 +114,8 @@ async def async_setup_entry(
                     key=rule.key,
                     name=_title(rule.key),
                     icon=rule.icon,
+                    invert_state=capability_name == "lock_vehicle"
+                    and "lock" in source_domains,
                 )
             )
 

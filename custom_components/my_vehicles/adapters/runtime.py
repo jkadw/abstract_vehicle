@@ -29,6 +29,7 @@ class ResolvedMappingRuntime:
     capability_states: dict[str, Any]
     capabilities: VehicleCapabilities
     actions: dict[str, dict[str, PreparedAction]]
+    errors: dict[str, str]
 
 
 class MappingRuntime:
@@ -51,13 +52,14 @@ class MappingRuntime:
     def resolve(self) -> ResolvedMappingRuntime:
         """Resolve one mapping against the current HA state model."""
 
-        capability_states = self._resolve_capability_states()
+        capability_states, errors = self._resolve_capability_states()
         capabilities = self._build_capabilities()
         actions = self._prepare_actions()
         return ResolvedMappingRuntime(
             capability_states=capability_states,
             capabilities=capabilities,
             actions=actions,
+            errors=errors,
         )
 
     def get_prepared_action(
@@ -152,11 +154,33 @@ class MappingRuntime:
             }
         return snapshot
 
-    def _resolve_capability_states(self) -> dict[str, Any]:
-        return {
-            capability_name: self._resolve_state_mapping(capability.state)
-            for capability_name, capability in self._mapping.capabilities.items()
-        }
+    def _resolve_capability_states(self) -> tuple[dict[str, Any], dict[str, str]]:
+        capability_states: dict[str, Any] = {}
+        errors: dict[str, str] = {}
+
+        for capability_name, capability in self._mapping.capabilities.items():
+            missing_entities = self._missing_source_entities(
+                capability.state.source_entities()
+            )
+            if missing_entities:
+                errors[capability_name] = (
+                    "Missing source entities: " + ", ".join(missing_entities)
+                )
+
+            try:
+                capability_states[capability_name] = self._resolve_state_mapping(
+                    capability.state
+                )
+            except Exception as err:
+                detail = f"{type(err).__name__}: {err}"
+                errors[capability_name] = (
+                    f"{errors[capability_name]}; {detail}"
+                    if capability_name in errors
+                    else detail
+                )
+                capability_states[capability_name] = None
+
+        return capability_states, errors
 
     def _build_capabilities(self) -> VehicleCapabilities:
         return VehicleCapabilities(
@@ -252,6 +276,13 @@ class MappingRuntime:
             _substitute_string(entity_id, self._vehicle, self._device)
             for entity_id in entity_ids
         ]
+
+    def _missing_source_entities(self, entity_ids: tuple[str, ...]) -> list[str]:
+        missing: list[str] = []
+        for entity_id in self._resolve_source_entities(entity_ids):
+            if self._get_state_object(entity_id) is None:
+                missing.append(entity_id)
+        return missing
 
     def _collect_entity_ids_from_value(self, value: Any, entity_ids: list[str]) -> None:
         if isinstance(value, str):

@@ -126,6 +126,16 @@ class MappedVehicleAdapter(VehicleAdapter):
             "charging_plugged": charging_plugged,
             "locked": locked,
             "climate_active": climate_active,
+            "ignition_on": _coerce_bool_state(resolved.capability_states.get("ignition")),
+            "range_warning": _coerce_bool_state(
+                resolved.capability_states.get("range_warning")
+            ),
+            "critical_warnings": resolved.capability_states.get("critical_warnings"),
+            "info_messages": resolved.capability_states.get("info_messages"),
+            "warning_lights_active": _coerce_bool_state(
+                resolved.capability_states.get("warning_lights")
+            ),
+            "source_problems": dict(resolved.errors),
         }
 
     async def get_raw_metrics(self) -> RawMetricsPayload:
@@ -144,7 +154,11 @@ class MappedVehicleAdapter(VehicleAdapter):
             "latitude": latitude,
             "longitude": longitude,
             "openings": self._resolve_openings(runtime),
+            "doors_open": _coerce_bool_state(resolved.capability_states.get("doors")),
+            "lids_open": _coerce_bool_state(resolved.capability_states.get("lids")),
+            "tire_pressure": resolved.capability_states.get("tire_pressure"),
             "source_units": self._resolve_source_units(runtime),
+            "source_problems": dict(resolved.errors),
         }
 
     async def get_capabilities(self):
@@ -200,6 +214,7 @@ class MappedVehicleAdapter(VehicleAdapter):
                 }
                 for capability_name, action_map in resolved.actions.items()
             },
+            "source_problems": dict(resolved.errors),
         }
 
     @property

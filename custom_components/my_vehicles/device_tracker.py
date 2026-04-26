@@ -31,6 +31,10 @@ class VehicleLocationTrackerEntity(VehicleBaseEntity, TrackerEntity):
         return self._normalized_data.longitude
 
     @property
+    def source_type(self) -> str:
+        return "gps"
+
+    @property
     def icon(self) -> str:
         return self._icon or "mdi:map-marker"
 

@@ -330,7 +330,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="windows_open",
+                    key="windows",
                     device_class="window",
                     icon="mdi:car-door",
                     create_when_state_supported=True,

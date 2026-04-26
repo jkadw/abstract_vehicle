@@ -116,5 +116,6 @@ class NormalizedVehicleData:
     odometer: float | None = None
     critical_warnings: object | None = None
     info_messages: object | None = None
+    source_problems: dict[str, str] = field(default_factory=dict)
     source_units: SourceUnits = field(default_factory=SourceUnits)
     display_units: SourceUnits = field(default_factory=SourceUnits)
