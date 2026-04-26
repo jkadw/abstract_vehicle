@@ -7,6 +7,7 @@ import logging
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers.event import async_track_state_change_event
 
 from ..const import (
     CONF_ADAPTER,
@@ -94,6 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_ADAPTER: adapter_type,
         DATA_VEHICLES: vehicle_entries,
     }
+    _register_vehicle_state_listeners(hass, entry, vehicle_entries)
     current_snapshot = _snapshot_vehicle_ids(vehicle_entries)
     snapshots[entry.entry_id] = sorted(current_snapshot)
     _log_vehicle_reconciliation(entry, adapter_type, previous_snapshot, current_snapshot)
@@ -182,3 +184,54 @@ def _log_vehicle_reconciliation(
         adapter_type,
         unchanged or ["-"],
     )
+
+
+def _register_vehicle_state_listeners(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    vehicle_entries: list[dict[str, object]],
+) -> None:
+    """Register refresh-only listeners for source entity state changes."""
+
+    for vehicle_entry in vehicle_entries:
+        adapter = vehicle_entry.get(DATA_ADAPTER)
+        if adapter is None:
+            continue
+        source_entity_ids = tuple(
+            entity_id for entity_id in getattr(adapter, "source_entity_ids", lambda: ())()
+            if isinstance(entity_id, str) and entity_id
+        )
+        if not source_entity_ids:
+            continue
+
+        async def _async_refresh_on_state_change(event: Event, *, entry_data=vehicle_entry) -> None:
+            _ = event
+            await _refresh_vehicle_entry(entry_data)
+
+        def _handle_state_change(event: Event, *, refresh=_async_refresh_on_state_change) -> None:
+            hass.async_create_task(refresh(event))
+
+        entry.async_on_unload(
+            async_track_state_change_event(
+                hass,
+                list(source_entity_ids),
+                _handle_state_change,
+            )
+        )
+
+
+async def _refresh_vehicle_entry(entry_data: dict[str, object]) -> None:
+    """Refresh one vehicle entry from source state without executing actions."""
+
+    adapter = entry_data[DATA_ADAPTER]
+    entities = entry_data.get(DATA_ENTITIES, [])
+
+    raw_state = await adapter.get_raw_state()
+    raw_metrics = await adapter.get_raw_metrics()
+    capabilities = await adapter.get_capabilities()
+    updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
+    entry_data[DATA_NORMALIZED] = updated
+
+    for entity in entities:
+        entity.update_normalized_data(updated)
+        entity.async_write_ha_state()

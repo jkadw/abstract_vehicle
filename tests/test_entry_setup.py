@@ -9,6 +9,7 @@ import pytest
 
 from custom_components.my_vehicles.setup.entry import (
     _log_vehicle_reconciliation,
+    _refresh_vehicle_entry,
     _snapshot_vehicle_ids,
     async_setup_entry,
 )
@@ -59,14 +60,23 @@ class _FakeHass:
         self.is_running = is_running
         self.bus = _FakeBus()
         self.config_entries = _FakeConfigEntries()
+        self.created_tasks: list[object] = []
+
+    def async_create_task(self, coro):
+        self.created_tasks.append(coro)
+        return coro
 
 
 class _FakeAdapter:
     def __init__(self, vehicle_id: str, name: str) -> None:
         self._vehicle_id = vehicle_id
         self._name = name
+        self.raw_state_calls = 0
+        self.raw_metrics_calls = 0
+        self.capability_calls = 0
 
     async def get_raw_state(self) -> dict[str, object]:
+        self.raw_state_calls += 1
         return {
             "vehicle_id": self._vehicle_id,
             "name": self._name,
@@ -85,6 +95,7 @@ class _FakeAdapter:
         }
 
     async def get_raw_metrics(self) -> dict[str, object]:
+        self.raw_metrics_calls += 1
         return {
             "battery_level": 60.0,
             "range": 200.0,
@@ -93,7 +104,11 @@ class _FakeAdapter:
         }
 
     async def get_capabilities(self) -> VehicleCapabilities:
+        self.capability_calls += 1
         return VehicleCapabilities()
+
+    def source_entity_ids(self) -> tuple[str, ...]:
+        return (f"sensor.{self._vehicle_id}_source",)
 
 
 def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
@@ -135,12 +150,23 @@ def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
         assert adapter_type == "kia_uvo"
         return _FakeAdapter(discovered_vehicle.vehicle_id, discovered_vehicle.title)
 
+    tracked_state_listeners: list[tuple[tuple[str, ...], object]] = []
+
+    def _fake_track_state_change_event(_hass, entity_ids, action):
+        tracked_state_listeners.append((tuple(entity_ids), action))
+        return action
+
     monkeypatch.setattr(vehicle_module, "async_register_services", _noop_register_services)
     monkeypatch.setattr(vehicle_module, "_discover_entry_vehicles", _fake_discover)
     monkeypatch.setattr(
         vehicle_module,
         "create_adapter_from_discovered_vehicle",
         _fake_create,
+    )
+    monkeypatch.setattr(
+        vehicle_module,
+        "async_track_state_change_event",
+        _fake_track_state_change_event,
     )
 
     result = asyncio.run(async_setup_entry(hass, entry))
@@ -152,6 +178,10 @@ def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
         "vehicle-2",
     ]
     assert len(hass.bus.listeners) == 1
+    assert tracked_state_listeners == [
+        (("sensor.vehicle-1_source",), tracked_state_listeners[0][1]),
+        (("sensor.vehicle-2_source",), tracked_state_listeners[1][1]),
+    ]
     assert hass.config_entries.forwarded == [
         (
             "entry-1",
@@ -163,6 +193,39 @@ def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
     asyncio.run(callback(object()))
 
     assert hass.config_entries.reloads == ["entry-1"]
+
+
+def test_refresh_vehicle_entry_updates_normalized_data_without_actions() -> None:
+    """Source-state refresh should rebuild normalized data and fan out entity updates."""
+
+    adapter = _FakeAdapter("vehicle-1", "Kia EV6")
+
+    class _Entity:
+        def __init__(self) -> None:
+            self.updated = None
+            self.write_calls = 0
+
+        def update_normalized_data(self, normalized_data) -> None:
+            self.updated = normalized_data
+
+        def async_write_ha_state(self) -> None:
+            self.write_calls += 1
+
+    entity = _Entity()
+    entry_data = {
+        "adapter": adapter,
+        "entities": [entity],
+        "normalized_data": None,
+    }
+
+    asyncio.run(_refresh_vehicle_entry(entry_data))
+
+    assert adapter.raw_state_calls == 1
+    assert adapter.raw_metrics_calls == 1
+    assert adapter.capability_calls == 1
+    assert entry_data["normalized_data"] is not None
+    assert entity.updated is entry_data["normalized_data"]
+    assert entity.write_calls == 1
 
 
 def test_snapshot_vehicle_ids_ignores_invalid_entries() -> None:

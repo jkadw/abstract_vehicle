@@ -374,3 +374,211 @@ capabilities:
 
     assert resolved.actions["windows"]["open"].available is False
     assert runtime.is_action_available("windows", "open") is False
+
+
+def test_mapping_runtime_source_snapshot_includes_action_availability_entities(
+    tmp_path: Path,
+) -> None:
+    """Availability-only source entities should participate in refresh/diagnostics."""
+
+    mapping_path = tmp_path / "availability_snapshot.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        data:
+          entity_id: binary_sensor.{vehicle}_windows_available
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_windows_available": SimpleNamespace(
+                state="on", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    snapshot = runtime.source_entity_snapshot()
+
+    assert "binary_sensor.santa_fe_windows_available" in snapshot
+    assert snapshot["binary_sensor.santa_fe_windows_available"]["exists"] is True
+    assert len(snapshot) == 2
+
+
+def test_mapping_runtime_source_snapshot_deduplicates_shared_source_entities(
+    tmp_path: Path,
+) -> None:
+    """One source entity referenced more than once should still appear only once."""
+
+    mapping_path = tmp_path / "dedupe_snapshot.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      entity: binary_sensor.{vehicle}_windows_available
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        data:
+          entity_id: binary_sensor.{vehicle}_windows_available
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_windows_available": SimpleNamespace(
+                state="on", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    snapshot = runtime.source_entity_snapshot()
+
+    assert list(snapshot) == ["binary_sensor.santa_fe_windows_available"]

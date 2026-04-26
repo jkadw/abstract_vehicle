@@ -107,6 +107,11 @@ class VehicleAdapter(ABC):
         _ = capability_name, action, kwargs
         return True
 
+    def source_entity_ids(self) -> tuple[str, ...]:
+        """Return source entity ids whose state changes should refresh the vehicle."""
+
+        return ()
+
     async def get_diagnostics(self) -> dict[str, Any]:
         """Return read-only diagnostic data for the adapter."""
 

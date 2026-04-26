@@ -44,6 +44,7 @@ if "homeassistant" not in sys.modules:
     entity_module = types.ModuleType("homeassistant.helpers.entity")
     device_registry_module = types.ModuleType("homeassistant.helpers.device_registry")
     entity_registry_module = types.ModuleType("homeassistant.helpers.entity_registry")
+    event_module = types.ModuleType("homeassistant.helpers.event")
     config_validation_module = types.ModuleType("homeassistant.helpers.config_validation")
     data_entry_flow = types.ModuleType("homeassistant.data_entry_flow")
     components = types.ModuleType("homeassistant.components")
@@ -71,6 +72,9 @@ if "homeassistant" not in sys.modules:
     class HomeAssistant:
         def __init__(self):
             self.data = {}
+
+        def async_create_task(self, coro):
+            return coro
 
     class Event:
         def __init__(self, data: dict | None = None):
@@ -144,6 +148,9 @@ if "homeassistant" not in sys.modules:
     entity_module.Entity = Entity
     device_registry_module.DeviceInfo = DeviceInfo
     entity_registry_module.async_get = lambda hass: None
+    event_module.async_track_state_change_event = (
+        lambda hass, entity_ids, action: action
+    )
     config_validation_module.entity_id = lambda value: value
     config_validation_module.string = lambda value: value
     data_entry_flow.FlowResult = dict
@@ -160,6 +167,7 @@ if "homeassistant" not in sys.modules:
     helpers.entity = entity_module
     helpers.device_registry = device_registry_module
     helpers.entity_registry = entity_registry_module
+    helpers.event = event_module
     helpers.config_validation = config_validation_module
     homeassistant.const = const
     homeassistant.config_entries = config_entries
@@ -184,6 +192,7 @@ if "homeassistant" not in sys.modules:
     sys.modules["homeassistant.helpers.entity"] = entity_module
     sys.modules["homeassistant.helpers.device_registry"] = device_registry_module
     sys.modules["homeassistant.helpers.entity_registry"] = entity_registry_module
+    sys.modules["homeassistant.helpers.event"] = event_module
     sys.modules["homeassistant.helpers.config_validation"] = config_validation_module
     sys.modules["homeassistant.data_entry_flow"] = data_entry_flow
     sys.modules["homeassistant.components"] = components

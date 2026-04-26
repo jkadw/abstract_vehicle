@@ -188,6 +188,14 @@ class MappedVehicleAdapter(VehicleAdapter):
         except Exception:
             return False
 
+    def source_entity_ids(self) -> tuple[str, ...]:
+        """Return resolved source entity ids for this mapped vehicle."""
+
+        try:
+            return tuple(self._runtime().source_entity_snapshot().keys())
+        except Exception:
+            return ()
+
     async def get_diagnostics(self) -> dict[str, Any]:
         """Return read-only mapping diagnostics for the selected source vehicle."""
 

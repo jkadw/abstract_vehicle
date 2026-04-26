@@ -224,3 +224,36 @@ def test_button_platform_creates_window_and_hazard_buttons_from_registry() -> No
     assert icons["turn_on_hazard_lights"] == "mdi:car-hazard-lights"
     open_button = next(entity for entity in added if entity._entity_key == "open_windows")
     assert open_button.available is False
+
+
+def test_button_availability_updates_when_adapter_availability_changes() -> None:
+    """Buttons should stay registered but reflect changing action availability."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        windows_state_supported=True,
+        windows_action_supported=True,
+        unavailable_actions={("windows", "open")},
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_buttons(hass, entry, added.extend))
+
+    open_button = next(entity for entity in added if entity._entity_key == "open_windows")
+    adapter = vehicle_data[DATA_ADAPTER]
+
+    assert open_button.available is False
+
+    adapter._unavailable_actions.clear()
+
+    assert open_button.available is True
