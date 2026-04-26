@@ -9,10 +9,14 @@ capabilities:
     actions:
       lock:
         action: kia_uvo.lock
+        availability_not:
+          entity: lock.{vehicle}_door_lock
         data:
           device_id: {device}
       unlock:
         action: kia_uvo.unlock
+        availability:
+          entity: lock.{vehicle}_door_lock
         data:
           device_id: {device}
 
@@ -22,10 +26,14 @@ capabilities:
     actions:
       start:
         action: switch.turn_on
+        availability_not:
+          entity: switch.{vehicle}_{vehicle}_climate
         target:
           entity_id: switch.{vehicle}_{vehicle}_climate
       stop:
         action: switch.turn_off
+        availability:
+          entity: switch.{vehicle}_{vehicle}_climate
         target:
           entity_id: switch.{vehicle}_{vehicle}_climate
 

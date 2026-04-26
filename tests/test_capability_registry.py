@@ -36,7 +36,12 @@ def test_button_rule_map_exposes_registry_driven_service_names() -> None:
     assert rules["lock_vehicle"][1].action == "lock"
     assert rules["unlock_vehicle"][0] == "lock_vehicle"
     assert rules["unlock_vehicle"][1].action == "unlock"
+    assert rules["open_windows"][0] == "windows"
+    assert rules["open_windows"][1].action == "open"
+    assert rules["close_windows"][0] == "windows"
+    assert rules["close_windows"][1].action == "close"
     assert rules["start_climate"][0] == "climate"
+    assert rules["turn_on_hazard_lights"][1].icon == "mdi:car-hazard-lights"
     assert rules["refresh"][0] == "refresh"
 
 
@@ -48,6 +53,7 @@ def test_lock_vehicle_state_rules_are_indexed_by_platform_domain() -> None:
 
     assert lock_rules["lock_vehicle"].key == "lock_vehicle"
     assert binary_rules["lock_vehicle"].key == "vehicle_locked"
+    assert binary_rules["doors"].key == "doors"
 
 
 def test_entity_rule_predicates_cover_lock_vehicle_generation_cases() -> None:

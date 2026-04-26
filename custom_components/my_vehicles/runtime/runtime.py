@@ -24,6 +24,7 @@ class PreparedAction:
     service: str
     data: dict[str, Any] = field(default_factory=dict)
     target: dict[str, Any] = field(default_factory=dict)
+    available: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +85,11 @@ class MappingRuntime:
             )
 
         return self._prepare_action(canonical_action, action)
+
+    def is_action_available(self, capability_name: str, canonical_action: str) -> bool:
+        """Return whether one mapped action is currently available."""
+
+        return self.get_prepared_action(capability_name, canonical_action).available
 
     async def async_execute_action(
         self, capability_name: str, canonical_action: str
@@ -218,7 +224,25 @@ class MappingRuntime:
             service=action.action,
             data=_substitute_placeholders(action.data, self._vehicle, self._device),
             target=_substitute_placeholders(action.target, self._vehicle, self._device),
+            available=self._resolve_action_availability(action),
         )
+
+    def _resolve_action_availability(self, action: ActionMapping) -> bool:
+        if action.availability is None:
+            if action.availability_not is None:
+                return True
+            value = self._resolve_state_mapping(action.availability_not)
+            if value is None:
+                return True
+            if isinstance(value, bool):
+                return not value
+            return not _state_to_bool(value)
+        value = self._resolve_state_mapping(action.availability)
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        return _state_to_bool(value)
 
     def _resolve_state_mapping(self, mapping: StateMapping) -> Any:
         if mapping.unavailable:
@@ -266,6 +290,18 @@ class MappingRuntime:
                 self._resolve_source_entities(capability.state.source_entities())
             )
             for action in capability.actions.values():
+                if action.availability is not None:
+                    entity_ids.extend(
+                        self._resolve_source_entities(
+                            action.availability.source_entities()
+                        )
+                    )
+                if action.availability_not is not None:
+                    entity_ids.extend(
+                        self._resolve_source_entities(
+                            action.availability_not.source_entities()
+                        )
+                    )
                 self._collect_entity_ids_from_value(action.data, entity_ids)
                 self._collect_entity_ids_from_value(action.target, entity_ids)
 

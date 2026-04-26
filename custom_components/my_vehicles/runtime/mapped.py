@@ -177,6 +177,17 @@ class MappedVehicleAdapter(VehicleAdapter):
             raise UnsupportedVehicleActionError(f"Unsupported action: {action}")
         return await runtime.async_execute_action(capability_name, action)
 
+    def is_action_available(
+        self, capability_name: str, action: str, **kwargs: Any
+    ) -> bool:
+        """Return whether one mapped action is currently available."""
+
+        _ = kwargs
+        try:
+            return self._runtime().is_action_available(capability_name, action)
+        except Exception:
+            return False
+
     async def get_diagnostics(self) -> dict[str, Any]:
         """Return read-only mapping diagnostics for the selected source vehicle."""
 
@@ -210,6 +221,7 @@ class MappedVehicleAdapter(VehicleAdapter):
                         "service": prepared.service,
                         "data": dict(prepared.data),
                         "target": dict(prepared.target),
+                        "available": prepared.available,
                     }
                     for action_name, prepared in action_map.items()
                 }

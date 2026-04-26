@@ -52,6 +52,8 @@ class ActionMapping:
     action: str
     data: dict[str, Any] = field(default_factory=dict)
     target: dict[str, Any] = field(default_factory=dict)
+    availability: StateMapping | None = None
+    availability_not: StateMapping | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -339,7 +341,39 @@ def _parse_actions(
             raise MappingValidationError(
                 f"{context}.{action_name}.target must be a dictionary"
             )
-        parsed[action_name] = ActionMapping(action=action, data=data, target=target)
+        raw_availability = raw_action.get("availability")
+        raw_availability_not = raw_action.get("availability_not")
+        availability = None
+        availability_not = None
+        if raw_availability is not None:
+            if not isinstance(raw_availability, dict):
+                raise MappingValidationError(
+                    f"{context}.{action_name}.availability must be a dictionary"
+                )
+            availability = _parse_state_mapping(
+                raw_availability,
+                context=f"{context}.{action_name}.availability",
+            )
+        if raw_availability_not is not None:
+            if not isinstance(raw_availability_not, dict):
+                raise MappingValidationError(
+                    f"{context}.{action_name}.availability_not must be a dictionary"
+                )
+            availability_not = _parse_state_mapping(
+                raw_availability_not,
+                context=f"{context}.{action_name}.availability_not",
+            )
+        if availability is not None and availability_not is not None:
+            raise MappingValidationError(
+                f"{context}.{action_name} may not define both availability and availability_not"
+            )
+        parsed[action_name] = ActionMapping(
+            action=action,
+            data=data,
+            target=target,
+            availability=availability,
+            availability_not=availability_not,
+        )
 
     return parsed
 

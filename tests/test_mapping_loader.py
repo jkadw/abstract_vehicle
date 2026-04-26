@@ -316,6 +316,271 @@ integration:
         load_mapping_file(mapping_path)
 
 
+def test_load_mapping_file_parses_action_availability_block(tmp_path: Path) -> None:
+    """Action mappings may optionally define availability with state-like syntax."""
+
+    mapping_path = tmp_path / "action_availability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        data:
+          device_id: "{device}"
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+
+    assert (
+        mapping.capability("windows").actions["open"].availability is not None
+    )
+    assert (
+        mapping.capability("windows").actions["open"].availability.entity
+        == "binary_sensor.{vehicle}_windows_available"
+    )
+
+
+def test_load_mapping_file_parses_action_availability_not_block(tmp_path: Path) -> None:
+    """Action mappings may optionally define negated availability."""
+
+    mapping_path = tmp_path / "action_availability_not.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability_not:
+          entity: binary_sensor.{vehicle}_windows_blocked
+        data:
+          device_id: "{device}"
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+
+    assert (
+        mapping.capability("windows").actions["open"].availability_not is not None
+    )
+    assert (
+        mapping.capability("windows").actions["open"].availability_not.entity
+        == "binary_sensor.{vehicle}_windows_blocked"
+    )
+
+
+def test_load_mapping_file_rejects_both_availability_forms(tmp_path: Path) -> None:
+    """One verb may not define both availability forms at once."""
+
+    mapping_path = tmp_path / "bad_action_availability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        availability_not:
+          entity: binary_sensor.{vehicle}_windows_blocked
+        data:
+          device_id: "{device}"
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MappingValidationError, match="may not define both"):
+        load_mapping_file(mapping_path)
+
+
 def test_load_mapping_file_parses_nested_state_block(tmp_path: Path) -> None:
     """Simple nested entity state mappings should load cleanly."""
 

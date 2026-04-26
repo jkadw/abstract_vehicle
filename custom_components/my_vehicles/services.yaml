@@ -68,6 +68,20 @@ turn_off_hazard_lights:
     device:
       integration: my_vehicles
 
+open_windows:
+  name: Open Windows
+  description: Open the windows for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
+close_windows:
+  name: Close Windows
+  description: Close the windows for the selected vehicle if supported.
+  target:
+    device:
+      integration: my_vehicles
+
 refresh:
   name: Refresh Vehicle
   description: Trigger a refresh for the selected vehicle if the adapter supports it.

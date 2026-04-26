@@ -90,6 +90,13 @@ async def async_execute_entry_action(
 
     adapter = entry_data[DATA_ADAPTER]
     entities = entry_data.get(DATA_ENTITIES, [])
+    availability_check = getattr(adapter, "is_action_available", None)
+    if callable(availability_check) and not availability_check(
+        capability_name, action_name
+    ):
+        raise ServiceValidationError(
+            f"Action '{action_name}' for capability '{capability_name}' is currently unavailable"
+        )
 
     try:
         await adapter.execute_action(action_name)

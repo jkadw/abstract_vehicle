@@ -99,6 +99,14 @@ class VehicleAdapter(ABC):
     async def execute_action(self, action: str, **kwargs: Any) -> ActionResult:
         """Execute a supported vehicle action."""
 
+    def is_action_available(
+        self, capability_name: str, action: str, **kwargs: Any
+    ) -> bool:
+        """Return whether one action is currently available."""
+
+        _ = capability_name, action, kwargs
+        return True
+
     async def get_diagnostics(self) -> dict[str, Any]:
         """Return read-only diagnostic data for the adapter."""
 

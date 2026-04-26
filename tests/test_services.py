@@ -105,6 +105,14 @@ class _ExplodingAdapter(_ServiceAdapter):
         raise RuntimeError("backend boom")
 
 
+class _UnavailableActionAdapter(_ServiceAdapter):
+    """Adapter that reports a mapped action as currently unavailable."""
+
+    def is_action_available(self, capability_name: str, action: str, **kwargs) -> bool:
+        _ = kwargs
+        return not (capability_name == "climate" and action == "start")
+
+
 class _FakeDevice:
     def __init__(self, device_id: str) -> None:
         self.id = device_id
@@ -298,3 +306,35 @@ def test_diagnostics_service_is_read_only_and_logs_results(caplog) -> None:
     assert entity.write_calls == 0
     assert "My Vehicles diagnostics:" in caplog.text
     assert "vehicle-123" in caplog.text
+
+
+def test_service_dispatch_rejects_currently_unavailable_action() -> None:
+    """Per-verb action availability should be enforced for service calls too."""
+
+    hass = HomeAssistant()
+    adapter = _UnavailableActionAdapter()
+    entity = _FakeEntity("sensor.family_ev")
+    device_id = "device-123"
+    normalized = normalize_vehicle_data(
+        asyncio.run(adapter.get_raw_state()),
+        asyncio.run(adapter.get_raw_metrics()),
+        asyncio.run(adapter.get_capabilities()),
+    )
+    hass.data = {
+        DOMAIN: {
+            "entry-1": {
+                DATA_VEHICLES: [
+                    {
+                        DATA_ADAPTER: adapter,
+                        DATA_NORMALIZED: normalized,
+                        DATA_ENTITIES: [entity],
+                    }
+                ],
+            }
+        }
+    }
+    services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
+
+    handler = _build_service_handler(hass, "start_climate")
+    with pytest.raises(ServiceValidationError, match="currently unavailable"):
+        asyncio.run(handler(ServiceCall({"device_id": device_id})))

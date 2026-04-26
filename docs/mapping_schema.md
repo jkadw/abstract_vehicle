@@ -289,6 +289,8 @@ Optional fields:
 
 - `target`
 - `data`
+- `availability`
+- `availability_not`
 
 Rules:
 
@@ -298,6 +300,15 @@ Rules:
   or `button.press`
 - `{device}` is available for runtime device-id substitution
 - `{vehicle}` is available for resolved per-vehicle entity-id substitution
+- if `availability` is present, it uses the same shape and state modes as a
+  capability `state` block
+- `availability_not` is the negated form of `availability` and uses the same
+  shape and state modes
+- `availability` and `availability_not` may not be used together on the same
+  verb
+- button entities are still created for mapped verbs even when `availability`
+  currently resolves false; in that case the button is unavailable instead of
+  disappearing
 
 ## Placeholder Rules
 

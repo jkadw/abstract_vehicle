@@ -9,6 +9,10 @@ from custom_components.my_vehicles.entities.binary_sensor import (
     VehicleBinaryStateEntity,
     async_setup_entry as async_setup_binary_sensors,
 )
+from custom_components.my_vehicles.entities.button import (
+    VehicleActionButtonEntity,
+    async_setup_entry as async_setup_buttons,
+)
 from custom_components.my_vehicles.const import (
     DATA_ADAPTER,
     DATA_ENTITIES,
@@ -39,8 +43,13 @@ class _FakeEntry:
 
 
 class _FakeAdapter:
-    def __init__(self) -> None:
+    def __init__(self, *, unavailable_actions: set[tuple[str, str]] | None = None) -> None:
         self._mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+        self._unavailable_actions = unavailable_actions or set()
+
+    def is_action_available(self, capability_name: str, action: str, **kwargs) -> bool:
+        _ = kwargs
+        return (capability_name, action) not in self._unavailable_actions
 
 
 def _normalized_vehicle(
@@ -48,6 +57,9 @@ def _normalized_vehicle(
     lock_state_supported: bool,
     lock_action_supported: bool,
     locked: bool | None = None,
+    windows_state_supported: bool = False,
+    windows_action_supported: bool = False,
+    hazard_action_supported: bool = False,
 ) -> NormalizedVehicleData:
     return NormalizedVehicleData(
         info=VehicleInfo(
@@ -63,6 +75,14 @@ def _normalized_vehicle(
                 state_supported=lock_state_supported,
                 action_supported=lock_action_supported,
             ),
+            windows=CapabilitySupport(
+                state_supported=windows_state_supported,
+                action_supported=windows_action_supported,
+            ),
+            hazard_lights=CapabilitySupport(
+                state_supported=False,
+                action_supported=hazard_action_supported,
+            ),
         ),
         locked=locked,
     )
@@ -73,13 +93,20 @@ def _vehicle_entry(
     lock_state_supported: bool,
     lock_action_supported: bool,
     locked: bool | None = None,
+    windows_state_supported: bool = False,
+    windows_action_supported: bool = False,
+    hazard_action_supported: bool = False,
+    unavailable_actions: set[tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     return {
-        DATA_ADAPTER: _FakeAdapter(),
+        DATA_ADAPTER: _FakeAdapter(unavailable_actions=unavailable_actions),
         DATA_NORMALIZED: _normalized_vehicle(
             lock_state_supported=lock_state_supported,
             lock_action_supported=lock_action_supported,
             locked=locked,
+            windows_state_supported=windows_state_supported,
+            windows_action_supported=windows_action_supported,
+            hazard_action_supported=hazard_action_supported,
         ),
         DATA_ENTITIES: [],
     }
@@ -161,3 +188,39 @@ def test_switch_platform_does_not_create_lock_switch_when_actions_are_available(
     asyncio.run(async_setup_switches(hass, entry, added.extend))
 
     assert added == []
+
+
+def test_button_platform_creates_window_and_hazard_buttons_from_registry() -> None:
+    """Registry-driven action buttons should appear only for mapped canonical verbs."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        windows_state_supported=True,
+        windows_action_supported=True,
+        hazard_action_supported=True,
+        unavailable_actions={("windows", "open")},
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_buttons(hass, entry, added.extend))
+
+    keys = {entity._entity_key for entity in added if isinstance(entity, VehicleActionButtonEntity)}
+    icons = {entity._entity_key: entity.icon for entity in added if isinstance(entity, VehicleActionButtonEntity)}
+
+    assert "open_windows" in keys
+    assert "close_windows" in keys
+    assert "turn_on_hazard_lights" in keys
+    assert "turn_off_hazard_lights" not in keys
+    assert icons["turn_on_hazard_lights"] == "mdi:car-hazard-lights"
+    open_button = next(entity for entity in added if entity._entity_key == "open_windows")
+    assert open_button.available is False

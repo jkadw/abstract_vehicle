@@ -32,10 +32,21 @@ class VehicleActionButtonEntity(VehicleBaseEntity, ButtonEntity):
         self._capability_name = capability_name
         self._action_name = action_name
         self._icon = icon
+        self._attr_icon = icon
 
     @property
     def icon(self) -> str | None:
         return self._icon
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        adapter = self._entry_data.get(DATA_ADAPTER)
+        checker = getattr(adapter, "is_action_available", None)
+        if callable(checker):
+            return bool(checker(self._capability_name, self._action_name))
+        return True
 
     async def async_press(self) -> None:
         await async_execute_entry_action(
@@ -57,9 +68,6 @@ async def async_setup_entry(
         adapter = vehicle_data.get(DATA_ADAPTER)
         mapping = getattr(adapter, "_mapping", None)
         for capability_name, rule in button_rules():
-            support = normalized.capabilities.get(capability_name)
-            if rule.create_when_action_supported and not support.action_supported:
-                continue
             if mapping is not None:
                 capability = mapping.capability(capability_name)
                 if capability is None or rule.action not in capability.actions:

@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from types import SimpleNamespace
 
-from custom_components.my_vehicles.mappings.schema import load_adapter_mapping
+from custom_components.my_vehicles.mappings.schema import (
+    load_adapter_mapping,
+    load_mapping_file,
+)
 from custom_components.my_vehicles.runtime.base import UnsupportedVehicleActionError
 from custom_components.my_vehicles.runtime.runtime import MappingRuntime
 
@@ -162,3 +166,211 @@ def test_mapping_runtime_rejects_unknown_mapped_actions() -> None:
         assert "Unsupported action 'tilt'" in str(err)
     else:  # pragma: no cover - explicit failure path for plain asserts
         raise AssertionError("UnsupportedVehicleActionError was not raised")
+
+
+def test_mapping_runtime_resolves_optional_action_availability(tmp_path: Path) -> None:
+    """Mapped actions may carry an optional state-like availability block."""
+
+    mapping_path = tmp_path / "availability.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        data:
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_windows_available": SimpleNamespace(
+                state="off", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    resolved = runtime.resolve()
+
+    assert resolved.actions["windows"]["open"].available is False
+    assert runtime.is_action_available("windows", "open") is False
+
+
+def test_mapping_runtime_resolves_optional_action_availability_not(
+    tmp_path: Path,
+) -> None:
+    """Negated availability should avoid templates for simple boolean inversions."""
+
+    mapping_path = tmp_path / "availability_not.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  lock_vehicle:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  charging:
+    state:
+      unavailable: true
+  horn:
+    state:
+      unavailable: true
+  flash_lights:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability_not:
+          entity: binary_sensor.{vehicle}_windows_blocked
+        data:
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  battery_level:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_windows_blocked": SimpleNamespace(
+                state="on", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    resolved = runtime.resolve()
+
+    assert resolved.actions["windows"]["open"].available is False
+    assert runtime.is_action_available("windows", "open") is False

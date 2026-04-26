@@ -345,6 +345,18 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     create_when_source_domain=("switch",),
                 ),
             ),
+            buttons=(
+                ButtonGenerationRule(
+                    action="open",
+                    key="open_windows",
+                    icon="mdi:car-door",
+                ),
+                ButtonGenerationRule(
+                    action="close",
+                    key="close_windows",
+                    icon="mdi:car-door-lock",
+                ),
+            ),
         ),
     ),
     "doors": CapabilityDefinition(
@@ -353,7 +365,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="doors_open",
+                    key="doors",
                     device_class="door",
                     icon="mdi:car-door",
                     create_when_state_supported=True,

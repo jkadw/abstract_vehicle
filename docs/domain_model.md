@@ -76,6 +76,12 @@ Each capability has:
 - one required `state` definition in the mapping
 - optional `actions`
 
+Mapped action verbs may also define an optional `availability` block. This uses
+the same shape as a capability `state` mapping and controls whether the
+corresponding button/service is currently available without removing the entity.
+The alternative `availability_not` form is also supported when a simple negated
+source condition is clearer than writing a template.
+
 Capability support is still represented in runtime attributes as:
 
 - `state_supported`
