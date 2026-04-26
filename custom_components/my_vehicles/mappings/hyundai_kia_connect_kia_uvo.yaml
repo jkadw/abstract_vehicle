@@ -37,7 +37,27 @@ capabilities:
         target:
           entity_id: switch.{vehicle}_{vehicle}_climate
 
-  charging:
+  fuel_level:
+    state:
+      entity: sensor.{vehicle}_fuel_level
+
+  fuel_driving_range:
+    state:
+      entity: sensor.{vehicle}_fuel_driving_range
+
+  ev_battery_level:
+    state:
+      entity: sensor.{vehicle}_ev_battery_level
+
+  ev_driving_range:
+    state:
+      entity: sensor.{vehicle}_ev_range
+
+  ev_plugged_in:
+    state:
+      entity: binary_sensor.{vehicle}_ev_battery_plug
+
+  ev_charging:
     state:
       entity: switch.{vehicle}_{vehicle}_ev_charging
     actions:
@@ -158,10 +178,6 @@ capabilities:
       any:
         - binary_sensor.{vehicle}_trunk
         - binary_sensor.{vehicle}_hood
-
-  battery_level:
-    state:
-      entity: sensor.{vehicle}_ev_battery_level
 
   refresh:
     state:

@@ -52,8 +52,10 @@ class VehicleBinaryStateEntity(VehicleBaseEntity, BinarySensorEntity):
             return self._normalized_data.windows_open
         if self._capability_name == "climate":
             return self._normalized_data.climate_active
-        if self._capability_name == "charging":
-            return self._normalized_data.charging_active
+        if self._capability_name == "ev_charging":
+            return self._normalized_data.ev_charging
+        if self._capability_name == "ev_plugged_in":
+            return self._normalized_data.ev_plugged_in
         if self._capability_name == "ignition":
             return self._normalized_data.ignition_on
         if self._capability_name == "range_warning":

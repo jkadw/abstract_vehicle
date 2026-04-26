@@ -88,8 +88,8 @@ class _FakeAdapter:
             "backend_online": True,
             "has_error": False,
             "driving": False,
-            "charging_active": False,
-            "charging_plugged": False,
+            "ev_charging": False,
+            "ev_plugged_in": False,
             "locked": True,
             "climate_active": False,
         }
@@ -97,8 +97,8 @@ class _FakeAdapter:
     async def get_raw_metrics(self) -> dict[str, object]:
         self.raw_metrics_calls += 1
         return {
-            "battery_level": 60.0,
-            "range": 200.0,
+            "ev_battery_level": 60.0,
+            "driving_range": 200.0,
             "openings": {},
             "source_units": {"distance_unit": "km"},
         }

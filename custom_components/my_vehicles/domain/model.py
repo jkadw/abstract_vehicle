@@ -100,15 +100,16 @@ class NormalizedVehicleData:
     state: VehicleState
     capabilities: VehicleCapabilities
     capability_values: dict[str, object] = field(default_factory=dict)
-    battery_level: float | None = None
     fuel_level: float | None = None
+    fuel_driving_range: float | None = None
+    ev_battery_level: float | None = None
+    ev_driving_range: float | None = None
+    ev_plugged_in: bool | None = None
+    ev_charging: bool | None = None
     driving_range: float | None = None
-    range: float | None = None
     locked: bool | None = None
     windows_open: bool | None = None
     climate_active: bool | None = None
-    charging_active: bool | None = None
-    charging_plugged: bool | None = None
     ignition_on: bool | None = None
     range_warning: bool | None = None
     latitude: float | None = None

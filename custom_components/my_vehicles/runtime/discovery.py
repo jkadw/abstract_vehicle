@@ -108,8 +108,8 @@ def build_vehicle_payload_from_device(
         "backend_online": True,
         "has_error": False,
         "driving": False,
-        "charging_active": False,
-        "charging_plugged": False,
+        "ev_charging": False,
+        "ev_plugged_in": False,
     }
 
 

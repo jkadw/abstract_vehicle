@@ -75,6 +75,18 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
             "sensor.santa_fe_ev_battery_level": SimpleNamespace(
                 state="76.5", attributes={"unit_of_measurement": "%"}
             ),
+            "sensor.santa_fe_ev_range": SimpleNamespace(
+                state="52", attributes={"unit_of_measurement": "km"}
+            ),
+            "sensor.santa_fe_fuel_level": SimpleNamespace(
+                state="43", attributes={"unit_of_measurement": "%"}
+            ),
+            "sensor.santa_fe_fuel_driving_range": SimpleNamespace(
+                state="610", attributes={"unit_of_measurement": "km"}
+            ),
+            "binary_sensor.santa_fe_ev_battery_plug": SimpleNamespace(
+                state="on", attributes={}
+            ),
             "sensor.santa_fe_total_driving_range": SimpleNamespace(
                 state="42", attributes={"unit_of_measurement": "km"}
             ),
@@ -95,7 +107,11 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
     assert resolved.capability_states["lock_vehicle"] == "locked"
     assert resolved.capability_states["windows"] is True
     assert resolved.capability_states["location"] == "home"
-    assert resolved.capability_states["battery_level"] == "76.5"
+    assert resolved.capability_states["ev_battery_level"] == "76.5"
+    assert resolved.capability_states["ev_driving_range"] == "52"
+    assert resolved.capability_states["fuel_level"] == "43"
+    assert resolved.capability_states["fuel_driving_range"] == "610"
+    assert resolved.capability_states["ev_plugged_in"] == "on"
     assert resolved.capability_states["driving_range"] == "42"
     assert resolved.capability_states["odometer"] == "12001"
     assert resolved.capability_states["range_warning"] is True
@@ -184,7 +200,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -237,9 +268,6 @@ capabilities:
   lids:
     state:
       unavailable: true
-  battery_level:
-    state:
-      unavailable: true
   refresh:
     state:
       unavailable: true
@@ -289,7 +317,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -342,9 +385,6 @@ capabilities:
   lids:
     state:
       unavailable: true
-  battery_level:
-    state:
-      unavailable: true
   refresh:
     state:
       unavailable: true
@@ -394,7 +434,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -448,9 +503,6 @@ capabilities:
   lids:
     state:
       unavailable: true
-  battery_level:
-    state:
-      unavailable: true
   refresh:
     state:
       unavailable: true
@@ -501,7 +553,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -552,9 +619,6 @@ capabilities:
     state:
       unavailable: true
   lids:
-    state:
-      unavailable: true
-  battery_level:
     state:
       unavailable: true
   refresh:

@@ -23,7 +23,7 @@ def test_normalize_vehicle_state_precedence() -> None:
         normalize_vehicle_state(
             {
                 "status": "driving",
-                "charging_active": True,
+                "ev_charging": True,
                 "backend_online": True,
             }
         )
@@ -65,10 +65,10 @@ def test_infer_capabilities_preserves_actions_and_fills_state_support() -> None:
         raw_state={
             "locked": True,
             "climate_active": False,
-            "charging_plugged": True,
+            "ev_plugged_in": True,
         },
         raw_metrics={
-            "battery_level": 80.0,
+            "ev_battery_level": 80.0,
             "odometer": 1234.5,
             "openings": {"sunroof": "closed"},
             "latitude": 1.0,
@@ -82,8 +82,8 @@ def test_infer_capabilities_preserves_actions_and_fills_state_support() -> None:
     assert inferred.windows.state_supported is False
     assert inferred.windows.action_supported is False
     assert inferred.location.state_supported is False
-    assert inferred.battery_level.state_supported is False
-    assert inferred.charging.state_supported is False
+    assert inferred.ev_battery_level.state_supported is False
+    assert inferred.ev_charging.state_supported is False
 
 
 def test_build_capability_values_maps_canonical_capability_names() -> None:
@@ -93,14 +93,14 @@ def test_build_capability_values_maps_canonical_capability_names() -> None:
         raw_state={
             "locked": True,
             "climate_active": False,
-            "charging_active": True,
+            "ev_charging": True,
             "ignition_on": True,
             "range_warning": False,
         },
         raw_metrics={
-            "range": 100.0,
+            "driving_range": 100.0,
             "odometer": 10.0,
-            "battery_level": 90.0,
+            "ev_battery_level": 90.0,
             "openings": {"front_left": "closed", "sunroof": "open"},
             "latitude": 1.0,
             "longitude": 2.0,
@@ -109,12 +109,12 @@ def test_build_capability_values_maps_canonical_capability_names() -> None:
 
     assert capability_values["lock_vehicle"] is True
     assert capability_values["climate"] is False
-    assert capability_values["charging"] is True
+    assert capability_values["ev_charging"] is True
     assert capability_values["windows"] is True
     assert capability_values["ignition"] is True
     assert capability_values["driving_range"] == 100.0
     assert capability_values["range_warning"] is False
-    assert capability_values["battery_level"] == 90.0
+    assert capability_values["ev_battery_level"] == 90.0
     assert capability_values["location"] == {"latitude": 1.0, "longitude": 2.0}
 
 
@@ -131,20 +131,20 @@ def test_normalize_vehicle_data_preserves_source_distance_units() -> None:
             "status": "parked",
             "locked": True,
             "climate_active": False,
-            "charging_active": False,
-            "charging_plugged": True,
+            "ev_charging": False,
+            "ev_plugged_in": True,
         },
         raw_metrics={
-            "range": 100.0,
+            "driving_range": 100.0,
             "odometer": 10.0,
-            "battery_level": 90.0,
+            "ev_battery_level": 90.0,
             "openings": {"front_left": "closed"},
             "source_units": {"distance_unit": "km"},
         },
         capabilities=VehicleCapabilities(
             lock_vehicle=CapabilitySupport(state_supported=True, action_supported=True),
             windows=CapabilitySupport(state_supported=True, action_supported=False),
-            battery_level=CapabilitySupport(state_supported=True, action_supported=False),
+            ev_battery_level=CapabilitySupport(state_supported=True, action_supported=False),
             driving_range=CapabilitySupport(state_supported=True, action_supported=False),
             odometer=CapabilitySupport(state_supported=True, action_supported=False),
         ),
@@ -152,9 +152,8 @@ def test_normalize_vehicle_data_preserves_source_distance_units() -> None:
 
     assert normalized.state is VehicleState.PARKED
     assert normalized.driving_range == 100.0
-    assert normalized.range == 100.0
     assert normalized.odometer == 10.0
     assert normalized.capabilities.lock_vehicle.action_supported is True
     assert normalized.capabilities.windows.state_supported is True
-    assert normalized.capabilities.battery_level.state_supported is True
+    assert normalized.capabilities.ev_battery_level.state_supported is True
     assert normalized.display_units.distance_unit == "km"

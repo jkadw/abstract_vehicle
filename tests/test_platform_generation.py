@@ -221,7 +221,7 @@ def test_button_platform_creates_window_and_hazard_buttons_from_registry() -> No
     assert "close_windows" in keys
     assert "turn_on_hazard_lights" in keys
     assert "turn_off_hazard_lights" not in keys
-    assert icons["turn_on_hazard_lights"] == "mdi:car-hazard-lights"
+    assert icons["turn_on_hazard_lights"] == "mdi:hazard-lights"
     open_button = next(entity for entity in added if entity._entity_key == "open_windows")
     assert open_button.available is False
 

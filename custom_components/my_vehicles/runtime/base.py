@@ -32,8 +32,8 @@ class RawStatePayload(TypedDict, total=False):
     backend_online: bool
     has_error: bool
     driving: bool
-    charging_active: bool
-    charging_plugged: bool
+    ev_charging: bool
+    ev_plugged_in: bool
     locked: bool
     climate_active: bool
 
@@ -41,9 +41,11 @@ class RawStatePayload(TypedDict, total=False):
 class RawMetricsPayload(TypedDict, total=False):
     """Loose raw metrics payload returned by adapters."""
 
-    battery_level: float
     fuel_level: float | None
-    range: float
+    fuel_driving_range: float | None
+    ev_battery_level: float | None
+    ev_driving_range: float | None
+    driving_range: float
     odometer: float
     latitude: float
     longitude: float

@@ -55,6 +55,13 @@ That entry:
 
 This is intentionally different from a one-entry-per-vehicle design.
 
+Vehicle type is also discovered per vehicle, not per mapping. The architecture
+should therefore support:
+
+- an optional explicit per-vehicle type source in mappings
+- fallback inference from the resolved capability surface of that one vehicle
+- `unknown` as a valid non-failing result
+
 ## Runtime Responsibilities
 
 The generic runtime is responsible for:
@@ -77,6 +84,7 @@ The runtime should not:
 Normalization owns:
 
 - canonical vehicle state derivation
+- final `vehicle_type` precedence and canonicalization
 - windows aggregation into `windows_open`
 - normalized attribute construction
 - normalized capability exposure

@@ -49,8 +49,8 @@ class VehicleCapabilitySwitchEntity(VehicleBaseEntity, SwitchEntity):
             )
         if self._capability_name == "climate":
             return self._normalized_data.climate_active
-        if self._capability_name == "charging":
-            return self._normalized_data.charging_active
+        if self._capability_name == "ev_charging":
+            return self._normalized_data.ev_charging
         if self._capability_name == "hazard_lights":
             value = self._capability_value(self._capability_name)
             return value if isinstance(value, bool) else None

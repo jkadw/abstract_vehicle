@@ -45,6 +45,7 @@ class CapabilityDefinition:
 
     name: str
     action_verbs: tuple[str, ...] = ()
+    applicable_vehicle_types: tuple[str, ...] = ("ice", "hev", "phev", "ev")
     ui: CapabilityUiPolicy = field(default_factory=CapabilityUiPolicy)
 
 
@@ -52,6 +53,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "lock_vehicle": CapabilityDefinition(
         name="lock_vehicle",
         action_verbs=("lock", "unlock"),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -85,6 +87,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "climate": CapabilityDefinition(
         name="climate",
         action_verbs=("start", "stop"),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -110,14 +113,89 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             ),
         ),
     ),
-    "charging": CapabilityDefinition(
-        name="charging",
-        action_verbs=("start", "stop"),
+    "fuel_level": CapabilityDefinition(
+        name="fuel_level",
+        applicable_vehicle_types=("ice", "hev", "phev"),
+        ui=CapabilityUiPolicy(
+            state_entities=(
+                EntityGenerationRule(
+                    domain="sensor",
+                    key="fuel_level",
+                    icon="mdi:gas-station",
+                    create_when_state_supported=True,
+                ),
+            ),
+        ),
+    ),
+    "fuel_driving_range": CapabilityDefinition(
+        name="fuel_driving_range",
+        applicable_vehicle_types=("ice", "hev", "phev"),
+        ui=CapabilityUiPolicy(
+            state_entities=(
+                EntityGenerationRule(
+                    domain="sensor",
+                    key="fuel_driving_range",
+                    device_class="distance",
+                    icon="mdi:map-marker-distance",
+                    create_when_state_supported=True,
+                ),
+            ),
+        ),
+    ),
+    "ev_battery_level": CapabilityDefinition(
+        name="ev_battery_level",
+        applicable_vehicle_types=("ev", "phev"),
+        ui=CapabilityUiPolicy(
+            state_entities=(
+                EntityGenerationRule(
+                    domain="sensor",
+                    key="ev_battery_level",
+                    device_class="battery",
+                    icon="mdi:battery",
+                    create_when_state_supported=True,
+                ),
+            ),
+        ),
+    ),
+    "ev_driving_range": CapabilityDefinition(
+        name="ev_driving_range",
+        applicable_vehicle_types=("ev", "phev"),
+        ui=CapabilityUiPolicy(
+            state_entities=(
+                EntityGenerationRule(
+                    domain="sensor",
+                    key="ev_driving_range",
+                    device_class="distance",
+                    icon="mdi:map-marker-distance",
+                    create_when_state_supported=True,
+                ),
+            ),
+        ),
+    ),
+    "ev_plugged_in": CapabilityDefinition(
+        name="ev_plugged_in",
+        applicable_vehicle_types=("ev", "phev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
-                    key="charging",
+                    key="ev_plugged_in",
+                    device_class="plug",
+                    icon="mdi:power-plug",
+                    create_when_state_supported=True,
+                ),
+            ),
+        ),
+    ),
+    "ev_charging": CapabilityDefinition(
+        name="ev_charging",
+        action_verbs=("start", "stop"),
+        applicable_vehicle_types=("ev", "phev"),
+        ui=CapabilityUiPolicy(
+            state_entities=(
+                EntityGenerationRule(
+                    domain="binary_sensor",
+                    key="ev_charging",
                     device_class="battery_charging",
                     icon="mdi:ev-station",
                     create_when_state_supported=True,
@@ -126,7 +204,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             control_entities=(
                 EntityGenerationRule(
                     domain="switch",
-                    key="charging",
+                    key="ev_charging",
                     icon="mdi:ev-station",
                     create_when_action_supported=True,
                     create_when_source_domain=("switch",),
@@ -141,6 +219,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "horn": CapabilityDefinition(
         name="horn",
         action_verbs=("trigger",),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -158,6 +237,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "flash_lights": CapabilityDefinition(
         name="flash_lights",
         action_verbs=("trigger",),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -179,13 +259,14 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "hazard_lights": CapabilityDefinition(
         name="hazard_lights",
         action_verbs=("turn_on", "turn_off"),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
                     domain="binary_sensor",
                     key="hazard_lights",
                     device_class="problem",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                     create_when_state_supported=True,
                 ),
             ),
@@ -193,7 +274,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 EntityGenerationRule(
                     domain="switch",
                     key="hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                     create_when_action_supported=True,
                     create_when_source_domain=("switch",),
                 ),
@@ -202,18 +283,19 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 ButtonGenerationRule(
                     action="turn_on",
                     key="turn_on_hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                 ),
                 ButtonGenerationRule(
                     action="turn_off",
                     key="turn_off_hazard_lights",
-                    icon="mdi:car-hazard-lights",
+                    icon="mdi:hazard-lights",
                 ),
             ),
         ),
     ),
     "location": CapabilityDefinition(
         name="location",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -227,6 +309,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "ignition": CapabilityDefinition(
         name="ignition",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -241,6 +324,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "driving_range": CapabilityDefinition(
         name="driving_range",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -255,6 +339,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "range_warning": CapabilityDefinition(
         name="range_warning",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -269,6 +354,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "odometer": CapabilityDefinition(
         name="odometer",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -284,6 +370,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "tire_pressure": CapabilityDefinition(
         name="tire_pressure",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -298,6 +385,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "warning_messages": CapabilityDefinition(
         name="warning_messages",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -312,6 +400,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "info_messages": CapabilityDefinition(
         name="info_messages",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -326,6 +415,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "windows": CapabilityDefinition(
         name="windows",
         action_verbs=("open", "close"),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -361,6 +451,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     ),
     "doors": CapabilityDefinition(
         name="doors",
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -376,6 +467,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
     "lids": CapabilityDefinition(
         name="lids",
         action_verbs=("open", "close"),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             state_entities=(
                 EntityGenerationRule(
@@ -397,23 +489,10 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
             ),
         ),
     ),
-    "battery_level": CapabilityDefinition(
-        name="battery_level",
-        ui=CapabilityUiPolicy(
-            state_entities=(
-                EntityGenerationRule(
-                    domain="sensor",
-                    key="battery_level",
-                    device_class="battery",
-                    icon="mdi:battery",
-                    create_when_state_supported=True,
-                ),
-            ),
-        ),
-    ),
     "refresh": CapabilityDefinition(
         name="refresh",
         action_verbs=("refresh",),
+        applicable_vehicle_types=("ice", "hev", "phev", "ev"),
         ui=CapabilityUiPolicy(
             buttons=(
                 ButtonGenerationRule(
@@ -443,14 +522,16 @@ DOCUMENTED_ATTRIBUTE_SCHEMA: tuple[str, ...] = (
     "manufacturer",
     "model",
     "vehicle_type",
-    "battery_level",
     "fuel_level",
-    "range",
+    "fuel_driving_range",
+    "ev_battery_level",
+    "ev_driving_range",
+    "ev_plugged_in",
+    "ev_charging",
+    "driving_range",
     "locked",
     "windows_open",
     "climate_active",
-    "charging_active",
-    "charging_plugged",
     "latitude",
     "longitude",
     "odometer",

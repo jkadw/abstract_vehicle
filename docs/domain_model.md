@@ -49,28 +49,6 @@ Every supported source integration is normalized onto the same capability list.
 Each mapping file must declare every canonical capability explicitly, even when
 unsupported.
 
-Canonical capabilities:
-
-- `lock_vehicle`
-- `climate`
-- `charging`
-- `horn`
-- `flash_lights`
-- `hazard_lights`
-- `location`
-- `ignition`
-- `driving_range`
-- `range_warning`
-- `odometer`
-- `tire_pressure`
-- `warning_messages`
-- `info_messages`
-- `windows`
-- `doors`
-- `lids`
-- `battery_level`
-- `refresh`
-
 Each capability has:
 
 - one required `state` definition in the mapping
@@ -88,56 +66,134 @@ Capability support is still represented in runtime attributes as:
 - `action_supported`
 
 The meaning of each capability is fixed here, not in individual mapping files.
-
 Canonical verbs are also fixed per capability in the Python registry. Mapping
 files may only use those verbs.
 
-Examples:
+Vehicle type is a property of an individual vehicle, not of a source
+integration as a whole. Applicability is therefore documented per capability,
+while vehicle-type discovery happens per discovered vehicle.
+
+Canonical capabilities:
 
 - `lock_vehicle`
-  Semantics: vehicle door locking state plus `lock` and `unlock` actions when
-  available.
+  Meaning: vehicle locking state and lock control at whole-vehicle level.
+  Canonical verbs: `lock`, `unlock`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `climate`
-  Semantics: cabin climate state plus `start` and `stop` actions when
-  available.
-- `charging`
-  Semantics: EV charging state plus optional `start` and `stop` actions when
-  the source integration supports them.
-- `horn`
-  Semantics: horn trigger action and any corresponding state if a source
-  integration exposes one.
-- `flash_lights`
-  Semantics: headlight flash action and any corresponding state if exposed.
+  Meaning: cabin climate or remote HVAC state and control.
+  Canonical verbs: `start`, `stop`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `hazard_lights`
-  Semantics: warning or hazard light state and `turn_on` / `turn_off` actions when
-  available.
+  Meaning: hazard or warning light control and any corresponding exposed state.
+  Canonical verbs: `turn_on`, `turn_off`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
+- `horn`
+  Meaning: horn trigger action and any corresponding exposed state.
+  Canonical verbs: `trigger`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
+- `flash_lights`
+  Meaning: headlight flash action and any corresponding exposed state.
+  Canonical verbs: `trigger`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `location`
-  Semantics: current vehicle position.
+  Meaning: current vehicle position.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `ignition`
-  Semantics: ignition or vehicle-on state.
-- `driving_range`
-  Semantics: remaining estimated range.
-- `range_warning`
-  Semantics: low-range warning, often derived from range.
+  Meaning: ignition, engine-on, or vehicle-on state.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `odometer`
-  Semantics: total distance traveled.
+  Meaning: total traveled distance.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
+- `range_warning`
+  Meaning: low-range warning, often derived from another range capability.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `tire_pressure`
-  Semantics: tire pressure status or measurement exposure.
+  Meaning: tire pressure state, warning, or summarized status.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `warning_messages`
-  Semantics: critical warning indicators.
+  Meaning: warning indicators or warning message state.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `info_messages`
-  Semantics: informational vehicle messages.
+  Meaning: informational messages or non-warning status messages.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `windows`
-  Semantics: combined window status plus optional window actions if a source
-  integration supports them.
+  Meaning: aggregated window state and optional whole-vehicle window actions.
+  Canonical verbs: `open`, `close`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `doors`
-  Semantics: combined door-open status.
+  Meaning: aggregated open or closed door state.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
 - `lids`
-  Semantics: hood, trunk, frunk, or similar lid status plus optional actions.
-- `battery_level`
-  Semantics: traction-battery level where available.
+  Meaning: aggregated hood, trunk, frunk, tailgate, or similar lid state.
+  Canonical verbs: `open`, `close`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+
+- `fuel_level`
+  Meaning: remaining fuel level for liquid-fuel energy storage.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`.
+
+- `fuel_driving_range`
+  Meaning: remaining range attributable to fuel.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`.
+
+- `ev_battery_level`
+  Meaning: traction-battery state of charge used for electric driving.
+  Canonical verbs: none.
+  Applicable vehicle types: `ev`, `phev`.
+
+- `ev_driving_range`
+  Meaning: remaining electric driving range.
+  Canonical verbs: none.
+  Applicable vehicle types: `ev`, `phev`.
+
+- `ev_plugged_in`
+  Meaning: whether the vehicle is physically connected to external charging.
+  Canonical verbs: none.
+  Applicable vehicle types: `ev`, `phev`.
+
+- `ev_charging`
+  Meaning: whether the vehicle is actively charging from external power.
+  Canonical verbs: `start`, `stop`.
+  Applicable vehicle types: `ev`, `phev`.
+
+- `driving_range`
+  Meaning: agnostic cross-vehicle remaining driving range for dashboards,
+  scripts, and automations that should not need to understand the underlying
+  energy system.
+  Canonical verbs: none.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
+  Notes: this is a convenience capability layered on top of vehicle-type-
+  specific range data, not a claim that fuel and EV ranges are semantically
+  identical.
+
 - `refresh`
-  Semantics: explicit refresh action exposed by the source integration.
+  Meaning: explicit refresh action exposed by the source integration.
+  Canonical verbs: `refresh`.
+  Applicable vehicle types: `ice`, `hev`, `phev`, `ev`.
 
 Example mapping shape:
 
@@ -173,15 +229,17 @@ grow, but the stable shape is:
 
 - `manufacturer: str`
 - `model: str`
-- `vehicle_type: ev|phev|ice|hybrid|unknown`
-- `battery_level: float | null`
+- `vehicle_type: ev|phev|hev|ice|unknown`
 - `driving_range: float | null`
-- `range: float | null`
+- `fuel_level: float | null`
+- `fuel_driving_range: float | null`
+- `ev_battery_level: float | null`
+- `ev_driving_range: float | null`
+- `ev_plugged_in: true|false|unknown`
+- `ev_charging: true|false|unknown`
 - `locked: true|false|unknown`
 - `windows_open: true|false|unknown`
 - `climate_active: true|false|unknown`
-- `charging_active: true|false|unknown`
-- `charging_plugged: true|false|unknown`
 - `ignition_on: true|false|unknown`
 - `latitude: float | null`
 - `longitude: float | null`
@@ -189,6 +247,9 @@ grow, but the stable shape is:
 - `warning_messages: object | null`
 - `info_messages: object | null`
 - `source_problems: object | null`
+
+`vehicle_type` is always determined per discovered vehicle. It must never be
+treated as a fixed property of a whole source integration.
 
 Capability support flags:
 
@@ -208,6 +269,18 @@ Capability support flags:
 - `location_action_supported: bool`
 - `ignition_state_supported: bool`
 - `ignition_action_supported: bool`
+- `fuel_level_state_supported: bool`
+- `fuel_level_action_supported: bool`
+- `fuel_driving_range_state_supported: bool`
+- `fuel_driving_range_action_supported: bool`
+- `ev_battery_level_state_supported: bool`
+- `ev_battery_level_action_supported: bool`
+- `ev_driving_range_state_supported: bool`
+- `ev_driving_range_action_supported: bool`
+- `ev_plugged_in_state_supported: bool`
+- `ev_plugged_in_action_supported: bool`
+- `ev_charging_state_supported: bool`
+- `ev_charging_action_supported: bool`
 - `driving_range_state_supported: bool`
 - `driving_range_action_supported: bool`
 - `range_warning_state_supported: bool`
@@ -226,19 +299,19 @@ Capability support flags:
 - `doors_action_supported: bool`
 - `lids_state_supported: bool`
 - `lids_action_supported: bool`
-- `battery_level_state_supported: bool`
-- `battery_level_action_supported: bool`
 - `refresh_state_supported: bool`
 - `refresh_action_supported: bool`
 
 The schema is stable by name. Unsupported capabilities should still appear in
 support flags as `false`.
 
-## Windows Aggregation
+## Aggregation
 
 All openings are aggregated into one semantic capability result:
 
 - `windows_open`
+- `doors`
+- `lids`
 
 Aggregation rules:
 
@@ -254,6 +327,120 @@ windows_open = any(opening == "open")
 ```
 
 This supports 1:n aggregation without exposing per-window controls in v1.
+
+The same aggregation principle also applies to other boolean group
+capabilities such as `warning_messages`.
+
+## Vehicle Type Discovery
+
+`my_vehicles` targets four canonical vehicle types:
+
+- `ev`
+- `hev`
+- `phev`
+- `ice`
+
+Vehicle type discovery is designed as a per-vehicle normalization step with a
+clear precedence order.
+
+Precedence:
+
+1. explicit mapped vehicle-type source
+2. inference from resolved capabilities and state
+3. `unknown`
+
+### 1. Explicit Mapped Vehicle-Type Source
+
+Preferred rule:
+
+- if a source integration exposes a reliable per-vehicle type field, `my_vehicles`
+  should use it
+
+This should be modeled as a vehicle-level input, not as integration metadata.
+
+Examples of acceptable explicit sources:
+
+- a source sensor or attribute that directly identifies the vehicle as EV, PHEV,
+  HEV, or ICE
+- an integration-specific per-vehicle property already present in Home Assistant
+
+Rules:
+
+- explicit mapped type wins over inference
+- explicit mapped type should still be normalized onto the canonical set
+  `ev | hev | phev | ice`
+- unknown or unsupported source labels should not fail setup; they should fall
+  through to inference or finally `unknown`
+
+### 2. Inference From Resolved Capabilities and State
+
+If no explicit mapped type is available, `my_vehicles` should infer vehicle
+type from the resolved capability surface of that individual vehicle.
+
+Intended inference rules:
+
+- if EV-only charging concepts exist together with fuel concepts, infer `phev`
+- if EV-only charging concepts exist without fuel concepts, infer `ev`
+- if fuel concepts exist without EV charging concepts, prefer `ice`
+- infer `hev` only when the source provides a reliable HEV-specific signal or
+  when later registry rules define a stable way to distinguish HEV from ICE
+
+Relevant capability groups:
+
+- EV charging concepts:
+  - `ev_plugged_in`
+  - `ev_charging`
+- EV energy concepts:
+  - `ev_battery_level`
+  - `ev_driving_range`
+- fuel concepts:
+  - `fuel_level`
+  - `fuel_driving_range`
+
+Interpretation guidance:
+
+- `ev`:
+  EV charging concepts are present and fuel concepts are absent
+- `phev`:
+  EV charging concepts and fuel concepts are both present
+- `ice`:
+  fuel concepts are present and EV charging concepts are absent
+- `hev`:
+  should not be guessed aggressively from weak signals alone
+
+This intentionally biases toward honesty over overclassification. `hev` is the
+hardest class to infer reliably without an explicit source signal, so unknown is
+better than a wrong type.
+
+### 3. Unknown Behavior
+
+If neither an explicit mapped type nor reliable inference is available:
+
+- set `vehicle_type = unknown`
+
+Rules:
+
+- `unknown` must not block setup
+- `unknown` must not prevent generic capabilities such as `lock_vehicle`,
+  `location`, `odometer`, `windows`, or `doors`
+- `unknown` should only suppress vehicle-type-specific convenience assumptions
+- users should still be able to build automations around universal capabilities
+  and directly supported energy capabilities
+
+### Design Boundary
+
+Vehicle-type discovery should be split intentionally:
+
+- mapping layer:
+  may provide an explicit per-vehicle type source when one exists
+- runtime:
+  resolves the mapped source value and vehicle-level supported capabilities
+- normalization:
+  applies precedence, canonicalizes the final value, and exposes
+  `vehicle_type`
+
+This keeps the mapping schema small while still allowing reliable explicit
+sources to override generic inference.
 
 ## Unit Configuration
 

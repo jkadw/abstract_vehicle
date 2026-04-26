@@ -24,7 +24,7 @@ def normalize_vehicle_state(raw_state: Mapping[str, Any]) -> VehicleState:
     if raw_state.get("has_error") is True or raw_state.get("status") == "error":
         return VehicleState.ERROR
 
-    if raw_state.get("charging_active") is True or raw_state.get("status") == "charging":
+    if raw_state.get("ev_charging") is True or raw_state.get("status") == "charging":
         return VehicleState.CHARGING
 
     if raw_state.get("backend_online") is False or raw_state.get("status") == "offline":
@@ -109,13 +109,18 @@ def build_capability_values(
     return {
         "lock_vehicle": _as_bool(raw_state.get("locked")),
         "climate": _as_bool(raw_state.get("climate_active")),
-        "charging": _as_bool(raw_state.get("charging_active")),
+        "fuel_level": _as_float(raw_metrics.get("fuel_level")),
+        "fuel_driving_range": _as_float(raw_metrics.get("fuel_driving_range")),
+        "ev_battery_level": _as_float(raw_metrics.get("ev_battery_level")),
+        "ev_driving_range": _as_float(raw_metrics.get("ev_driving_range")),
+        "ev_plugged_in": _as_bool(raw_state.get("ev_plugged_in")),
+        "ev_charging": _as_bool(raw_state.get("ev_charging")),
         "horn": _as_bool(raw_state.get("horn_active")),
         "flash_lights": _as_bool(raw_state.get("flash_lights_active")),
         "hazard_lights": _as_bool(raw_state.get("hazard_lights_active")),
         "location": location_value,
         "ignition": _as_bool(raw_state.get("ignition_on")),
-        "driving_range": _as_float(raw_metrics.get("range")),
+        "driving_range": _as_float(raw_metrics.get("driving_range")),
         "range_warning": _as_boolish(
             raw_state.get("range_warning", raw_metrics.get("range_warning"))
         ),
@@ -126,7 +131,6 @@ def build_capability_values(
         "windows": normalize_openings(_as_mapping(raw_metrics.get("openings"))),
         "doors": _as_boolish(raw_metrics.get("doors_open")),
         "lids": _as_boolish(raw_metrics.get("lids_open")),
-        "battery_level": _as_float(raw_metrics.get("battery_level")),
         "refresh": None,
     }
 
@@ -160,15 +164,16 @@ def normalize_vehicle_data(
         state=normalize_vehicle_state(raw_state),
         capabilities=normalized_capabilities,
         capability_values=capability_values,
-        battery_level=_as_float(raw_metrics.get("battery_level")),
         fuel_level=_as_float(raw_metrics.get("fuel_level")),
+        fuel_driving_range=_as_float(raw_metrics.get("fuel_driving_range")),
+        ev_battery_level=_as_float(raw_metrics.get("ev_battery_level")),
+        ev_driving_range=_as_float(raw_metrics.get("ev_driving_range")),
+        ev_plugged_in=_as_bool(raw_state.get("ev_plugged_in")),
+        ev_charging=_as_bool(raw_state.get("ev_charging")),
         driving_range=driving_range,
-        range=driving_range,
         locked=_as_bool(raw_state.get("locked")),
         windows_open=normalize_openings(_as_mapping(raw_metrics.get("openings"))),
         climate_active=_as_bool(raw_state.get("climate_active")),
-        charging_active=_as_bool(raw_state.get("charging_active")),
-        charging_plugged=_as_bool(raw_state.get("charging_plugged")),
         ignition_on=_as_bool(raw_state.get("ignition_on")),
         range_warning=_as_boolish(capability_values.get("range_warning")),
         latitude=_as_float(raw_metrics.get("latitude")),
@@ -189,14 +194,16 @@ def build_vehicle_attributes(data: NormalizedVehicleData) -> dict[str, Any]:
         "manufacturer": data.info.manufacturer,
         "model": data.info.model,
         "vehicle_type": data.info.vehicle_type,
-        "battery_level": data.battery_level,
+        "fuel_level": data.fuel_level,
+        "fuel_driving_range": data.fuel_driving_range,
+        "ev_battery_level": data.ev_battery_level,
+        "ev_driving_range": data.ev_driving_range,
+        "ev_plugged_in": data.ev_plugged_in,
+        "ev_charging": data.ev_charging,
         "driving_range": data.driving_range,
-        "range": data.range,
         "locked": data.locked,
         "windows_open": data.windows_open,
         "climate_active": data.climate_active,
-        "charging_active": data.charging_active,
-        "charging_plugged": data.charging_plugged,
         "ignition_on": data.ignition_on,
         "range_warning": data.range_warning,
         "latitude": data.latitude,

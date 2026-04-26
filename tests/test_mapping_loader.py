@@ -45,7 +45,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      entity: sensor.{vehicle}_ev_battery_level
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -98,9 +113,6 @@ capabilities:
   lids:
     state:
       unavailable: true
-  battery_level:
-    state:
-      entity: sensor.{vehicle}_ev_battery_level
   refresh:
     state:
       unavailable: true
@@ -132,6 +144,19 @@ def test_load_adapter_mapping_for_kia_yaml() -> None:
     assert (
         mapping.capability("driving_range").state.entity
         == "sensor.{vehicle}_total_driving_range"
+    )
+    assert mapping.capability("fuel_level").state.entity == "sensor.{vehicle}_fuel_level"
+    assert (
+        mapping.capability("fuel_driving_range").state.entity
+        == "sensor.{vehicle}_fuel_driving_range"
+    )
+    assert (
+        mapping.capability("ev_driving_range").state.entity
+        == "sensor.{vehicle}_ev_range"
+    )
+    assert (
+        mapping.capability("ev_plugged_in").state.entity
+        == "binary_sensor.{vehicle}_ev_battery_plug"
     )
     assert mapping.capability("range_warning").state.domain == "binary_sensor"
 
@@ -332,7 +357,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -383,9 +423,6 @@ capabilities:
     state:
       unavailable: true
   lids:
-    state:
-      unavailable: true
-  battery_level:
     state:
       unavailable: true
   refresh:
@@ -422,7 +459,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -475,9 +527,6 @@ capabilities:
   lids:
     state:
       unavailable: true
-  battery_level:
-    state:
-      unavailable: true
   refresh:
     state:
       unavailable: true
@@ -512,7 +561,22 @@ capabilities:
   climate:
     state:
       unavailable: true
-  charging:
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
     state:
       unavailable: true
   horn:
@@ -565,9 +629,6 @@ capabilities:
     state:
       unavailable: true
   lids:
-    state:
-      unavailable: true
-  battery_level:
     state:
       unavailable: true
   refresh:

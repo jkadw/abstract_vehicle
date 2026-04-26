@@ -44,8 +44,14 @@ class VehicleCapabilitySensorEntity(VehicleBaseEntity, SensorEntity):
 
     @property
     def native_value(self) -> Any:
-        if self._capability_name == "battery_level":
-            return self._normalized_data.battery_level
+        if self._capability_name == "fuel_level":
+            return self._normalized_data.fuel_level
+        if self._capability_name == "fuel_driving_range":
+            return self._normalized_data.fuel_driving_range
+        if self._capability_name == "ev_battery_level":
+            return self._normalized_data.ev_battery_level
+        if self._capability_name == "ev_driving_range":
+            return self._normalized_data.ev_driving_range
         if self._capability_name == "driving_range":
             return self._normalized_data.driving_range
         if self._capability_name == "odometer":
@@ -58,9 +64,14 @@ class VehicleCapabilitySensorEntity(VehicleBaseEntity, SensorEntity):
 
     @property
     def native_unit_of_measurement(self) -> str | None:
-        if self._capability_name == "battery_level":
+        if self._capability_name in {"fuel_level", "ev_battery_level"}:
             return PERCENTAGE
-        if self._capability_name in {"driving_range", "odometer"}:
+        if self._capability_name in {
+            "fuel_driving_range",
+            "ev_driving_range",
+            "driving_range",
+            "odometer",
+        }:
             distance_unit = self._normalized_data.display_units.distance_unit
             if distance_unit == "mi":
                 return UnitOfLength.MILES

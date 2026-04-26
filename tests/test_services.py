@@ -57,16 +57,16 @@ class _ServiceAdapter:
             "backend_online": True,
             "has_error": False,
             "driving": False,
-            "charging_active": False,
-            "charging_plugged": True,
+            "ev_charging": False,
+            "ev_plugged_in": True,
             "locked": self._locked,
             "climate_active": self._climate_active,
         }
 
     async def get_raw_metrics(self) -> dict[str, object]:
         return {
-            "battery_level": 80.0,
-            "range": 250.0,
+            "ev_battery_level": 80.0,
+            "driving_range": 250.0,
             "openings": {},
             "source_units": {"distance_unit": "km"},
         }

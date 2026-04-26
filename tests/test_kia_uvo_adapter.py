@@ -102,7 +102,7 @@ def _configured_vehicles() -> list[dict]:
             "backend_online": True,
             "has_error": False,
             "driving": False,
-            "charging_plugged": True,
+            "ev_plugged_in": True,
         }
     ]
 
@@ -212,8 +212,8 @@ def test_kia_uvo_adapter_maps_selected_vehicle_via_generic_mapping() -> None:
     assert raw_state["model"] == "EV6"
     assert raw_state["status"] == "parked"
     assert raw_state["locked"] is True
-    assert raw_metrics["battery_level"] == 61.5
-    assert raw_metrics["range"] == 198.0
+    assert raw_metrics["ev_battery_level"] == 61.5
+    assert raw_metrics["driving_range"] == 198.0
     assert raw_metrics["latitude"] == 33.749
     assert raw_metrics["openings"]["santa_fe_front_right_window"] == "open"
     assert capabilities.lock_vehicle.action_supported is True
@@ -237,10 +237,9 @@ def test_kia_uvo_adapter_relies_on_normalization_for_canonical_outputs() -> None
 
     assert normalized.state.value == "parked"
     assert normalized.driving_range == 198.0
-    assert normalized.range == 198.0
     assert normalized.odometer == 12450.0
     assert normalized.capabilities.location.state_supported is True
-    assert normalized.capabilities.battery_level.state_supported is True
+    assert normalized.capabilities.ev_battery_level.state_supported is True
 
 
 def test_kia_uvo_adapter_executes_supported_actions_via_mapping_runtime() -> None:
@@ -293,7 +292,7 @@ def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     assert diagnostics["integration_domain"] == "kia_uvo"
     assert diagnostics["source_vehicle"] == "santa_fe"
     assert diagnostics["raw_state"]["vehicle_id"] == "kia-1"
-    assert diagnostics["raw_metrics"]["range"] == 198.0
+    assert diagnostics["raw_metrics"]["driving_range"] == 198.0
     assert diagnostics["capabilities"]["refresh"]["action_supported"] is True
     assert diagnostics["actions"]["windows"]["open"]["service"] == "kia_uvo.set_windows"
     assert (

@@ -96,10 +96,12 @@ class MappedVehicleAdapter(VehicleAdapter):
         resolved = self._resolve_runtime()
         locked = _coerce_lock_state(resolved.capability_states.get("lock_vehicle"))
         climate_active = _coerce_bool_state(resolved.capability_states.get("climate"))
-        charging_active = _coerce_bool_state(
-            resolved.capability_states.get("charging")
-        ) or self._as_bool(vehicle.get("charging_active"), default=False)
-        charging_plugged = self._as_bool(vehicle.get("charging_plugged"))
+        ev_charging = _coerce_bool_state(
+            resolved.capability_states.get("ev_charging")
+        ) or self._as_bool(vehicle.get("ev_charging"), default=False)
+        ev_plugged_in = _coerce_bool_state(
+            resolved.capability_states.get("ev_plugged_in")
+        ) or self._as_bool(vehicle.get("ev_plugged_in"))
         available = self._as_bool(vehicle.get("available"), default=True)
         backend_online = self._as_bool(vehicle.get("backend_online"), default=True)
         has_error = self._as_bool(vehicle.get("has_error"), default=False)
@@ -117,14 +119,14 @@ class MappedVehicleAdapter(VehicleAdapter):
                 backend_online=backend_online,
                 has_error=has_error,
                 driving=driving,
-                charging_active=charging_active is True,
+                charging_active=ev_charging is True,
             ),
             "available": available,
             "backend_online": backend_online,
             "has_error": has_error,
             "driving": driving,
-            "charging_active": charging_active,
-            "charging_plugged": charging_plugged,
+            "ev_charging": ev_charging,
+            "ev_plugged_in": ev_plugged_in,
             "locked": locked,
             "climate_active": climate_active,
             "ignition_on": _coerce_bool_state(resolved.capability_states.get("ignition")),
@@ -146,11 +148,19 @@ class MappedVehicleAdapter(VehicleAdapter):
         runtime = self._runtime()
         latitude, longitude = self._resolve_coordinates(runtime)
         return {
-            "battery_level": self._as_float(
-                resolved.capability_states.get("battery_level")
+            "fuel_level": self._as_float(resolved.capability_states.get("fuel_level")),
+            "fuel_driving_range": self._as_float(
+                resolved.capability_states.get("fuel_driving_range")
             ),
-            "fuel_level": None,
-            "range": self._as_float(resolved.capability_states.get("driving_range")),
+            "ev_battery_level": self._as_float(
+                resolved.capability_states.get("ev_battery_level")
+            ),
+            "ev_driving_range": self._as_float(
+                resolved.capability_states.get("ev_driving_range")
+            ),
+            "driving_range": self._as_float(
+                resolved.capability_states.get("driving_range")
+            ),
             "odometer": self._as_float(resolved.capability_states.get("odometer")),
             "latitude": latitude,
             "longitude": longitude,
@@ -361,8 +371,8 @@ class MappedVehicleAdapter(VehicleAdapter):
             "backend_online",
             "has_error",
             "driving",
-            "charging_active",
-            "charging_plugged",
+            "ev_charging",
+            "ev_plugged_in",
         ):
             refreshed_value = refreshed_vehicle.get(field_name)
             if refreshed_value is not None:
