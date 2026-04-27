@@ -13,6 +13,8 @@ from custom_components.my_vehicles.const import (
     DATA_NORMALIZED,
     DATA_VEHICLES,
     DOMAIN,
+    EVENT_ACTION_EXECUTED,
+    EVENT_STATE_CHANGED,
     SERVICE_DIAGNOSTICS,
 )
 from custom_components.my_vehicles.domain.model import CapabilitySupport, VehicleCapabilities
@@ -127,6 +129,14 @@ class _FakeDeviceRegistry:
         return self._device
 
 
+class _FakeBus:
+    def __init__(self) -> None:
+        self.fired: list[tuple[str, dict[str, object]]] = []
+
+    def async_fire(self, event_type: str, event_data) -> None:
+        self.fired.append((event_type, event_data))
+
+
 def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     """A supported service should delegate to the adapter and refresh state."""
 
@@ -152,6 +162,7 @@ def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
             }
         }
     }
+    hass.bus = _FakeBus()
     services_module.dr.async_get = lambda _hass: _FakeDeviceRegistry(device_id)
 
     handler = _build_service_handler(hass, "central_locking")
@@ -162,6 +173,28 @@ def test_service_dispatch_executes_action_and_refreshes_entity() -> None:
     assert entity.updated_data is not None
     assert entity.updated_data.locked is False
     assert entity.write_calls == 1
+    assert hass.bus.fired == [
+        (
+            EVENT_ACTION_EXECUTED,
+            {
+                "device_id": device_id,
+                "vehicle_id": "vehicle-123",
+                "capability": "central_locking",
+                "action": "unlock",
+                "action_data": {},
+            },
+        ),
+        (
+            EVENT_STATE_CHANGED,
+            {
+                "device_id": device_id,
+                "vehicle_id": "vehicle-123",
+                "capability": "central_locking",
+                "old_value": True,
+                "new_value": False,
+            },
+        ),
+    ]
 
 
 def test_service_dispatch_rejects_missing_capability_support() -> None:

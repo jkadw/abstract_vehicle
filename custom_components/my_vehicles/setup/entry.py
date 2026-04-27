@@ -20,6 +20,7 @@ from ..const import (
     PLATFORMS,
 )
 from ..domain.normalization import normalize_vehicle_data
+from ..events import async_fire_state_changes
 from ..runtime.loader import create_adapter_from_discovered_vehicle, discover_adapter_vehicles
 from ..services import async_register_services, async_unregister_services
 
@@ -236,7 +237,7 @@ def _register_vehicle_state_listeners(
 
         async def _async_refresh_on_state_change(event: Event, *, entry_data=vehicle_entry) -> None:
             _ = event
-            await _refresh_vehicle_entry(entry_data)
+            await _refresh_vehicle_entry(entry_data, hass=hass)
 
         def _handle_state_change(event: Event, *, refresh=_async_refresh_on_state_change) -> None:
             hass.async_create_task(refresh(event))
@@ -250,17 +251,23 @@ def _register_vehicle_state_listeners(
         )
 
 
-async def _refresh_vehicle_entry(entry_data: dict[str, object]) -> None:
+async def _refresh_vehicle_entry(
+    entry_data: dict[str, object], *, hass: HomeAssistant | None = None
+) -> None:
     """Refresh one vehicle entry from source state without executing actions."""
 
     adapter = entry_data[DATA_ADAPTER]
     entities = entry_data.get(DATA_ENTITIES, [])
+    previous = entry_data.get(DATA_NORMALIZED)
 
     raw_state = await adapter.get_raw_state()
     raw_metrics = await adapter.get_raw_metrics()
     capabilities = await adapter.get_capabilities()
     updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
     entry_data[DATA_NORMALIZED] = updated
+
+    if hass is not None:
+        async_fire_state_changes(hass, previous, updated)
 
     for entity in entities:
         entity.update_normalized_data(updated)

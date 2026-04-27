@@ -157,6 +157,9 @@ class MappingRuntime:
             success=True,
             action=canonical_action,
             message=f"Executed {prepared.service}",
+            action_data=dict(prepared.data),
+            action_target=dict(prepared.target),
+            service=prepared.service,
         )
 
     def state_value(self, entity_id: str) -> str:

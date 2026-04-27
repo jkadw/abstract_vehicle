@@ -20,8 +20,10 @@ from custom_components.my_vehicles.const import (
     DATA_DISCOVERY_SNAPSHOTS,
     DATA_VEHICLES,
     DOMAIN,
+    EVENT_STATE_CHANGED,
 )
 from custom_components.my_vehicles.domain.model import VehicleCapabilities
+from custom_components.my_vehicles.domain.normalization import normalize_vehicle_data
 
 
 class _FakeEntry:
@@ -37,10 +39,14 @@ class _FakeEntry:
 class _FakeBus:
     def __init__(self) -> None:
         self.listeners: list[tuple[str, object]] = []
+        self.fired: list[tuple[str, dict[str, object]]] = []
 
     def async_listen_once(self, event_type: str, callback):
         self.listeners.append((event_type, callback))
         return callback
+
+    def async_fire(self, event_type: str, event_data) -> None:
+        self.fired.append((event_type, event_data))
 
 
 class _FakeConfigEntries:
@@ -245,6 +251,74 @@ def test_refresh_vehicle_entry_updates_normalized_data_without_actions() -> None
     assert entry_data["normalized_data"] is not None
     assert entity.updated is entry_data["normalized_data"]
     assert entity.write_calls == 1
+
+
+def test_refresh_vehicle_entry_emits_capability_state_changed_events() -> None:
+    """Refreshes should emit generic state events for changed capability values."""
+
+    hass = _FakeHass(is_running=True)
+    adapter = _FakeAdapter("vehicle-1", "Kia EV6")
+
+    class _Entity:
+        def update_normalized_data(self, normalized_data) -> None:
+            _ = normalized_data
+
+        def async_write_ha_state(self) -> None:
+            return None
+
+    previous = normalize_vehicle_data(
+        {
+            "vehicle_id": "vehicle-1",
+            "name": "Kia EV6",
+            "manufacturer": "Kia",
+            "model": "Unknown",
+            "vehicle_type": "ev",
+            "status": "parked",
+            "available": True,
+            "backend_online": True,
+            "has_error": False,
+            "driving": False,
+            "ev_charging": False,
+            "ev_plugged_in": False,
+            "locked": False,
+            "climate_active": False,
+        },
+        {
+            "ev_battery_level": 60.0,
+            "driving_range": 200.0,
+            "openings": {},
+            "source_units": {"distance_unit": "km"},
+        },
+        asyncio.run(adapter.get_capabilities()),
+    )
+    entry_data = {
+        "adapter": adapter,
+        "entities": [_Entity()],
+        "normalized_data": previous,
+    }
+
+    from custom_components.my_vehicles import events as events_module
+
+    class _NoDeviceRegistry:
+        def async_get_device(self, identifiers=None, connections=None):
+            _ = identifiers, connections
+            return None
+
+    events_module.dr.async_get = lambda _hass: _NoDeviceRegistry()
+    asyncio.run(_refresh_vehicle_entry(entry_data, hass=hass))
+
+    assert hass.bus.fired == [
+        (
+            EVENT_STATE_CHANGED,
+            {
+                "device_id": None,
+                "vehicle_id": "vehicle-1",
+                "capability": "central_locking",
+                "old_value": False,
+                "new_value": True,
+            },
+        )
+    ]
 
 
 def test_snapshot_vehicle_ids_ignores_invalid_entries() -> None:

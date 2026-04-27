@@ -24,6 +24,7 @@ from .const import (
     SERVICE_DIAGNOSTICS,
 )
 from .domain.normalization import normalize_vehicle_data
+from .events import async_fire_action_executed, async_fire_state_changes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,11 +92,15 @@ async def async_unregister_services(hass: HomeAssistant) -> None:
 
 
 async def async_execute_entry_action(
-    entry_data: dict[str, object], capability_name: str, action_name: str
+    hass: HomeAssistant,
+    entry_data: dict[str, object],
+    capability_name: str,
+    action_name: str,
 ) -> None:
     """Execute an action, then rebuild and fan out normalized state."""
 
-    normalized = entry_data[DATA_NORMALIZED]
+    previous = entry_data[DATA_NORMALIZED]
+    normalized = previous
     support = getattr(normalized.capabilities, capability_name)
     if not support.action_supported:
         raise ServiceValidationError(
@@ -113,7 +118,7 @@ async def async_execute_entry_action(
         )
 
     try:
-        await adapter.execute_action(action_name)
+        result = await adapter.execute_action(action_name)
     except UnsupportedVehicleActionError as err:
         raise ServiceValidationError(str(err)) from err
     except Exception as err:
@@ -126,6 +131,15 @@ async def async_execute_entry_action(
     capabilities = await adapter.get_capabilities()
     updated = normalize_vehicle_data(raw_state, raw_metrics, capabilities)
     entry_data[DATA_NORMALIZED] = updated
+
+    async_fire_action_executed(
+        hass,
+        updated,
+        capability_name,
+        action_name,
+        dict(result.get("action_data", {})) if isinstance(result, dict) else {},
+    )
+    async_fire_state_changes(hass, previous, updated)
 
     for entity in entities:
         entity.update_normalized_data(updated)
@@ -148,7 +162,9 @@ def _build_service_handler(hass: HomeAssistant, service_name: str):
         )
 
         for entry_data in target_entries:
-            await async_execute_entry_action(entry_data, capability_name, action_name)
+            await async_execute_entry_action(
+                hass, entry_data, capability_name, action_name
+            )
 
     return _handle_service
 

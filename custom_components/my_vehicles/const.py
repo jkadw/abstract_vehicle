@@ -28,6 +28,8 @@ DATA_DISCOVERY_SNAPSHOTS: Final = "discovery_snapshots"
 DATA_SERVICES_REGISTERED: Final = "services_registered"
 
 SERVICE_DIAGNOSTICS: Final = "diagnostics"
+EVENT_STATE_CHANGED: Final = "my_vehicles.state_changed"
+EVENT_ACTION_EXECUTED: Final = "my_vehicles.action_executed"
 
 NORMALIZED_STATES: Final[tuple[str, ...]] = (
     "unknown",

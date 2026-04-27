@@ -59,6 +59,9 @@ class ActionResult(TypedDict, total=False):
     success: bool
     action: str
     message: str
+    action_data: dict[str, Any]
+    action_target: dict[str, Any]
+    service: str
 
 
 class VehicleAdapterError(Exception):
