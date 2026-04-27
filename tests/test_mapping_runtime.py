@@ -339,6 +339,120 @@ capabilities:
     assert runtime.is_action_available("windows", "open") is False
 
 
+def test_mapping_runtime_keeps_action_available_for_indeterminate_availability_state(
+    tmp_path: Path,
+) -> None:
+    """Indeterminate availability states should not disable mapped buttons."""
+
+    mapping_path = tmp_path / "availability_indeterminate.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  central_locking:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
+    state:
+      unavailable: true
+  vehicle_alert:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability:
+          entity: binary_sensor.{vehicle}_windows_available
+        data:
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_windows_available": SimpleNamespace(
+                state="unavailable", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    resolved = runtime.resolve()
+
+    assert resolved.actions["windows"]["open"].available is True
+    assert runtime.is_action_available("windows", "open") is True
+
+
 def test_mapping_runtime_resolves_capability_level_availability(tmp_path: Path) -> None:
     """Capability availability should gate controls without living on each verb."""
 
@@ -684,6 +798,120 @@ capabilities:
 
     assert resolved.actions["windows"]["open"].available is False
     assert runtime.is_action_available("windows", "open") is False
+
+
+def test_mapping_runtime_keeps_action_available_for_indeterminate_availability_not_state(
+    tmp_path: Path,
+) -> None:
+    """Indeterminate negated availability states should not disable mapped buttons."""
+
+    mapping_path = tmp_path / "availability_not_indeterminate.yaml"
+    mapping_path.write_text(
+        """
+integration:
+  domain: kia_uvo
+  friendly_name: Hyundai / Kia Connect
+capabilities:
+  central_locking:
+    state:
+      unavailable: true
+  climate:
+    state:
+      unavailable: true
+  fuel_level:
+    state:
+      unavailable: true
+  fuel_driving_range:
+    state:
+      unavailable: true
+  ev_battery_level:
+    state:
+      unavailable: true
+  ev_driving_range:
+    state:
+      unavailable: true
+  ev_plugged_in:
+    state:
+      unavailable: true
+  ev_charging:
+    state:
+      unavailable: true
+  vehicle_alert:
+    state:
+      unavailable: true
+  hazard_lights:
+    state:
+      unavailable: true
+  location:
+    state:
+      unavailable: true
+  ignition:
+    state:
+      unavailable: true
+  driving_range:
+    state:
+      unavailable: true
+  range_warning:
+    state:
+      unavailable: true
+  odometer:
+    state:
+      unavailable: true
+  tire_pressure:
+    state:
+      unavailable: true
+  warning_messages:
+    state:
+      unavailable: true
+  info_messages:
+    state:
+      unavailable: true
+  windows:
+    state:
+      any:
+        - binary_sensor.{vehicle}_front_left_window
+    actions:
+      open:
+        action: kia_uvo.set_windows
+        availability_not:
+          entity: binary_sensor.{vehicle}_windows_blocked
+        data:
+          device_id: {device}
+  doors:
+    state:
+      unavailable: true
+  lids:
+    state:
+      unavailable: true
+  refresh:
+    state:
+      unavailable: true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    mapping = load_mapping_file(mapping_path)
+    hass = _FakeHass(
+        {
+            "binary_sensor.santa_fe_front_left_window": SimpleNamespace(
+                state="off", attributes={}
+            ),
+            "binary_sensor.santa_fe_windows_blocked": SimpleNamespace(
+                state="unavailable", attributes={}
+            ),
+        }
+    )
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="santa_fe",
+        device="device-123",
+    )
+
+    resolved = runtime.resolve()
+
+    assert resolved.actions["windows"]["open"].available is True
+    assert runtime.is_action_available("windows", "open") is True
 
 
 def test_mapping_runtime_source_snapshot_includes_action_availability_entities(

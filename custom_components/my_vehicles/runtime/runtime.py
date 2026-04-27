@@ -286,35 +286,35 @@ class MappingRuntime:
         if action.availability is None:
             if action.availability_not is None:
                 return True
-            value = self._resolve_state_mapping(action.availability_not)
+            value = _availability_state_to_optional_bool(
+                self._resolve_state_mapping(action.availability_not)
+            )
             if value is None:
                 return True
-            if isinstance(value, bool):
-                return not value
-            return not _state_to_bool(value)
-        value = self._resolve_state_mapping(action.availability)
+            return not value
+        value = _availability_state_to_optional_bool(
+            self._resolve_state_mapping(action.availability)
+        )
         if value is None:
-            return False
-        if isinstance(value, bool):
-            return value
-        return _state_to_bool(value)
+            return True
+        return value
 
     def _resolve_capability_availability_for_mapping(self, capability: Any) -> bool:
         if capability.availability is None:
             if capability.availability_not is None:
                 return True
-            value = self._resolve_state_mapping(capability.availability_not)
+            value = _availability_state_to_optional_bool(
+                self._resolve_state_mapping(capability.availability_not)
+            )
             if value is None:
                 return True
-            if isinstance(value, bool):
-                return not value
-            return not _state_to_bool(value)
-        value = self._resolve_state_mapping(capability.availability)
+            return not value
+        value = _availability_state_to_optional_bool(
+            self._resolve_state_mapping(capability.availability)
+        )
         if value is None:
-            return False
-        if isinstance(value, bool):
-            return value
-        return _state_to_bool(value)
+            return True
+        return value
 
     def _service_exists(self, full_service_name: str) -> bool:
         """Return whether one referenced HA service is currently registered."""
@@ -476,6 +476,28 @@ def _jinja_int(value: Any, default: int = 0) -> int:
 def _state_to_bool(value: Any) -> bool:
     normalized = str(value).strip().lower()
     return normalized in {"on", "open", "true", "1", "locked", "charging"}
+
+
+def _availability_state_to_optional_bool(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        if value == 1:
+            return True
+        if value == 0:
+            return False
+        return None
+
+    normalized = str(value).strip().lower()
+    if normalized in {"on", "open", "true", "1", "locked", "charging"}:
+        return True
+    if normalized in {"off", "closed", "false", "0", "unlocked"}:
+        return False
+    if normalized in {"", "unknown", "unavailable", "none", "null"}:
+        return None
+    return None
 
 
 def _substitute_placeholders(value: Any, vehicle: str, device: str) -> Any:
