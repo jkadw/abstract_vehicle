@@ -81,7 +81,7 @@ def test_config_flow_shows_available_adapter_options(monkeypatch) -> None:
     }
 
     async def _options(_hass):
-        return {"hyundai_kia_connect_kia_uvo": "Hyundai / Kia Connect"}
+        return {"kia_uvo": "Hyundai / Kia Connect"}
 
     monkeypatch.setattr(module, "get_available_adapter_options", _options)
 
@@ -100,7 +100,7 @@ def test_config_flow_rejects_unknown_adapter_submission(monkeypatch) -> None:
     flow.async_abort = lambda *, reason: {"type": "abort", "reason": reason}
 
     async def _options(_hass):
-        return {"hyundai_kia_connect_kia_uvo": "Hyundai / Kia Connect"}
+        return {"kia_uvo": "Hyundai / Kia Connect"}
 
     monkeypatch.setattr(module, "get_available_adapter_options", _options)
 
@@ -127,18 +127,18 @@ def test_config_flow_creates_entry_for_selected_adapter(monkeypatch) -> None:
         unique_ids.append(value)
 
     async def _options(_hass):
-        return {"hyundai_kia_connect_kia_uvo": "Hyundai / Kia Connect"}
+        return {"kia_uvo": "Hyundai / Kia Connect"}
 
     flow.async_set_unique_id = _set_unique_id
     monkeypatch.setattr(module, "get_available_adapter_options", _options)
 
     result = asyncio.run(
-        flow.async_step_user({"adapter": "hyundai_kia_connect_kia_uvo"})
+        flow.async_step_user({"adapter": "kia_uvo"})
     )
 
-    assert unique_ids == ["hyundai_kia_connect_kia_uvo"]
+    assert unique_ids == ["kia_uvo"]
     assert result == {
         "type": "create_entry",
         "title": "Hyundai / Kia Connect",
-        "data": {"adapter": "hyundai_kia_connect_kia_uvo"},
+        "data": {"adapter": "kia_uvo"},
     }

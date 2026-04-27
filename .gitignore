@@ -3,3 +3,4 @@ __pycache__/
 .env
 PROJECT.md
 PROMPTS.md
+adapter_references/

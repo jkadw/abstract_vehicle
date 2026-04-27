@@ -1,0 +1,156 @@
+integration:
+  domain: uconnect
+  friendly_name: Uconnect
+
+capabilities:
+  central_locking:
+    state:
+      entity: lock.{vehicle}_doors_lock
+    actions:
+      lock:
+        action: uconnect.doors_lock
+        availability_not:
+          entity: lock.{vehicle}_doors_lock
+        data:
+          device_id: "{device}"
+      unlock:
+        action: uconnect.doors_unlock
+        availability:
+          entity: lock.{vehicle}_doors_lock
+        data:
+          device_id: "{device}"
+
+  climate:
+    state:
+      entity: switch.{vehicle}_precondition
+    actions:
+      start_heating:
+        action: uconnect.precond_on
+        availability_not:
+          entity: switch.{vehicle}_precondition
+        data:
+          device_id: "{device}"
+      start_cooling:
+        action: uconnect.precond_on
+        availability_not:
+          entity: switch.{vehicle}_precondition
+        data:
+          device_id: "{device}"
+      stop:
+        action: uconnect.precond_off
+        availability:
+          entity: switch.{vehicle}_precondition
+        data:
+          device_id: "{device}"
+
+  fuel_level:
+    state:
+      unavailable: true
+
+  fuel_driving_range:
+    state:
+      unavailable: true
+
+  ev_battery_level:
+    state:
+      entity: sensor.{vehicle}_hvbattery_charge
+
+  ev_driving_range:
+    state:
+      entity: sensor.{vehicle}_driving_range
+
+  ev_plugged_in:
+    state:
+      entity: binary_sensor.{vehicle}_ev_charger
+
+  ev_charging:
+    availability:
+      entity: binary_sensor.{vehicle}_ev_charger
+    state:
+      entity: binary_sensor.{vehicle}_charging
+    actions:
+      start:
+        action: uconnect.charge_now
+        availability_not:
+          entity: binary_sensor.{vehicle}_charging
+        data:
+          device_id: "{device}"
+
+  vehicle_alert:
+    state:
+      unavailable: true
+    actions:
+      flash:
+        action: uconnect.lights
+        data:
+          device_id: "{device}"
+      alarm:
+        action: uconnect.lights_horn
+        data:
+          device_id: "{device}"
+
+  hazard_lights:
+    state:
+      unavailable: true
+
+  location:
+    state:
+      entity: device_tracker.{vehicle}_location
+
+  ignition:
+    state:
+      entity: binary_sensor.{vehicle}_ignition
+
+  driving_range:
+    state:
+      entity: sensor.{vehicle}_driving_range_total
+
+  range_warning:
+    state:
+      domain: binary_sensor
+      template: "{{ states('sensor.{vehicle}_driving_range_total') | float < 50 }}"
+      device_class: problem
+
+  odometer:
+    state:
+      entity: sensor.{vehicle}_odometer
+      device_class: distance
+      state_class: total_increasing
+
+  tire_pressure:
+    state:
+      any:
+        - binary_sensor.{vehicle}_wheel_front_left_pressure_warning
+        - binary_sensor.{vehicle}_wheel_front_right_pressure_warning
+        - binary_sensor.{vehicle}_wheel_rear_left_pressure_warning
+        - binary_sensor.{vehicle}_wheel_rear_right_pressure_warning
+
+  warning_messages:
+    state:
+      any:
+        - binary_sensor.{vehicle}_low_fuel
+
+  info_messages:
+    state:
+      unavailable: true
+
+  windows:
+    state:
+      unavailable: true
+
+  doors:
+    state:
+      unavailable: true
+
+  lids:
+    state:
+      unavailable: true
+
+  refresh:
+    state:
+      unavailable: true
+    actions:
+      refresh:
+        action: uconnect.deep_refresh
+        data:
+          device_id: "{device}"

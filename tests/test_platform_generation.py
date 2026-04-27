@@ -49,7 +49,7 @@ class _FakeAdapter:
         unavailable_actions: set[tuple[str, str]] | None = None,
         unavailable_capabilities: set[str] | None = None,
     ) -> None:
-        self._mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+        self._mapping = load_adapter_mapping("kia_uvo")
         self._unavailable_actions = unavailable_actions or set()
         self._unavailable_capabilities = unavailable_capabilities or set()
 

@@ -161,8 +161,8 @@ capabilities:
       any:
         - binary_sensor.{vehicle}_front_left_window
         - binary_sensor.{vehicle}_front_right_window
-        - binary_sensor.{vehicle}_rear_left_window
-        - binary_sensor.{vehicle}_rear_right_window
+        - binary_sensor.{vehicle}_back_left_window
+        - binary_sensor.{vehicle}_back_right_window
     actions:
       open:
         action: kia_uvo.set_windows

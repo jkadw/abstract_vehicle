@@ -173,7 +173,7 @@ def _patch_registries(monkeypatch, hass: _FakeHass, identifiers) -> None:
 
 
 def _kia_uvo_adapter_class():
-    definition = get_adapter_definition("hyundai_kia_connect_kia_uvo")
+    definition = get_adapter_definition("kia_uvo")
     assert definition is not None
     return _load_adapter_class(definition)
 
@@ -304,7 +304,7 @@ def test_kia_uvo_adapter_exposes_read_only_diagnostics() -> None:
     diagnostics = asyncio.run(adapter.get_diagnostics())
 
     assert diagnostics["adapter_type"] == "mapped"
-    assert diagnostics["mapping_name"] == "hyundai_kia_connect_kia_uvo"
+    assert diagnostics["mapping_name"] == "kia_uvo"
     assert diagnostics["integration_domain"] == "kia_uvo"
     assert diagnostics["source_vehicle"] == "santa_fe"
     assert diagnostics["raw_state"]["vehicle_id"] == "kia-1"

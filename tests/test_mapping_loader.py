@@ -124,7 +124,7 @@ capabilities:
 def test_load_adapter_mapping_for_kia_yaml() -> None:
     """The Hyundai/Kia example mapping should load successfully."""
 
-    mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+    mapping = load_adapter_mapping("kia_uvo")
 
     assert mapping.integration.domain == "kia_uvo"
     assert mapping.integration.friendly_name == "Hyundai / Kia Connect"
@@ -135,8 +135,8 @@ def test_load_adapter_mapping_for_kia_yaml() -> None:
     assert mapping.capability("windows").state.any == (
         "binary_sensor.{vehicle}_front_left_window",
         "binary_sensor.{vehicle}_front_right_window",
-        "binary_sensor.{vehicle}_rear_left_window",
-        "binary_sensor.{vehicle}_rear_right_window",
+        "binary_sensor.{vehicle}_back_left_window",
+        "binary_sensor.{vehicle}_back_right_window",
     )
     assert (
         mapping.capability("driving_range").state.entity
@@ -779,13 +779,13 @@ def test_registry_discovers_adapter_definition_from_mapping_yaml() -> None:
     definitions = get_adapter_definitions()
 
     assert any(
-        definition.key == "hyundai_kia_connect_kia_uvo" for definition in definitions
+        definition.key == "kia_uvo" for definition in definitions
     )
 
-    definition = get_adapter_definition("hyundai_kia_connect_kia_uvo")
+    definition = get_adapter_definition("kia_uvo")
     assert definition is not None
     assert definition.kind == "mapping"
-    assert definition.mapping_name == "hyundai_kia_connect_kia_uvo"
+    assert definition.mapping_name == "kia_uvo"
     assert definition.source_integration == "kia_uvo"
     assert definition.fallback_label == "Hyundai / Kia Connect"
 
@@ -799,22 +799,23 @@ def test_registry_has_explicit_custom_adapter_extension_point() -> None:
 def test_registry_builds_generic_mapped_adapter_class_for_discovered_mapping() -> None:
     """Discovered mapping definitions should resolve to a configured generic adapter class."""
 
-    definition = get_adapter_definition("hyundai_kia_connect_kia_uvo")
+    definition = get_adapter_definition("kia_uvo")
     assert definition is not None
 
     adapter_class = _load_adapter_class(definition)
 
     assert issubclass(adapter_class, MappedVehicleAdapter)
-    assert adapter_class.mapping_name == "hyundai_kia_connect_kia_uvo"
+    assert adapter_class.mapping_name == "kia_uvo"
     assert adapter_class.get_friendly_name() == "Hyundai / Kia Connect"
 
 
-def test_registry_does_not_support_integration_domain_alias_lookup() -> None:
-    """Adapter definitions should now resolve only by mapping filename key."""
+def test_registry_supports_kia_uvo_mapping_key_lookup() -> None:
+    """The renamed mapping should resolve directly by the upstream integration key."""
 
     definition = get_adapter_definition("kia_uvo")
 
-    assert definition is None
+    assert definition is not None
+    assert definition.key == "kia_uvo"
 
 
 def test_registry_discovers_additional_mapping_yaml_without_python_changes(

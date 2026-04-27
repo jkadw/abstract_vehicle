@@ -52,7 +52,7 @@ class _ServiceRegistry:
 def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions() -> None:
     """The runtime should resolve the main v1 mapping modes without executing actions."""
 
-    mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+    mapping = load_adapter_mapping("kia_uvo")
     hass = _FakeHass(
         {
             "lock.santa_fe_door_lock": SimpleNamespace(state="locked", attributes={}),
@@ -140,7 +140,7 @@ def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions(
 def test_mapping_runtime_executes_mapped_actions_via_ha_services() -> None:
     """Mapped actions should call HA services with substituted placeholders."""
 
-    mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+    mapping = load_adapter_mapping("kia_uvo")
     hass = _FakeHass({})
     runtime = MappingRuntime(
         hass,
@@ -173,7 +173,7 @@ def test_mapping_runtime_executes_mapped_actions_via_ha_services() -> None:
 def test_mapping_runtime_rejects_unknown_mapped_actions() -> None:
     """Unsupported mapped actions should fail with a clear adapter-level error."""
 
-    mapping = load_adapter_mapping("hyundai_kia_connect_kia_uvo")
+    mapping = load_adapter_mapping("kia_uvo")
     runtime = MappingRuntime(
         _FakeHass({}),
         mapping,

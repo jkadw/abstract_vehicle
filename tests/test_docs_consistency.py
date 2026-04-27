@@ -18,7 +18,7 @@ MAPPING_PATH = (
     / "custom_components"
     / "my_vehicles"
     / "mappings"
-    / "hyundai_kia_connect_kia_uvo.yaml"
+    / "kia_uvo.yaml"
 )
 
 
