@@ -13,6 +13,7 @@ class EntityGenerationRule:
     key: str
     device_class: str | None = None
     state_class: str | None = None
+    suggested_display_precision: int | None = None
     icon: str | None = None
     create_always: bool = False
     create_when_state_supported: bool = False
@@ -121,6 +122,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                 EntityGenerationRule(
                     domain="sensor",
                     key="fuel_level",
+                    suggested_display_precision=0,
                     icon="mdi:gas-station",
                     create_when_state_supported=True,
                 ),
@@ -136,6 +138,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="sensor",
                     key="fuel_driving_range",
                     device_class="distance",
+                    suggested_display_precision=0,
                     icon="mdi:map-marker-distance",
                     create_when_state_supported=True,
                 ),
@@ -151,6 +154,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="sensor",
                     key="ev_battery_level",
                     device_class="battery",
+                    suggested_display_precision=0,
                     icon="mdi:battery",
                     create_when_state_supported=True,
                 ),
@@ -166,6 +170,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="sensor",
                     key="ev_driving_range",
                     device_class="distance",
+                    suggested_display_precision=0,
                     icon="mdi:map-marker-distance",
                     create_when_state_supported=True,
                 ),
@@ -332,6 +337,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     domain="sensor",
                     key="driving_range",
                     device_class="distance",
+                    suggested_display_precision=0,
                     icon="mdi:map-marker-distance",
                     create_when_state_supported=True,
                 ),
@@ -363,6 +369,7 @@ CAPABILITY_REGISTRY: dict[str, CapabilityDefinition] = {
                     key="odometer",
                     device_class="distance",
                     state_class="total_increasing",
+                    suggested_display_precision=2,
                     icon="mdi:counter",
                     create_when_state_supported=True,
                 ),

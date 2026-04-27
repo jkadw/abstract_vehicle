@@ -34,12 +34,14 @@ class VehicleCapabilitySensorEntity(VehicleBaseEntity, SensorEntity):
         *,
         device_class: str | None = None,
         state_class: str | None = None,
+        suggested_display_precision: int | None = None,
         icon: str | None = None,
     ) -> None:
         super().__init__(normalized_data, entity_key, entity_name)
         self._capability_name = capability_name
         self._device_class = device_class
         self._state_class = state_class
+        self._suggested_display_precision = suggested_display_precision
         self._icon = icon
 
     @property
@@ -90,6 +92,10 @@ class VehicleCapabilitySensorEntity(VehicleBaseEntity, SensorEntity):
     def icon(self) -> str | None:
         return self._icon
 
+    @property
+    def suggested_display_precision(self) -> int | None:
+        return self._suggested_display_precision
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -121,6 +127,7 @@ async def async_setup_entry(
                     _title(rule.key),
                     device_class=rule.device_class,
                     state_class=rule.state_class,
+                    suggested_display_precision=rule.suggested_display_precision,
                     icon=rule.icon,
                 )
             )
