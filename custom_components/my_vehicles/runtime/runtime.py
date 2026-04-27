@@ -91,7 +91,11 @@ class MappingRuntime:
                 f"Mapped action '{canonical_action}' for capability '{capability_name}' is not available in Home Assistant"
             )
 
-        return self._prepare_action(canonical_action, action)
+        return self._prepare_action(
+            canonical_action,
+            action,
+            capability_name=capability_name,
+        )
 
     def is_action_supported(self, capability_name: str, canonical_action: str) -> bool:
         """Return whether one mapped action is structurally supported in this HA instance."""
