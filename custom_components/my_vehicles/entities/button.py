@@ -72,6 +72,11 @@ async def async_setup_entry(
                 capability = mapping.capability(capability_name)
                 if capability is None or rule.action not in capability.actions:
                     continue
+            support_checker = getattr(adapter, "is_action_supported", None)
+            if callable(support_checker) and not support_checker(
+                capability_name, rule.action
+            ):
+                continue
             entity = VehicleActionButtonEntity(
                 normalized,
                 vehicle_data,

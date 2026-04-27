@@ -109,6 +109,14 @@ class VehicleAdapter(ABC):
         _ = capability_name, action, kwargs
         return True
 
+    def is_action_supported(
+        self, capability_name: str, action: str, **kwargs: Any
+    ) -> bool:
+        """Return whether one action is supported in this HA instance at all."""
+
+        _ = capability_name, action, kwargs
+        return True
+
     def is_capability_available(self, capability_name: str, **kwargs: Any) -> bool:
         """Return whether one capability-level control should be available."""
 

@@ -48,14 +48,20 @@ class _FakeAdapter:
         *,
         unavailable_actions: set[tuple[str, str]] | None = None,
         unavailable_capabilities: set[str] | None = None,
+        unsupported_actions: set[tuple[str, str]] | None = None,
     ) -> None:
         self._mapping = load_adapter_mapping("kia_uvo")
         self._unavailable_actions = unavailable_actions or set()
         self._unavailable_capabilities = unavailable_capabilities or set()
+        self._unsupported_actions = unsupported_actions or set()
 
     def is_action_available(self, capability_name: str, action: str, **kwargs) -> bool:
         _ = kwargs
         return (capability_name, action) not in self._unavailable_actions
+
+    def is_action_supported(self, capability_name: str, action: str, **kwargs) -> bool:
+        _ = kwargs
+        return (capability_name, action) not in self._unsupported_actions
 
     def is_capability_available(self, capability_name: str, **kwargs) -> bool:
         _ = kwargs
@@ -116,11 +122,13 @@ def _vehicle_entry(
     ev_charging_action_supported: bool = False,
     unavailable_actions: set[tuple[str, str]] | None = None,
     unavailable_capabilities: set[str] | None = None,
+    unsupported_actions: set[tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     return {
         DATA_ADAPTER: _FakeAdapter(
             unavailable_actions=unavailable_actions,
             unavailable_capabilities=unavailable_capabilities,
+            unsupported_actions=unsupported_actions,
         ),
         DATA_NORMALIZED: _normalized_vehicle(
             lock_state_supported=lock_state_supported,
@@ -281,6 +289,33 @@ def test_button_availability_updates_when_adapter_availability_changes() -> None
     adapter._unavailable_actions.clear()
 
     assert open_button.available is True
+
+
+def test_button_platform_skips_mapped_verbs_without_registered_ha_service() -> None:
+    """Mapped verbs should not create buttons when their HA service is missing."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        unavailable_actions=set(),
+        unsupported_actions={("hazard_lights", "turn_on")},
+        hazard_action_supported=True,
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_buttons(hass, entry, added.extend))
+
+    keys = {entity._entity_key for entity in added if isinstance(entity, VehicleActionButtonEntity)}
+    assert "turn_on_hazard_lights" not in keys
 
 
 def test_switch_availability_reflects_action_availability() -> None:

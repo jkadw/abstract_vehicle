@@ -86,8 +86,25 @@ class MappingRuntime:
             raise UnsupportedVehicleActionError(
                 f"Unsupported action '{canonical_action}' for capability '{capability_name}'"
             )
+        if not self.is_action_supported(capability_name, canonical_action):
+            raise UnsupportedVehicleActionError(
+                f"Mapped action '{canonical_action}' for capability '{capability_name}' is not available in Home Assistant"
+            )
 
         return self._prepare_action(canonical_action, action)
+
+    def is_action_supported(self, capability_name: str, canonical_action: str) -> bool:
+        """Return whether one mapped action is structurally supported in this HA instance."""
+
+        capability = self._mapping.capability(capability_name)
+        if capability is None:
+            return False
+
+        action = capability.actions.get(canonical_action)
+        if action is None:
+            return False
+
+        return self._service_exists(action.action)
 
     def is_action_available(self, capability_name: str, canonical_action: str) -> bool:
         """Return whether one mapped action is currently available."""
@@ -208,7 +225,10 @@ class MappingRuntime:
             **{
                 capability_name: CapabilitySupport(
                     state_supported=not capability.state.unavailable,
-                    action_supported=bool(capability.actions),
+                    action_supported=any(
+                        self._service_exists(action.action)
+                        for action in capability.actions.values()
+                    ),
                 )
                 for capability_name, capability in self._mapping.capabilities.items()
             }
@@ -227,6 +247,8 @@ class MappingRuntime:
                 continue
             prepared[capability_name] = {}
             for canonical_action, action in capability.actions.items():
+                if not self._service_exists(action.action):
+                    continue
                 prepared[capability_name][canonical_action] = self._prepare_action(
                     canonical_action,
                     action,
@@ -289,6 +311,31 @@ class MappingRuntime:
         if isinstance(value, bool):
             return value
         return _state_to_bool(value)
+
+    def _service_exists(self, full_service_name: str) -> bool:
+        """Return whether one referenced HA service is currently registered."""
+
+        services = getattr(self._hass, "services", None)
+        if services is None:
+            return True
+
+        domain, service = _split_service_name(full_service_name)
+
+        has_service = getattr(services, "has_service", None)
+        if callable(has_service):
+            try:
+                return bool(has_service(domain, service))
+            except Exception:
+                return False
+
+        async_has_service = getattr(services, "async_has_service", None)
+        if callable(async_has_service):
+            try:
+                return bool(async_has_service(domain, service))
+            except Exception:
+                return False
+
+        return True
 
     def _resolve_state_mapping(self, mapping: StateMapping) -> Any:
         if mapping.unavailable:

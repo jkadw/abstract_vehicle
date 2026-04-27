@@ -28,6 +28,19 @@ class _FakeHass:
 class _ServiceRegistry:
     def __init__(self) -> None:
         self.calls: list[dict[str, object]] = []
+        self._registered: set[tuple[str, str]] = {
+            ("kia_uvo", "lock"),
+            ("kia_uvo", "unlock"),
+            ("kia_uvo", "start_climate"),
+            ("kia_uvo", "stop_climate"),
+            ("kia_uvo", "start_charge"),
+            ("kia_uvo", "stop_charge"),
+            ("kia_uvo", "set_windows"),
+            ("kia_uvo", "start_hazard_lights"),
+            ("kia_uvo", "force_update"),
+            ("switch", "turn_on"),
+            ("switch", "turn_off"),
+        }
 
     async def async_call(
         self,
@@ -37,16 +50,19 @@ class _ServiceRegistry:
         service_data=None,
         target=None,
         blocking: bool = False,
-    ) -> None:
-        self.calls.append(
-            {
+        ) -> None:
+            self.calls.append(
+                {
                 "domain": domain,
                 "service": service,
                 "service_data": service_data,
                 "target": target,
                 "blocking": blocking,
-            }
-        )
+                }
+            )
+
+    def has_service(self, domain: str, service: str) -> bool:
+        return (domain, service) in self._registered
 
 
 def test_mapping_runtime_resolves_direct_state_aggregation_template_and_actions() -> None:
@@ -185,6 +201,28 @@ def test_mapping_runtime_rejects_unknown_mapped_actions() -> None:
         asyncio.run(runtime.async_execute_action("windows", "tilt"))
     except UnsupportedVehicleActionError as err:
         assert "Unsupported action 'tilt'" in str(err)
+    else:  # pragma: no cover - explicit failure path for plain asserts
+        raise AssertionError("UnsupportedVehicleActionError was not raised")
+
+
+def test_mapping_runtime_treats_missing_ha_service_as_unsupported_action() -> None:
+    """Mapped verbs should be unsupported when the referenced HA service is absent."""
+
+    mapping = load_adapter_mapping("uconnect")
+    hass = _FakeHass({})
+    runtime = MappingRuntime(
+        hass,
+        mapping,
+        vehicle="fiat_kleiner_flitzer",
+        device="device-123",
+    )
+
+    assert runtime.is_action_supported("vehicle_alert", "alarm") is False
+
+    try:
+        runtime.get_prepared_action("vehicle_alert", "alarm")
+    except UnsupportedVehicleActionError as err:
+        assert "not available in Home Assistant" in str(err)
     else:  # pragma: no cover - explicit failure path for plain asserts
         raise AssertionError("UnsupportedVehicleActionError was not raised")
 

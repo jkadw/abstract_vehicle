@@ -201,6 +201,17 @@ class MappedVehicleAdapter(VehicleAdapter):
         except Exception:
             return False
 
+    def is_action_supported(
+        self, capability_name: str, action: str, **kwargs: Any
+    ) -> bool:
+        """Return whether one mapped action is supported by the current HA service set."""
+
+        _ = kwargs
+        try:
+            return self._runtime().is_action_supported(capability_name, action)
+        except Exception:
+            return False
+
     def is_capability_available(self, capability_name: str, **kwargs: Any) -> bool:
         """Return whether one mapped capability should be available for controls."""
 

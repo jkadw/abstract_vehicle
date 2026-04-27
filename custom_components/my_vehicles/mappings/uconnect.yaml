@@ -120,10 +120,10 @@ capabilities:
   tire_pressure:
     state:
       any:
-        - binary_sensor.{vehicle}_wheel_front_left_pressure_warning
-        - binary_sensor.{vehicle}_wheel_front_right_pressure_warning
-        - binary_sensor.{vehicle}_wheel_rear_left_pressure_warning
-        - binary_sensor.{vehicle}_wheel_rear_right_pressure_warning
+        - binary_sensor.{vehicle}_tire_pressure_front_left_warning
+        - binary_sensor.{vehicle}_tire_pressure_front_right_warning
+        - binary_sensor.{vehicle}_tire_pressure_rear_left_warning
+        - binary_sensor.{vehicle}_tire_pressure_rear_right_warning
 
   warning_messages:
     state:
