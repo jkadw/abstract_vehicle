@@ -8,6 +8,7 @@ import logging
 import pytest
 
 from custom_components.my_vehicles.setup.entry import (
+    _normalize_entry_adapter_key,
     _log_vehicle_reconciliation,
     _refresh_vehicle_entry,
     _snapshot_vehicle_ids,
@@ -46,12 +47,17 @@ class _FakeConfigEntries:
     def __init__(self) -> None:
         self.forwarded: list[tuple[str, tuple[str, ...]]] = []
         self.reloads: list[str] = []
+        self.updated: list[tuple[object, dict]] = []
 
     async def async_forward_entry_setups(self, entry, platforms) -> None:
         self.forwarded.append((entry.entry_id, tuple(platforms)))
 
     async def async_reload(self, entry_id: str) -> None:
         self.reloads.append(entry_id)
+
+    def async_update_entry(self, entry, *, data) -> None:
+        entry.data = data
+        self.updated.append((entry, data))
 
 
 class _FakeHass:
@@ -193,6 +199,19 @@ def test_async_setup_entry_builds_multi_vehicle_state_and_startup_reload(
     asyncio.run(callback(object()))
 
     assert hass.config_entries.reloads == ["entry-1"]
+
+
+def test_normalize_entry_adapter_key_migrates_renamed_kia_mapping() -> None:
+    """Existing config entries should be rewritten to the renamed kia_uvo key."""
+
+    hass = _FakeHass(is_running=True)
+    entry = _FakeEntry("entry-1", {CONF_ADAPTER: "hyundai_kia_connect_kia_uvo"})
+
+    normalized = asyncio.run(_normalize_entry_adapter_key(hass, entry))
+
+    assert normalized == "kia_uvo"
+    assert entry.data[CONF_ADAPTER] == "kia_uvo"
+    assert hass.config_entries.updated == [(entry, {CONF_ADAPTER: "kia_uvo"})]
 
 
 def test_refresh_vehicle_entry_updates_normalized_data_without_actions() -> None:

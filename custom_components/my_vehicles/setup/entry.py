@@ -25,6 +25,10 @@ from ..services import async_register_services, async_unregister_services
 
 LOGGER = logging.getLogger(__name__)
 
+_ADAPTER_KEY_MIGRATIONS: dict[str, str] = {
+    "hyundai_kia_connect_kia_uvo": "kia_uvo",
+}
+
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the My Vehicles integration."""
@@ -42,7 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault(DATA_DISCOVERY_SNAPSHOTS, {})
 
-    adapter_type = entry.data.get(CONF_ADAPTER)
+    adapter_type = await _normalize_entry_adapter_key(hass, entry)
     if not isinstance(adapter_type, str) or not adapter_type:
         raise ValueError("Configured adapter type must be a non-empty string")
 
@@ -130,10 +134,36 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _discover_entry_vehicles(hass: HomeAssistant, entry: ConfigEntry) -> list:
     """Discover all source vehicles for the selected mapping entry."""
 
-    adapter_type = entry.data.get(CONF_ADAPTER)
+    adapter_type = await _normalize_entry_adapter_key(hass, entry)
     if not isinstance(adapter_type, str) or not adapter_type:
         raise ValueError("Configured adapter type must be a non-empty string")
     return await discover_adapter_vehicles(hass, adapter_type)
+
+
+async def _normalize_entry_adapter_key(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> str | None:
+    """Rewrite known renamed adapter keys in-place and return the normalized value."""
+
+    adapter_type = entry.data.get(CONF_ADAPTER)
+    if not isinstance(adapter_type, str):
+        return None
+
+    normalized = _ADAPTER_KEY_MIGRATIONS.get(adapter_type, adapter_type)
+    if normalized == adapter_type:
+        return normalized
+
+    hass.config_entries.async_update_entry(
+        entry,
+        data={**entry.data, CONF_ADAPTER: normalized},
+    )
+    LOGGER.info(
+        "Migrated My Vehicles entry '%s' adapter key from '%s' to '%s'",
+        entry.entry_id,
+        adapter_type,
+        normalized,
+    )
+    return normalized
 
 
 def _snapshot_vehicle_ids(vehicle_entries: object) -> set[str]:
