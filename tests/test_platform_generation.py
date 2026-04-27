@@ -46,11 +46,12 @@ class _FakeAdapter:
     def __init__(
         self,
         *,
+        mapping_name: str = "kia_uvo",
         unavailable_actions: set[tuple[str, str]] | None = None,
         unavailable_capabilities: set[str] | None = None,
         unsupported_actions: set[tuple[str, str]] | None = None,
     ) -> None:
-        self._mapping = load_adapter_mapping("kia_uvo")
+        self._mapping = load_adapter_mapping(mapping_name)
         self._unavailable_actions = unavailable_actions or set()
         self._unavailable_capabilities = unavailable_capabilities or set()
         self._unsupported_actions = unsupported_actions or set()
@@ -120,12 +121,14 @@ def _vehicle_entry(
     hazard_action_supported: bool = False,
     ev_charging_state_supported: bool = False,
     ev_charging_action_supported: bool = False,
+    mapping_name: str = "kia_uvo",
     unavailable_actions: set[tuple[str, str]] | None = None,
     unavailable_capabilities: set[str] | None = None,
     unsupported_actions: set[tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     return {
         DATA_ADAPTER: _FakeAdapter(
+            mapping_name=mapping_name,
             unavailable_actions=unavailable_actions,
             unavailable_capabilities=unavailable_capabilities,
             unsupported_actions=unsupported_actions,
@@ -376,3 +379,29 @@ def test_switch_stays_available_when_only_one_direction_is_currently_available()
     charging_switch = next(entity for entity in added if entity._entity_key == "ev_charging")
 
     assert charging_switch.available is True
+
+
+def test_switch_is_not_created_when_state_source_is_not_a_switch() -> None:
+    """Switch generation must follow the state source domain, not just action support."""
+
+    hass = HomeAssistant()
+    entry = _FakeEntry()
+    vehicle_data = _vehicle_entry(
+        lock_state_supported=False,
+        lock_action_supported=False,
+        ev_charging_state_supported=True,
+        ev_charging_action_supported=True,
+        mapping_name="uconnect",
+    )
+    hass.data = {
+        DOMAIN: {
+            entry.entry_id: {
+                DATA_VEHICLES: [vehicle_data],
+            }
+        }
+    }
+    added = []
+
+    asyncio.run(async_setup_switches(hass, entry, added.extend))
+
+    assert added == []

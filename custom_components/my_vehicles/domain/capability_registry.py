@@ -603,12 +603,16 @@ def should_create_entity_rule(
 ) -> bool:
     """Return whether one registry entity rule should create an entity."""
 
+    if rule.create_when_source_domain:
+        if not source_domains:
+            return False
+        if not (set(rule.create_when_source_domain) & source_domains):
+            return False
+
     if rule.create_always:
         return True
     if rule.create_when_state_supported and state_supported:
         return True
     if rule.create_when_action_supported and action_supported:
         return True
-    if rule.create_when_source_domain and source_domains:
-        return bool(set(rule.create_when_source_domain) & source_domains)
     return False
